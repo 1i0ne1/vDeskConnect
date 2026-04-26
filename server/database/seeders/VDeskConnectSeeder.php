@@ -247,11 +247,11 @@ class VDeskConnectSeeder extends Seeder
                 'school_id' => $demoSchoolId,
                 'student_id' => $sid,
                 'subject_id' => $subjectIds[0],
+                'grade_level_id' => $gradeIds[0],
                 'term_id' => $termId,
-                'session_id' => $sessionId,
                 'ca_score' => rand(15, 35),
                 'exam_score' => rand(30, 60),
-                'total_score' => 0, // Will be computed in Phase 9 logic if needed, but let's set it
+                'total_score' => 0, 
                 'created_at' => $now,
             ]);
         }
@@ -280,7 +280,7 @@ class VDeskConnectSeeder extends Seeder
                 'options' => json_encode(['A' => $q+1, 'B' => $q+2, 'C' => $q+3, 'D' => $q+4]),
                 'correct_answer' => 'B',
                 'marks' => 12,
-                'order' => $q,
+                'order_index' => $q,
             ]);
         }
 
