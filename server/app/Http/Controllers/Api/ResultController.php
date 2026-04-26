@@ -10,6 +10,7 @@ use App\Models\Exam;
 use App\Models\ExamSubmission;
 use App\Models\GradeLevel;
 use App\Models\GradeScale;
+use App\Models\ReportCard;
 use App\Models\StudentGrade;
 use App\Models\Subject;
 use App\Models\User;
