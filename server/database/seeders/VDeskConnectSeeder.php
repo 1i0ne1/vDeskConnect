@@ -399,17 +399,31 @@ class VDeskConnectSeeder extends Seeder
         // ─────────────────────────────────────────────
         //  12. REPORT CARDS
         // ─────────────────────────────────────────────
-        $positions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-        shuffle($positions);
-        
-        foreach ($studentIds as $index => $sid) {
+        $studentAverages = [];
+        foreach ($studentIds as $sid) {
+            $totalAvg = DB::table('student_grades')
+                ->where('student_id', $sid)
+                ->where('term_id', $termId)
+                ->avg('total_score');
+            $studentAverages[] = [
+                'student_id' => $sid,
+                'average' => $totalAvg
+            ];
+        }
+
+        // Sort by average to get overall positions
+        usort($studentAverages, function($a, $b) {
+            return $b['average'] <=> $a['average'];
+        });
+
+        foreach ($studentAverages as $index => $rank) {
             DB::table('report_cards')->insert([
                 'school_id' => $demoSchoolId,
-                'student_id' => $sid,
+                'student_id' => $rank['student_id'],
                 'term_id' => $termId,
                 'session_id' => $sessionId,
-                'overall_average' => rand(65, 92) + (rand(0, 99) / 100),
-                'overall_position' => $positions[$index],
+                'overall_average' => $rank['average'],
+                'overall_position' => $index + 1,
                 'total_students' => count($studentIds),
                 'published' => true,
                 'generated_at' => $now,
