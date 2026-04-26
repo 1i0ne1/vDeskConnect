@@ -167,7 +167,9 @@ export default function ReportsPage() {
             </div>
             <div>
               <p className="text-text-secondary text-xs font-medium uppercase tracking-wider">Students</p>
-              <h3 className="text-2xl font-bold text-text-main">1,240</h3>
+              <h3 className="text-2xl font-bold text-text-main">
+                {[...new Set(grades.map(g => g.student_id))].length || 0}
+              </h3>
             </div>
           </div>
           <div className="bg-bg-card p-6 rounded-card border border-white/5 shadow-soft flex items-center space-x-4">
@@ -176,7 +178,9 @@ export default function ReportsPage() {
             </div>
             <div>
               <p className="text-text-secondary text-xs font-medium uppercase tracking-wider">Processed</p>
-              <h3 className="text-2xl font-bold text-text-main">85%</h3>
+              <h3 className="text-2xl font-bold text-text-main">
+                {reportCards.length > 0 ? Math.round((reportCards.filter(rc => rc.pdf_url).length / reportCards.length) * 100) : 0}%
+              </h3>
             </div>
           </div>
           <div className="bg-bg-card p-6 rounded-card border border-white/5 shadow-soft flex items-center space-x-4">
@@ -185,7 +189,7 @@ export default function ReportsPage() {
             </div>
             <div>
               <p className="text-text-secondary text-xs font-medium uppercase tracking-wider">Reports</p>
-              <h3 className="text-2xl font-bold text-text-main">920</h3>
+              <h3 className="text-2xl font-bold text-text-main">{reportCards.length}</h3>
             </div>
           </div>
           <div className="bg-bg-card p-6 rounded-card border border-white/5 shadow-soft flex items-center space-x-4">
