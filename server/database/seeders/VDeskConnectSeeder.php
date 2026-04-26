@@ -279,19 +279,49 @@ class VDeskConnectSeeder extends Seeder
             ]);
         }
 
-        foreach ($studentIds as $sid) {
-            foreach ($subjectIds as $subjId) {
+        // Pre-calculate positions per subject
+        foreach ($subjectIds as $subjId) {
+            $subjectScores = [];
+            foreach ($studentIds as $sid) {
                 $ca = rand(15, 35);
                 $exam = rand(30, 60);
+                $total = $ca + $exam;
+                
+                $grade = 'F';
+                $remark = 'Fail';
+                if ($total >= 70) { $grade = 'A'; $remark = 'Excellent'; }
+                elseif ($total >= 60) { $grade = 'B'; $remark = 'Very Good'; }
+                elseif ($total >= 50) { $grade = 'C'; $remark = 'Credit'; }
+                elseif ($total >= 40) { $grade = 'P'; $remark = 'Pass'; }
+
+                $subjectScores[] = [
+                    'student_id' => $sid,
+                    'ca_score' => $ca,
+                    'exam_score' => $exam,
+                    'total_score' => $total,
+                    'grade' => $grade,
+                    'remark' => $remark
+                ];
+            }
+            
+            // Sort by total score to get positions
+            usort($subjectScores, function($a, $b) {
+                return $b['total_score'] <=> $a['total_score'];
+            });
+
+            foreach ($subjectScores as $index => $score) {
                 DB::table('student_grades')->insert([
                     'school_id' => $demoSchoolId,
-                    'student_id' => $sid,
+                    'student_id' => $score['student_id'],
                     'subject_id' => $subjId,
                     'grade_level_id' => $gradeIds[0],
                     'term_id' => $termId,
-                    'ca_score' => $ca,
-                    'exam_score' => $exam,
-                    'total_score' => $ca + $exam, 
+                    'ca_score' => $score['ca_score'],
+                    'exam_score' => $score['exam_score'],
+                    'total_score' => $score['total_score'],
+                    'grade' => $score['grade'],
+                    'remark' => $score['remark'],
+                    'position' => $index + 1,
                     'created_at' => $now,
                 ]);
             }
