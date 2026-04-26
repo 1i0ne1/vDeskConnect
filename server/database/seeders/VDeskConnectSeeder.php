@@ -426,6 +426,7 @@ class VDeskConnectSeeder extends Seeder
                 'overall_position' => $index + 1,
                 'total_students' => count($studentIds),
                 'published' => true,
+                'pdf_url' => '/storage/reports/dummy.pdf',
                 'generated_at' => $now,
                 'created_at' => $now,
                 'updated_at' => $now,
