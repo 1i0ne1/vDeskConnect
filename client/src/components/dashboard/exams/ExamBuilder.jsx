@@ -41,6 +41,7 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
       fetchInitialData();
       if (initialExam) {
         setFormData({
+          id: initialExam.id,
           title: initialExam.title,
           description: initialExam.description || '',
           subject_id: initialExam.subject_id,
@@ -54,7 +55,25 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
           type: initialExam.type || 'MCQ',
         });
         if (initialExam.questions) setQuestions(initialExam.questions);
+        setStep(1);
+      } else {
+        setFormData({
+          title: '',
+          description: '',
+          subject_id: '',
+          grade_level_id: '',
+          term_id: '',
+          is_ca_test: false,
+          week_number: '',
+          duration_minutes: 60,
+          start_at: '',
+          end_at: '',
+          type: 'MCQ',
+        });
+        setQuestions([]);
+        setStep(1);
       }
+      setActiveQuestion(null);
     }
   }, [isOpen, initialExam]);
 
