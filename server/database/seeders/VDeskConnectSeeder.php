@@ -280,17 +280,21 @@ class VDeskConnectSeeder extends Seeder
         }
 
         foreach ($studentIds as $sid) {
-            DB::table('student_grades')->insert([
-                'school_id' => $demoSchoolId,
-                'student_id' => $sid,
-                'subject_id' => $subjectIds[0],
-                'grade_level_id' => $gradeIds[0],
-                'term_id' => $termId,
-                'ca_score' => rand(15, 35),
-                'exam_score' => rand(30, 60),
-                'total_score' => 0, 
-                'created_at' => $now,
-            ]);
+            foreach ($subjectIds as $subjId) {
+                $ca = rand(15, 35);
+                $exam = rand(30, 60);
+                DB::table('student_grades')->insert([
+                    'school_id' => $demoSchoolId,
+                    'student_id' => $sid,
+                    'subject_id' => $subjId,
+                    'grade_level_id' => $gradeIds[0],
+                    'term_id' => $termId,
+                    'ca_score' => $ca,
+                    'exam_score' => $exam,
+                    'total_score' => $ca + $exam, 
+                    'created_at' => $now,
+                ]);
+            }
         }
 
         // ─────────────────────────────────────────────
