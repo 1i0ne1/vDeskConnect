@@ -72,6 +72,10 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
   };
 
   const handleCreateHeader = async () => {
+    if (!formData.title || !formData.subject_id || !formData.grade_level_id || !formData.term_id) {
+      toast.error('Please fill all required fields');
+      return;
+    }
     setLoading(true);
     try {
       let exam;
