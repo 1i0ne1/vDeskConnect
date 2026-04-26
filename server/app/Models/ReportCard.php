@@ -22,6 +22,7 @@ class ReportCard extends Model
     protected $casts = [
         'generated_at' => 'datetime',
         'published' => 'boolean',
+        'overall_average' => 'float',
     ];
 
     public function student()

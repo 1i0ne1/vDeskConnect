@@ -428,7 +428,7 @@ export default function ReportsPage() {
                               </p>
                             </div>
                           </td>
-                          <td className="px-4 py-4 text-text-main text-sm font-bold">{rc.overall_average?.toFixed(2)}%</td>
+                          <td className="px-4 py-4 text-text-main text-sm font-bold">{Number(rc.overall_average || 0).toFixed(2)}%</td>
                           <td className="px-4 py-4 text-text-secondary text-sm">
                             {rc.overall_position} / {rc.total_students}
                           </td>
