@@ -54,6 +54,39 @@ const SCHOOL_ADMIN_NAV = [
   { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
 ];
 
+// Teacher navigation items
+const TEACHER_NAV = [
+  { label: 'Dashboard', icon: LayoutGrid, href: '/dashboard' },
+  { label: 'My Classes', icon: School, href: '/dashboard/classes' },
+  { label: 'Lectures', icon: Video, href: '/dashboard/lectures' },
+  { label: 'Lesson Notes', icon: ClipboardList, href: '/dashboard/lesson-notes' },
+  { label: 'Exams & Grading', icon: FileText, href: '/dashboard/exams' },
+  { label: 'Students', icon: GraduationCap, href: '/dashboard/students' },
+  { label: 'Events', icon: Calendar, href: '/dashboard/events' },
+  { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
+];
+
+// Student navigation items
+const STUDENT_NAV = [
+  { label: 'Dashboard', icon: LayoutGrid, href: '/dashboard' },
+  { label: 'My Lectures', icon: Video, href: '/dashboard/lectures' },
+  { label: 'My Exams', icon: FileText, href: '/dashboard/exams' },
+  { label: 'Results', icon: Award, href: '/dashboard/results' },
+  { label: 'Events', icon: Calendar, href: '/dashboard/events' },
+  { label: 'Fees', icon: CreditCard, href: '/dashboard/fees' },
+  { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
+];
+
+// Staff (Principal, Admin Staff, Receptionist) navigation items
+const STAFF_NAV = [
+  { label: 'Dashboard', icon: LayoutGrid, href: '/dashboard' },
+  { label: 'Students', icon: GraduationCap, href: '/dashboard/students' },
+  { label: 'Fees', icon: CreditCard, href: '/dashboard/fees' },
+  { label: 'Events', icon: Calendar, href: '/dashboard/events' },
+  { label: 'Staff Chat', icon: Users, href: '/dashboard/chat' },
+  { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
+];
+
 export default function Sidebar({ role = 'admin', user, onLogout, collapsed: initialCollapsed = false, onToggle, mobileOpen, onMobileClose }) {
   const pathname = usePathname();
   
@@ -83,7 +116,11 @@ export default function Sidebar({ role = 'admin', user, onLogout, collapsed: ini
     }
   }, [initialCollapsed]);
 
-  const navItems = role === 'super_admin' ? SUPER_ADMIN_NAV : SCHOOL_ADMIN_NAV;
+  const navItems = role === 'super_admin' ? SUPER_ADMIN_NAV : 
+                   role === 'teacher' ? TEACHER_NAV :
+                   role === 'student' ? STUDENT_NAV :
+                   (['principal', 'admin_staff', 'receptionist'].includes(role)) ? STAFF_NAV :
+                   SCHOOL_ADMIN_NAV;
 
   const handleLogout = () => {
     onLogout?.();
