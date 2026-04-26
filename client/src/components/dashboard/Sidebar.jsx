@@ -205,10 +205,16 @@ export default function Sidebar({ role = 'admin', user, onLogout, collapsed: ini
             <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
               role === 'super_admin'
                 ? 'bg-warning/20 text-warning'
-                : 'bg-primary/20 text-primary-light'
+                : role === 'admin'
+                ? 'bg-primary/20 text-primary-light'
+                : role === 'teacher'
+                ? 'bg-success/20 text-success'
+                : role === 'student'
+                ? 'bg-info/20 text-info'
+                : 'bg-white/10 text-white/60'
             }`}>
               <Shield size={12} />
-              {role === 'super_admin' ? 'Super Admin' : 'School Admin'}
+              {role.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
             </div>
           </div>
         )}
