@@ -58,6 +58,8 @@ class VDeskConnectSeeder extends Seeder
         $sessionId = DB::table('academic_sessions')->insertGetId([
             'school_id' => $demoSchoolId,
             'name' => '2025/2026 Academic Year',
+            'start_date' => '2025-09-01',
+            'end_date' => '2026-08-31',
             'active' => true,
             'created_at' => $now,
         ]);
@@ -66,6 +68,8 @@ class VDeskConnectSeeder extends Seeder
             'school_id' => $demoSchoolId,
             'session_id' => $sessionId,
             'name' => 'First Term',
+            'start_date' => '2025-09-01',
+            'end_date' => '2025-12-20',
             'active' => true,
             'created_at' => $now,
         ]);
