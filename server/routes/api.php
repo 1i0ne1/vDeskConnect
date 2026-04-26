@@ -211,4 +211,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/submissions/{submissionId}', [ExamController::class, 'submissionDetails']);
         Route::post('/submissions/{submissionId}/grade', [ExamController::class, 'gradeSubmission']);
     });
+
+    // Results & Reports (Phase 9)
+    Route::prefix('results')->group(function () {
+        Route::get('/grades', [ResultController::class, 'index']);
+        Route::post('/grades/compute', [ResultController::class, 'computeGrades']);
+        Route::get('/pins', [ResultController::class, 'listPins']);
+        Route::post('/pins/generate', [ResultController::class, 'generatePins']);
+        Route::post('/check', [ResultController::class, 'checkResult']);
+    });
 });
