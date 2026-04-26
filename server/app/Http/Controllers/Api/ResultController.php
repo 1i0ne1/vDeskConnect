@@ -175,6 +175,96 @@ class ResultController extends Controller
     }
 
     /**
+     * Compute overall positions for students in a class.
+     */
+    public function computeOverallResults(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'grade_level_id' => 'required|exists:grade_levels,id',
+            'term_id' => 'required|exists:academic_terms,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user = $request->user();
+        $schoolId = $user->school_id;
+        $gradeLevelId = $request->grade_level_id;
+        $termId = $request->term_id;
+
+        // 1. Fetch all student grades for this class and term
+        $allGrades = StudentGrade::where('school_id', $schoolId)
+            ->where('grade_level_id', $gradeLevelId)
+            ->where('term_id', $termId)
+            ->get();
+
+        if ($allGrades->isEmpty()) {
+            return response()->json(['message' => 'No grades found for this class/term. Compute subject grades first.'], 404);
+        }
+
+        // 2. Group by student and calculate average
+        $studentTotals = [];
+        foreach ($allGrades as $grade) {
+            if (!isset($studentTotals[$grade->student_id])) {
+                $studentTotals[$grade->student_id] = [
+                    'student_id' => $grade->student_id,
+                    'total_score' => 0,
+                    'subjects_count' => 0,
+                ];
+            }
+            $studentTotals[$grade->student_id]['total_score'] += $grade->total_score;
+            $studentTotals[$grade->student_id]['subjects_count']++;
+        }
+
+        // Calculate averages
+        $rankings = [];
+        foreach ($studentTotals as $id => $data) {
+            $rankings[] = [
+                'student_id' => $id,
+                'average' => $data['total_score'] / max(1, $data['subjects_count']),
+                'total_score' => $data['total_score']
+            ];
+        }
+
+        // 3. Sort by total_score (or average)
+        usort($rankings, function($a, $b) {
+            return $b['total_score'] <=> $a['total_score'];
+        });
+
+        // 4. Update or Create overall report card record (or just a ranking table?)
+        // For now, let's just return the rankings or store them in a summary table if needed.
+        // Actually, report_cards table is better for this.
+        
+        $term = AcademicTerm::find($termId);
+        $sessionId = $term->academic_session_id;
+
+        foreach ($rankings as $index => $rank) {
+            DB::table('report_cards')->updateOrInsert(
+                [
+                    'school_id' => $schoolId,
+                    'student_id' => $rank['student_id'],
+                    'term_id' => $termId,
+                ],
+                [
+                    'session_id' => $sessionId,
+                    'overall_average' => $rank['average'],
+                    'overall_position' => $index + 1,
+                    'total_students' => count($rankings),
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]
+            );
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Successfully computed overall positions for " . count($rankings) . " students.",
+            'rankings' => $rankings
+        ]);
+    }
+
+    /**
      * Generate bulk Result PINs.
      */
     public function generatePins(Request $request): JsonResponse
