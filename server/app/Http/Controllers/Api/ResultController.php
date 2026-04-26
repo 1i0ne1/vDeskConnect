@@ -13,6 +13,7 @@ use App\Models\GradeScale;
 use App\Models\StudentGrade;
 use App\Models\Subject;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -382,6 +383,84 @@ class ResultController extends Controller
             'status' => 'success',
             'student' => $student->load('profile'),
             'data' => $grades
+        ]);
+    }
+
+    /**
+     * Generate PDF Report Cards for a class and term.
+     */
+    public function generateReportCards(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'grade_level_id' => 'required|exists:grade_levels,id',
+            'term_id' => 'required|exists:academic_terms,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user = $request->user();
+        $schoolId = $user->school_id;
+        $gradeLevelId = $request->grade_level_id;
+        $termId = $request->term_id;
+
+        // Fetch report cards for this class/term
+        $reportCards = ReportCard::where('school_id', $schoolId)
+            ->where('term_id', $termId)
+            ->whereHas('student.profile', function($q) use ($gradeLevelId) {
+                $q->where('data->grade_level_id', $gradeLevelId);
+            })
+            ->with(['student.profile', 'term', 'session'])
+            ->get();
+
+        if ($reportCards->isEmpty()) {
+            return response()->json(['message' => 'No report cards found. Compute overall results first.'], 404);
+        }
+
+        $term = AcademicTerm::find($termId);
+        $gradeLevel = GradeLevel::find($gradeLevelId);
+        $school = $user->school;
+
+        $generatedCount = 0;
+        foreach ($reportCards as $reportCard) {
+            $student = $reportCard->student;
+            
+            // Get all subject grades for this student
+            $grades = StudentGrade::where('student_id', $student->id)
+                ->where('term_id', $termId)
+                ->with('subject')
+                ->get();
+
+            $data = [
+                'school' => $school,
+                'student' => $student,
+                'term' => $term,
+                'session' => $reportCard->session,
+                'gradeLevel' => $gradeLevel,
+                'reportCard' => $reportCard,
+                'grades' => $grades
+            ];
+
+            $pdf = Pdf::loadView('reports.report_card', $data);
+            
+            // Save PDF to storage
+            $fileName = "report_card_{$student->id}_{$termId}.pdf";
+            $filePath = "reports/{$schoolId}/{$termId}/{$fileName}";
+            
+            \Illuminate\Support\Facades\Storage::disk('public')->put($filePath, $pdf->output());
+            
+            $reportCard->update([
+                'pdf_url' => "/storage/{$filePath}",
+                'generated_at' => now(),
+            ]);
+
+            $generatedCount++;
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Successfully generated $generatedCount report cards."
         ]);
     }
 }
