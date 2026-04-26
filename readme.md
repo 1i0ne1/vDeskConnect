@@ -82,20 +82,19 @@ Whether you follow a 3-term Nigerian system, a semester-based American model, or
 
 ---
 
-## 🔒 LICENSE & LEGAL NOTICE
+## LICENSE & LEGAL NOTICE
 
-> [!CAUTION]
-> **PROPRIETARY AND CONFIDENTIAL SOFTWARE**
-> 
-> This software is **NOT** open source. It is the exclusive property of the author.
-> 
-> 🚫 **NO MODIFICATION:** No part of this project may be modified, adapted, or altered.
-> 🚫 **NO REDISTRIBUTION:** Redistribution, resale, or sublicensing is strictly prohibited.
-> 🚫 **NO UNAUTHORIZED ACCESS:** Unauthorized use, duplication, or access to the source code is a violation of copyright law.
-> 
-> **FALIURE TO ADHERE TO THESE TERMS IS A DANGEROUS GAME.** Unauthorized "touching" or tampering with this codebase will result in immediate legal action and prosecution to the fullest extent of the law. 
-> 
-> **ALL RIGHTS RESERVED.**
+PROPRIETARY AND CONFIDENTIAL SOFTWARE
+
+This software is NOT open source. It is the exclusive property of the author.
+
+NO MODIFICATION: No part of this project may be modified, adapted, or altered.
+NO REDISTRIBUTION: Redistribution, resale, or sublicensing is strictly prohibited.
+NO UNAUTHORIZED ACCESS: Unauthorized use, duplication, or access to the source code is a violation of copyright law.
+
+FALIURE TO ADHERE TO THESE TERMS IS A DANGEROUS GAME. Unauthorized "touching" or tampering with this codebase will result in immediate legal action and prosecution to the fullest extent of the law. 
+
+ALL RIGHTS RESERVED.
 
 ---
 
