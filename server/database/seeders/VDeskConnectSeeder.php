@@ -70,7 +70,6 @@ class VDeskConnectSeeder extends Seeder
             'name' => 'First Term',
             'start_date' => '2025-09-01',
             'end_date' => '2025-12-20',
-            'active' => true,
             'created_at' => $now,
         ]);
 
