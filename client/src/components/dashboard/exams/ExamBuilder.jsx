@@ -30,6 +30,7 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
     duration_minutes: 60,
     start_at: '',
     end_at: '',
+    type: 'MCQ',
   });
 
   const [questions, setQuestions] = useState([]);
@@ -50,6 +51,7 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
           duration_minutes: initialExam.duration_minutes,
           start_at: initialExam.start_at ? initialExam.start_at.substring(0, 16) : '',
           end_at: initialExam.end_at ? initialExam.end_at.substring(0, 16) : '',
+          type: initialExam.type || 'MCQ',
         });
         if (initialExam.questions) setQuestions(initialExam.questions);
       }
@@ -341,6 +343,21 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
                       onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
                       className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-text-main focus:outline-none focus:border-primary"
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-text-secondary">Exam Type (Format)</label>
+                    <select
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-text-main focus:outline-none focus:border-primary"
+                    >
+                      <option value="MCQ">Multiple Choice Questions (MCQ)</option>
+                      <option value="Theory">Theory / Essay</option>
+                      <option value="Mixed">Mixed (MCQ + Theory)</option>
+                    </select>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-text-secondary flex items-center space-x-2">
