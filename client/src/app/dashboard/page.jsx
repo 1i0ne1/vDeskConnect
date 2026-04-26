@@ -21,27 +21,6 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import IllustrationDisplay from '@/components/ui/IllustrationDisplay';
 import { api } from '@/lib/api';
 
-const STATS = [
-  { label: 'Total Classes', value: '24', change: '+2', trend: 'up', icon: BookOpen, color: 'bg-primary/10 text-primary' },
-  { label: 'Total Students', value: '486', change: '+15', trend: 'up', icon: GraduationCap, color: 'bg-success/10 text-success' },
-  { label: 'Total Lessons', value: '142', change: '+8', trend: 'up', icon: FileText, color: 'bg-warning/10 text-warning' },
-  { label: 'Total Hours', value: '320', change: '-5', trend: 'down', icon: Clock, color: 'bg-info/10 text-info' },
-];
-
-const STUDENTS_PERFORMANCE = [
-  { name: 'Oliver James', grade: '6', class: 'Class A', mastery: 98 },
-  { name: 'Sarah Chen', grade: '6', class: 'Class B', mastery: 95 },
-  { name: 'Aisha Bello', grade: '5', class: 'Class A', mastery: 92 },
-  { name: 'James Wilson', grade: '6', class: 'Class A', mastery: 89 },
-  { name: 'Fatima Hassan', grade: '5', class: 'Class B', mastery: 87 },
-];
-
-const UPCOMING_EVENTS = [
-  { time: '9:00 am', title: 'Biology', description: 'Biological molecules, cell, enzymes', end: '10:00 am' },
-  { time: '11:00 am', title: 'Chemistry', description: 'Chemical reactions and bonding', end: '12:00 pm' },
-  { time: '1:00 pm', title: 'Physics', description: 'Newton\'s laws of motion', end: '2:00 pm' },
-];
-
 const MY_NOTES = [
   { title: 'Prepare Questions for final test', desc: 'Prepare Questions for final test for the students of class A', color: 'bg-warning/10' },
   { title: 'Update Scheme of Work', desc: 'Update the scheme of work for Term 2 Science subjects', color: 'bg-primary/10' },
@@ -53,6 +32,19 @@ export default function SchoolAdminDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [dashboardData, setDashboardData] = useState({
+    stats: [],
+    topStudents: [],
+    schedule: []
+  });
+
+  const iconMap = {
+    BookOpen: BookOpen,
+    GraduationCap: GraduationCap,
+    Users: Users,
+    FileText: FileText,
+    Clock: Clock
+  };
 
   useEffect(() => {
     const token = api.getToken();
@@ -61,19 +53,29 @@ export default function SchoolAdminDashboard() {
       return;
     }
 
-    api.get('/user')
-      .then((data) => {
-        if (data.user?.role === 'super_admin') {
+    const fetchData = async () => {
+      try {
+        const [userData, statsData] = await Promise.all([
+          api.get('/user'),
+          api.get('/dashboard/stats')
+        ]);
+
+        if (userData.user?.role === 'super_admin') {
           router.push('/admin/dashboard');
           return;
         }
-        setUser(data.user);
+
+        setUser(userData.user);
+        setDashboardData(statsData);
         setLoading(false);
-      })
-      .catch(() => {
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
         api.logout();
         router.push('/login');
-      });
+      }
+    };
+
+    fetchData();
   }, [router]);
 
   if (loading) {
@@ -85,7 +87,10 @@ export default function SchoolAdminDashboard() {
   }
 
   const greeting = new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening';
-  const userName = user?.email?.split('@')[0] || 'Admin';
+  const profileData = typeof user?.profile?.data === 'string' 
+    ? JSON.parse(user.profile.data) 
+    : user?.profile?.data;
+  const userName = profileData?.first_name || user?.email?.split('@')[0] || 'Admin';
 
   return (
     <DashboardLayout title="Dashboard" subtitle={`${greeting}, ${userName}!`} role="admin">
@@ -105,27 +110,30 @@ export default function SchoolAdminDashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {STATS.map((stat, i) => (
-            <div
-              key={i}
-              className="bg-bg-card rounded-card shadow-soft p-5 card-hover-lift animate-slide-up"
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.color}`}>
-                  <stat.icon size={20} />
+          {dashboardData.stats.map((stat, i) => {
+            const Icon = iconMap[stat.icon] || BookOpen;
+            return (
+              <div
+                key={i}
+                className="bg-bg-card rounded-card shadow-soft p-5 card-hover-lift animate-slide-up"
+                style={{ animationDelay: `${i * 100}ms` }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.color}`}>
+                    <Icon size={20} />
+                  </div>
+                  <div className={`flex items-center gap-1 text-xs font-medium ${
+                    stat.trend === 'up' ? 'text-success' : 'text-error'
+                  }`}>
+                    {stat.trend === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                    {stat.change}
+                  </div>
                 </div>
-                <div className={`flex items-center gap-1 text-xs font-medium ${
-                  stat.trend === 'up' ? 'text-success' : 'text-error'
-                }`}>
-                  {stat.trend === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                  {stat.change}
-                </div>
+                <p className="text-2xl font-bold text-text-primary">{stat.value}</p>
+                <p className="text-sm text-text-secondary mt-1">{stat.label}</p>
               </div>
-              <p className="text-2xl font-bold text-text-primary">{stat.value}</p>
-              <p className="text-sm text-text-secondary mt-1">{stat.label}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Main Content Grid */}
@@ -134,25 +142,32 @@ export default function SchoolAdminDashboard() {
           <div className="bg-bg-card rounded-card shadow-soft">
             <div className="flex items-center justify-between p-5 border-b border-border">
               <h3 className="font-semibold text-text-primary">Students Performance</h3>
-              <button className="text-xs text-primary hover:text-primary-dark transition-colors">
+              <button onClick={() => router.push('/dashboard/reports')} className="text-xs text-primary hover:text-primary-dark transition-colors">
                 View all
               </button>
             </div>
-            <div className="divide-y divide-border">
-              {STUDENTS_PERFORMANCE.map((student, i) => (
-                <div key={i} className="flex items-center justify-between px-5 py-3 hover:bg-bg-main/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">
-                      {student.name.charAt(0)}
+            <div className="divide-y divide-border min-h-[300px]">
+              {dashboardData.topStudents.length > 0 ? (
+                dashboardData.topStudents.map((student, i) => (
+                  <div key={i} className="flex items-center justify-between px-5 py-3 hover:bg-bg-main/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">
+                        {student.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-text-primary">{student.name}</p>
+                        <p className="text-xs text-text-secondary">{student.grade} / {student.class}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-text-primary">{student.name}</p>
-                      <p className="text-xs text-text-secondary">{student.grade} / {student.class}</p>
-                    </div>
+                    <span className="text-sm font-semibold text-text-primary">{student.mastery}%</span>
                   </div>
-                  <span className="text-sm font-semibold text-text-primary">{student.mastery}%</span>
+                ))
+              ) : (
+                <div className="p-10 text-center">
+                  <TrendingUp className="mx-auto text-text-muted mb-2 opacity-20" size={40} />
+                  <p className="text-sm text-text-secondary">No performance data yet</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -161,24 +176,31 @@ export default function SchoolAdminDashboard() {
             <div className="p-5 border-b border-border">
               <h3 className="font-semibold text-text-primary">Today's Schedule</h3>
             </div>
-            <div className="p-5 space-y-4">
-              {UPCOMING_EVENTS.map((event, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs text-text-secondary">{event.time}</span>
-                    <div className="w-px h-8 bg-border mt-1" />
+            <div className="p-5 space-y-4 min-h-[300px]">
+              {dashboardData.schedule.length > 0 ? (
+                dashboardData.schedule.map((event, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs text-text-secondary whitespace-nowrap">{event.time}</span>
+                      <div className="w-px h-8 bg-border mt-1" />
+                    </div>
+                    <div className="flex-1 pb-4 border-l-2 border-primary pl-4">
+                      <p className="text-sm font-medium text-text-primary">{event.title}</p>
+                      <p className="text-xs text-text-secondary mt-0.5">{event.description}</p>
+                      <p className="text-xs text-text-muted mt-1">{event.end}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 pb-4 border-l-2 border-primary pl-4">
-                    <p className="text-sm font-medium text-text-primary">{event.title}</p>
-                    <p className="text-xs text-text-secondary mt-0.5">{event.description}</p>
-                    <p className="text-xs text-text-muted mt-1">{event.end}</p>
-                  </div>
+                ))
+              ) : (
+                <div className="p-10 text-center">
+                  <Calendar className="mx-auto text-text-muted mb-2 opacity-20" size={40} />
+                  <p className="text-sm text-text-secondary">Nothing scheduled for today</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
-          {/* My Notes */}
+          {/* My Notes (Keeping Static for now or we could pull from somewhere) */}
           <div className="bg-bg-card rounded-card shadow-soft">
             <div className="flex items-center justify-between p-5 border-b border-border">
               <h3 className="font-semibold text-text-primary">My Notes</h3>
