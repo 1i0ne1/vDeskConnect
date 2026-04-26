@@ -15,11 +15,29 @@ class VDeskConnectSeeder extends Seeder
         $output = $this->command->getOutput();
         $now = Carbon::now();
 
-        // Clean tables to avoid duplicates (optional but helpful for re-seeding)
-        // Note: In a real app, use truncate with caution due to FKs
-        
         // ─────────────────────────────────────────────
-        //  1. SUPER ADMIN & SCHOOL
+        //  1. PLATFORM SUPER ADMIN (Owner)
+        // ─────────────────────────────────────────────
+        $superAdminId = DB::table('users')->insertGetId([
+            'school_id'  => null, // Platform owner doesn't belong to a school
+            'email'      => 'admin@vdeskconnect.com',
+            'password'   => Hash::make('SuperAdmin@2026!'),
+            'role'       => 'admin', // System treats this as superadmin if school_id is null
+            'verified'   => true,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        DB::table('profiles')->insert([
+            'user_id' => $superAdminId,
+            'type' => 'admin',
+            'data' => json_encode(['first_name' => 'VDesk', 'last_name' => 'Owner']),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        // ─────────────────────────────────────────────
+        //  2. SCHOOL & SCHOOL ADMIN
         // ─────────────────────────────────────────────
         $demoSchoolId = DB::table('schools')->insertGetId([
             'name'       => 'Greenfield Academy',
@@ -37,7 +55,7 @@ class VDeskConnectSeeder extends Seeder
         $directorId = DB::table('users')->insertGetId([
             'school_id'  => $demoSchoolId,
             'email'      => 'director@greenfield.edu',
-            'password'   => Hash::make('Password@2026!'),
+            'password'   => Hash::make('SchoolAdmin@2026!'),
             'role'       => 'admin',
             'verified'   => true,
             'created_at' => $now,
@@ -53,7 +71,7 @@ class VDeskConnectSeeder extends Seeder
         ]);
 
         // ─────────────────────────────────────────────
-        //  2. ACADEMIC STRUCTURE
+        //  3. ACADEMIC STRUCTURE
         // ─────────────────────────────────────────────
         $sessionId = DB::table('academic_sessions')->insertGetId([
             'school_id' => $demoSchoolId,
@@ -117,7 +135,7 @@ class VDeskConnectSeeder extends Seeder
         }
 
         // ─────────────────────────────────────────────
-        //  3. TEACHERS & ASSIGNMENTS
+        //  4. TEACHERS & ASSIGNMENTS
         // ─────────────────────────────────────────────
         $teachers = [
             ['first' => 'Adeyemi', 'last' => 'Olabisi', 'email' => 'teacher@greenfield.edu'],
@@ -150,7 +168,7 @@ class VDeskConnectSeeder extends Seeder
         ]);
 
         // ─────────────────────────────────────────────
-        //  4. STUDENTS
+        //  5. STUDENTS
         // ─────────────────────────────────────────────
         $studentNames = [
             ['Emmanuel', 'Adebayo'], ['Fatima', 'Mohammed'], ['David', 'Okafor'], 
@@ -182,7 +200,7 @@ class VDeskConnectSeeder extends Seeder
         }
 
         // ─────────────────────────────────────────────
-        //  5. SCHEME OF WORK & LESSON NOTES
+        //  6. SCHEME OF WORK & LESSON NOTES (Markdown Rich)
         // ─────────────────────────────────────────────
         $topics = ['Algebra Basics', 'Equations', 'Probability', 'Geometry', 'Calculus Intro'];
         foreach ($topics as $i => $topic) {
@@ -195,10 +213,10 @@ class VDeskConnectSeeder extends Seeder
                 'week_number' => $i + 1,
                 'topic' => $topic,
                 'aspects' => json_encode([
-                    'objectives' => 'Learn ' . $topic . ' fundamentals.',
-                    'activities' => 'Class discussion and practice.',
-                    'resources' => 'Textbook and Whiteboard.',
-                    'evaluation' => 'Short quiz at the end.'
+                    'objectives' => "By the end of this week, students should be able to:\n- **Understand** $topic concepts.\n- **Apply** $topic formulas in exercises.\n- **Analyze** real-world problems using $topic.",
+                    'activities' => "1. **Discussion:** Introduction to $topic.\n2. **Group Task:** Solve 10 problems on $topic.\n3. **Quiz:** Test on $topic fundamentals.",
+                    'resources' => "- Textbook Chapter " . ($i+1) . "\n- [Online Resource](https://vdeskconnect.edu/resources/$i)\n- Interactive Board",
+                    'evaluation' => "### Assessment for $topic:\n- Homework assignment due Friday.\n- Class participation score."
                 ]),
                 'status' => 'published',
                 'created_at' => $now,
@@ -214,11 +232,11 @@ class VDeskConnectSeeder extends Seeder
                 'week_number' => $i + 1,
                 'topic' => $topic,
                 'aspects' => json_encode([
-                    'objective' => 'Learn ' . $topic . ' fundamentals.',
-                    'content' => "Full explanation of $topic with examples.",
-                    'methodology' => 'Demonstration and Practice.',
-                    'evaluation' => 'Short quiz at the end.',
-                    'materials' => 'Textbook, Whiteboard'
+                    'objective' => "Comprehensive understanding of **$topic**.",
+                    'content' => "## $topic Overview\n\n| Level | Concept | Complexity |\n|-------|---------|------------|\n| 1 | Basic | Low |\n| 2 | Advanced | High |\n\n> \"$topic is the foundation of modern mathematics.\"",
+                    'methodology' => "- **Visual Aids:** 3D graphs for $topic.\n- **Direct Instruction:** Lecture on core $topic rules.",
+                    'evaluation' => "#### Evaluation for $topic\n- Quiz on Friday.\n- Peer review session.",
+                    'materials' => "Graph paper, Calculators"
                 ]),
                 'status' => 'published',
                 'created_at' => $now,
@@ -226,9 +244,28 @@ class VDeskConnectSeeder extends Seeder
         }
 
         // ─────────────────────────────────────────────
-        //  6. CA WEEKS & STUDENT GRADES
+        //  7. LECTURES (Markdown Rich)
         // ─────────────────────────────────────────────
-        // Define weeks 3 and 6 as test weeks
+        DB::table('lectures')->insert([
+            'school_id' => $demoSchoolId,
+            'teacher_id' => $teacherIds[0],
+            'grade_level_id' => $gradeIds[0],
+            'subject_id' => $subjectIds[0],
+            'title' => 'Quantum Mathematics Basics',
+            'description' => 'Introduction to quantum math concepts using Markdown formatting.',
+            'scheduled_at' => $now->addDays(2),
+            'duration_minutes' => 60,
+            'status' => 'scheduled',
+            'type' => 'async',
+            'content' => "## Quantum Math Introduction\n\nQuantum math is fascinating. Here's a brief breakdown:\n\n### Core Formulas\n$ E = mc^2 $\n\n```javascript\nconsole.log('Welcome to Quantum Math');\n```\n\n---\nCheck the resources tab for more.",
+            'is_published' => true,
+            'created_by' => $teacherIds[0],
+            'created_at' => $now,
+        ]);
+
+        // ─────────────────────────────────────────────
+        //  8. CA WEEKS & STUDENT GRADES
+        // ─────────────────────────────────────────────
         for ($w = 1; $w <= 12; $w++) {
             DB::table('ca_weeks')->insert([
                 'school_id' => $demoSchoolId,
@@ -257,7 +294,7 @@ class VDeskConnectSeeder extends Seeder
         }
 
         // ─────────────────────────────────────────────
-        //  7. EXAMS & SUBMISSIONS
+        //  9. EXAMS & SUBMISSIONS
         // ─────────────────────────────────────────────
         $examId = DB::table('exams')->insertGetId([
             'school_id' => $demoSchoolId,
@@ -296,7 +333,7 @@ class VDeskConnectSeeder extends Seeder
         }
 
         // ─────────────────────────────────────────────
-        //  8. GRADE SCALES
+        //  10. GRADE SCALES
         // ─────────────────────────────────────────────
         DB::table('grade_scales')->insert([
             'school_id' => $demoSchoolId,
@@ -313,7 +350,7 @@ class VDeskConnectSeeder extends Seeder
         ]);
 
         // ─────────────────────────────────────────────
-        //  9. RESULT PINS
+        //  11. RESULT PINS
         // ─────────────────────────────────────────────
         for ($p = 1; $p <= 20; $p++) {
             DB::table('result_pins')->insert([
@@ -325,7 +362,20 @@ class VDeskConnectSeeder extends Seeder
             ]);
         }
 
-        $output->writeln('<fg=green>✓ Database seeded with COMPREHENSIVE bulk data!</>');
-        $output->writeln('<fg=yellow>→ Login: director@greenfield.edu / Password@2026!</>');
+        $output->writeln("");
+        $output->writeln("<fg=white;bg=green;options=bold>  SUCCESS  </> <fg=green>Database seeded with COMPREHENSIVE bulk data!</>");
+        $output->writeln("");
+        $output->writeln("<fg=white;options=bold>┌────────────────────────────────────────────────────────────────────┐</>");
+        $output->writeln("<fg=white;options=bold>│                      vDeskConnect - SEEDED ACCOUNTS                │</>");
+        $output->writeln("<fg=white;options=bold>├────────────────────────────────────────────────────────────────────┤</>");
+        $output->writeln("<fg=white;options=bold>│  </><fg=cyan;options=bold>SUPER ADMIN (Platform Owner)</>                                   <fg=white;options=bold>│</>");
+        $output->writeln("<fg=white;options=bold>│  </><fg=yellow>Email    :</> admin@vdeskconnect.com                               <fg=white;options=bold>│</>");
+        $output->writeln("<fg=white;options=bold>│  </><fg=yellow>Password :</> SuperAdmin@2026!                                    <fg=white;options=bold>│</>");
+        $output->writeln("<fg=white;options=bold>│                                                                    │</>");
+        $output->writeln("<fg=white;options=bold>│  </><fg=cyan;options=bold>SCHOOL ADMIN (Greenfield Academy)</>                            <fg=white;options=bold>│</>");
+        $output->writeln("<fg=white;options=bold>│  </><fg=yellow>Email    :</> director@greenfield.edu                               <fg=white;options=bold>│</>");
+        $output->writeln("<fg=white;options=bold>│  </><fg=yellow>Password :</> SchoolAdmin@2026!                                  <fg=white;options=bold>│</>");
+        $output->writeln("<fg=white;options=bold>└────────────────────────────────────────────────────────────────────┘</>");
+        $output->writeln("");
     }
 }
