@@ -11,6 +11,7 @@ use App\Models\Lecture;
 use App\Models\StudentGrade;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
@@ -56,7 +57,7 @@ class DashboardController extends Controller
 
         // Student Performance (Top 5)
         $topStudents = StudentGrade::where('school_id', $schoolId)
-            ->with(['student.profile', 'subject'])
+            ->with(['student.profile', 'gradeLevel'])
             ->orderBy('total_score', 'desc')
             ->limit(5)
             ->get()
@@ -66,7 +67,7 @@ class DashboardController extends Controller
                 return [
                     'name' => ($data['first_name'] ?? '') . ' ' . ($data['last_name'] ?? ''),
                     'grade' => $grade->grade ?? 'N/A',
-                    'class' => $grade->subject->name ?? 'N/A', // or grade level name
+                    'class' => $grade->gradeLevel->name ?? 'N/A',
                     'mastery' => round($grade->total_score) ?: 0
                 ];
             });

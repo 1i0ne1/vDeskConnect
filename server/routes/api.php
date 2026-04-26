@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\AcademicController;
 use App\Http\Controllers\Api\LectureController;
 use App\Http\Controllers\Api\ExamController;
 use App\Http\Controllers\Api\ResultController;
+use App\Http\Controllers\Api\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +40,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::put('/auth/change-password', [AuthController::class, 'changePassword']);
+
+    // Dashboard
+    Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
 
     // UI Illustrations management (Super Admin only)
     Route::prefix('ui')->group(function () {
