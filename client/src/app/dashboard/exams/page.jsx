@@ -45,7 +45,7 @@ export default function ExamsPage() {
       const [glRes, subRes, termRes] = await Promise.all([
         academicApi.gradeLevels.getAll(),
         academicApi.subjects.getAll(),
-        academicApi.terms.getAll(), // This needs a session ID usually, but academicApi.terms.getAll() handles active session
+        academicApi.terms.getActive(),
       ]);
       setGradeLevels(glRes.grade_levels || []);
       setSubjects(subRes.subjects || []);

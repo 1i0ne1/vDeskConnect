@@ -61,7 +61,7 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
       const [glRes, subRes, termRes] = await Promise.all([
         academicApi.gradeLevels.getAll(),
         academicApi.subjects.getAll(),
-        academicApi.terms.getAll(),
+        academicApi.terms.getActive(),
       ]);
       setGradeLevels(glRes.grade_levels || []);
       setSubjects(subRes.subjects || []);
