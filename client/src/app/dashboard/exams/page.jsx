@@ -87,6 +87,30 @@ export default function ExamsPage() {
     return <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">Published</span>;
   };
 
+  const handleEdit = async (exam) => {
+    setLoading(true);
+    try {
+      const fullExam = await examsApi.getExam(exam.id);
+      setEditingExam(fullExam.data);
+      setIsBuilderOpen(true);
+    } catch (error) {
+      toast.error('Failed to load exam details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this exam?')) return;
+    try {
+      await examsApi.deleteExam(id);
+      toast.success('Exam deleted');
+      fetchExams();
+    } catch (error) {
+      toast.error('Failed to delete exam');
+    }
+  };
+
   return (
     <DashboardLayout title="Exams & Assessments" subtitle="Create and manage school examinations" role="admin">
       <div className="space-y-6">
@@ -151,7 +175,7 @@ export default function ExamsPage() {
             </button>
 
             <button 
-              onClick={() => toast.success('Redirecting to AI Exam Builder...')}
+              onClick={() => { setEditingExam(null); setIsBuilderOpen(true); }}
               className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary to-primary-light text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
             >
               <Sparkles size={18} />
@@ -159,7 +183,7 @@ export default function ExamsPage() {
             </button>
 
             <button 
-              onClick={() => toast.success('Opening Exam Creator...')}
+              onClick={() => { setEditingExam(null); setIsBuilderOpen(true); }}
               className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
             >
               <Plus size={18} />
@@ -171,7 +195,7 @@ export default function ExamsPage() {
         {/* Exams List */}
         <div className="grid grid-cols-1 gap-4">
           <AnimatePresence mode="popLayout">
-            {loading ? (
+            {loading && !isBuilderOpen ? (
               <div className="col-span-full py-20 flex flex-col items-center justify-center space-y-4">
                 <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                 <p className="text-text-secondary">Loading examinations...</p>
@@ -188,7 +212,7 @@ export default function ExamsPage() {
                   className="group bg-bg-card p-5 rounded-card border border-white/5 shadow-soft hover:border-primary/30 transition-all cursor-pointer"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-4" onClick={() => handleEdit(exam)}>
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                         exam.is_ca_test ? 'bg-yellow-500/10 text-yellow-500' : 'bg-blue-500/10 text-blue-500'
                       }`}>
@@ -222,13 +246,25 @@ export default function ExamsPage() {
                         <p className="text-text-secondary text-xs">{exam.term?.name}</p>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <button className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all" title="View Details">
+                        <button 
+                          className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all" 
+                          title="View Details"
+                          onClick={() => handleEdit(exam)}
+                        >
                           <Eye size={18} />
                         </button>
-                        <button className="p-2 text-text-secondary hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all" title="Edit Exam">
+                        <button 
+                          className="p-2 text-text-secondary hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all" 
+                          title="Edit Exam"
+                          onClick={() => handleEdit(exam)}
+                        >
                           <Edit2 size={18} />
                         </button>
-                        <button className="p-2 text-text-secondary hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all" title="Delete Exam">
+                        <button 
+                          className="p-2 text-text-secondary hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all" 
+                          title="Delete Exam"
+                          onClick={() => handleDelete(exam.id)}
+                        >
                           <Trash2 size={18} />
                         </button>
                         <button className="p-2 text-text-secondary hover:text-green-400 hover:bg-green-400/10 rounded-lg transition-all" title="View Submissions">
@@ -249,10 +285,16 @@ export default function ExamsPage() {
                     : "Get started by creating your first exam or use the AI builder to generate one in seconds."}
                 </p>
                 <div className="flex items-center justify-center space-x-4">
-                  <button className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all">
+                  <button 
+                    onClick={() => { setEditingExam(null); setIsBuilderOpen(true); }}
+                    className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all"
+                  >
                     Create Exam
                   </button>
-                  <button className="px-6 py-2 bg-white/5 text-text-main rounded-lg font-bold border border-white/10 hover:bg-white/10 transition-all">
+                  <button 
+                    onClick={() => { setFilters({ grade_level_id: '', subject_id: '', term_id: '' }); setSearchQuery(''); }}
+                    className="px-6 py-2 bg-white/5 text-text-main rounded-lg font-bold border border-white/10 hover:bg-white/10 transition-all"
+                  >
                     Clear Filters
                   </button>
                 </div>
@@ -261,6 +303,13 @@ export default function ExamsPage() {
           </AnimatePresence>
         </div>
       </div>
+
+      <ExamBuilder 
+        isOpen={isBuilderOpen} 
+        onClose={() => { setIsBuilderOpen(false); setEditingExam(null); }} 
+        onExamCreated={fetchExams}
+        initialExam={editingExam}
+      />
     </DashboardLayout>
   );
 }
