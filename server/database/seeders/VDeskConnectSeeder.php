@@ -247,11 +247,11 @@ class VDeskConnectSeeder extends Seeder
                 'school_id' => $demoSchoolId,
                 'student_id' => $sid,
                 'subject_id' => $subjectIds[0],
+                'grade_level_id' => $gradeIds[0],
                 'term_id' => $termId,
-                'session_id' => $sessionId,
                 'ca_score' => rand(15, 35),
                 'exam_score' => rand(30, 60),
-                'total_score' => 0, // Will be computed in Phase 9 logic if needed, but let's set it
+                'total_score' => 0, 
                 'created_at' => $now,
             ]);
         }
@@ -276,11 +276,10 @@ class VDeskConnectSeeder extends Seeder
             DB::table('exam_questions')->insert([
                 'exam_id' => $examId,
                 'question_text' => "What is 2 + $q?",
-                'type' => 'MCQ',
+                'type' => 'mcq',
                 'options' => json_encode(['A' => $q+1, 'B' => $q+2, 'C' => $q+3, 'D' => $q+4]),
                 'correct_answer' => 'B',
                 'marks' => 12,
-                'order' => $q,
             ]);
         }
 
@@ -288,9 +287,10 @@ class VDeskConnectSeeder extends Seeder
             $subId = DB::table('exam_submissions')->insertGetId([
                 'exam_id' => $examId,
                 'student_id' => $sid,
-                'score' => rand(30, 60),
+                'auto_score' => rand(30, 60),
+                'manual_score' => 0,
                 'status' => 'graded',
-                'graded_at' => $now,
+                'submitted_at' => $now,
                 'created_at' => $now,
             ]);
         }
@@ -311,6 +311,19 @@ class VDeskConnectSeeder extends Seeder
             ]),
             'created_at' => $now,
         ]);
+
+        // ─────────────────────────────────────────────
+        //  9. RESULT PINS
+        // ─────────────────────────────────────────────
+        for ($p = 1; $p <= 20; $p++) {
+            DB::table('result_pins')->insert([
+                'school_id' => $demoSchoolId,
+                'pin' => strtoupper(Str::random(10)),
+                'used' => ($p <= 5), // Mark first 5 as used
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
 
         $output->writeln('<fg=green>✓ Database seeded with COMPREHENSIVE bulk data!</>');
         $output->writeln('<fg=yellow>→ Login: director@greenfield.edu / Password@2026!</>');
