@@ -25,6 +25,7 @@ import {
   SlidersHorizontal,
   ClipboardList,
   Video,
+  Award,
 } from 'lucide-react';
 
 // Super Admin navigation items
