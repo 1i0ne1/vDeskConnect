@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import ExamBuilder from '@/components/dashboard/exams/ExamBuilder';
+import GradingInterface from '@/components/dashboard/exams/GradingInterface';
 import { examsApi } from '@/lib/exams-api';
 import { academicApi } from '@/lib/academic-api';
 import { format } from 'date-fns';
@@ -21,7 +22,9 @@ export default function ExamsPage() {
   const [activeTab, setActiveTab] = useState('all'); // all, ca, final
   const [searchQuery, setSearchQuery] = useState('');
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
+  const [isGradingOpen, setIsGradingOpen] = useState(false);
   const [editingExam, setEditingExam] = useState(null);
+  const [selectedExamForGrading, setSelectedExamForGrading] = useState(null);
   const [filters, setFilters] = useState({
     grade_level_id: '',
     subject_id: '',
