@@ -287,9 +287,10 @@ class VDeskConnectSeeder extends Seeder
             $subId = DB::table('exam_submissions')->insertGetId([
                 'exam_id' => $examId,
                 'student_id' => $sid,
-                'score' => rand(30, 60),
+                'auto_score' => rand(30, 60),
+                'manual_score' => 0,
                 'status' => 'graded',
-                'graded_at' => $now,
+                'submitted_at' => $now,
                 'created_at' => $now,
             ]);
         }
@@ -310,6 +311,19 @@ class VDeskConnectSeeder extends Seeder
             ]),
             'created_at' => $now,
         ]);
+
+        // ─────────────────────────────────────────────
+        //  9. RESULT PINS
+        // ─────────────────────────────────────────────
+        for ($p = 1; $p <= 20; $p++) {
+            DB::table('result_pins')->insert([
+                'school_id' => $demoSchoolId,
+                'pin' => strtoupper(Str::random(10)),
+                'used' => ($p <= 5), // Mark first 5 as used
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
 
         $output->writeln('<fg=green>✓ Database seeded with COMPREHENSIVE bulk data!</>');
         $output->writeln('<fg=yellow>→ Login: director@greenfield.edu / Password@2026!</>');
