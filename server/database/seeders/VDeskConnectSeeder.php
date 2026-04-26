@@ -276,11 +276,10 @@ class VDeskConnectSeeder extends Seeder
             DB::table('exam_questions')->insert([
                 'exam_id' => $examId,
                 'question_text' => "What is 2 + $q?",
-                'type' => 'MCQ',
+                'type' => 'mcq',
                 'options' => json_encode(['A' => $q+1, 'B' => $q+2, 'C' => $q+3, 'D' => $q+4]),
                 'correct_answer' => 'B',
                 'marks' => 12,
-                'order_index' => $q,
             ]);
         }
 
