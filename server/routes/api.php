@@ -217,6 +217,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('results')->group(function () {
         Route::get('/grades', [ResultController::class, 'index']);
         Route::post('/grades/compute', [ResultController::class, 'computeGrades']);
+        Route::post('/overall/compute', [ResultController::class, 'computeOverallResults']);
         Route::get('/pins', [ResultController::class, 'listPins']);
         Route::post('/pins/generate', [ResultController::class, 'generatePins']);
         Route::post('/check', [ResultController::class, 'checkResult']);
