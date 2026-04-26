@@ -10,7 +10,16 @@ export const resultApi = {
       return api.get(`/results/grades?${params.toString()}`);
     },
     compute: (data) => api.post('/results/grades/compute', data),
-    computeOverall: (data) => api.post('/results/overall/compute', data), // Wait, I should check the route for overall
+    computeOverall: (data) => api.post('/results/overall/compute', data),
+  },
+  reports: {
+    getAll: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.grade_level_id) params.append('grade_level_id', filters.grade_level_id);
+      if (filters.term_id) params.append('term_id', filters.term_id);
+      return api.get(`/results/report-cards?${params.toString()}`);
+    },
+    generate: (data) => api.post('/results/report-cards/generate', data),
   },
   pins: {
     getAll: () => api.get('/results/pins'),
