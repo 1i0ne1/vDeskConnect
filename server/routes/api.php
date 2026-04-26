@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\TeacherController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\AcademicController;
 use App\Http\Controllers\Api\LectureController;
+use App\Http\Controllers\Api\ExamController;
 
 /*
 |--------------------------------------------------------------------------
@@ -194,5 +195,20 @@ Route::middleware('auth:sanctum')->group(function () {
     // AI Lecture Generator
     Route::prefix('ai')->group(function () {
         Route::post('lecture', [AcademicController::class, 'generateLectureAI']);
+        Route::post('exam', [AcademicController::class, 'generateExamAI']);
+    });
+
+    // Exams (Phase 8)
+    Route::prefix('exams')->group(function () {
+        Route::get('/', [ExamController::class, 'index']);
+        Route::post('/', [ExamController::class, 'store']);
+        Route::get('/{id}', [ExamController::class, 'show']);
+        Route::put('/{id}', [ExamController::class, 'update']);
+        Route::delete('/{id}', [ExamController::class, 'destroy']);
+        Route::put('/{id}/publish', [ExamController::class, 'publish']);
+        Route::post('/{id}/questions', [ExamController::class, 'syncQuestions']);
+        Route::get('/{id}/submissions', [ExamController::class, 'submissions']);
+        Route::get('/submissions/{submissionId}', [ExamController::class, 'submissionDetails']);
+        Route::post('/submissions/{submissionId}/grade', [ExamController::class, 'gradeSubmission']);
     });
 });
