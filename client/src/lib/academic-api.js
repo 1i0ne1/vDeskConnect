@@ -19,6 +19,7 @@ export const academicApi = {
   // Terms
   terms: {
     getAll: (sessionId) => api.get(`/academic/terms/session/${sessionId}`),
+    getActive: () => api.get('/academic/terms'),
     create: (data) => api.post('/academic/terms', data),
     bulkCreate: (data) => api.post('/academic/terms/bulk', data),
     update: (id, data) => api.put(`/academic/terms/${id}`, data),
