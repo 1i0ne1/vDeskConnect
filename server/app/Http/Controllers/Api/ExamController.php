@@ -9,7 +9,6 @@ use App\Models\Exam;
 use App\Models\ExamQuestion;
 use App\Models\ExamSubmission;
 use App\Models\ExamAnswer;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
