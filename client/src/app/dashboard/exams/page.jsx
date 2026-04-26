@@ -47,9 +47,9 @@ export default function ExamsPage() {
         academicApi.subjects.getAll(),
         academicApi.terms.getActive(),
       ]);
-      setGradeLevels(glRes.grade_levels || []);
-      setSubjects(subRes.subjects || []);
-      setTerms(termRes.terms || []);
+      setGradeLevels(glRes.grade_levels || glRes.data || []);
+      setSubjects(subRes.subjects || subRes.data || []);
+      setTerms(termRes.terms || termRes.data || []);
     } catch (error) {
       console.error('Error fetching filter data:', error);
     }

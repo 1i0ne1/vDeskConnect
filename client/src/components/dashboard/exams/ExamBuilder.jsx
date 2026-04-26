@@ -63,9 +63,9 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
         academicApi.subjects.getAll(),
         academicApi.terms.getActive(),
       ]);
-      setGradeLevels(glRes.grade_levels || []);
-      setSubjects(subRes.subjects || []);
-      setTerms(termRes.terms || []);
+      setGradeLevels(glRes.grade_levels || glRes.data || []);
+      setSubjects(subRes.subjects || subRes.data || []);
+      setTerms(termRes.terms || termRes.data || []);
     } catch (error) {
       toast.error('Failed to load form data');
     }
@@ -155,7 +155,7 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
         theory_count: 2,
       });
 
-      const generatedQuestions = res.data.questions.map(q => ({
+      const generatedQuestions = (res.exam?.questions || res.data?.questions || []).map(q => ({
         ...q,
         id: Date.now() + Math.random(),
       }));
