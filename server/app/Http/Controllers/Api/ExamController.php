@@ -20,19 +20,19 @@ class ExamController extends Controller
         $query = Exam::where('school_id', $user->school_id)
             ->with(['subject', 'gradeLevel', 'term']);
 
-        if ($request->has('grade_level_id')) {
+        if ($request->filled('grade_level_id')) {
             $query->where('grade_level_id', $request->grade_level_id);
         }
 
-        if ($request->has('term_id')) {
+        if ($request->filled('term_id')) {
             $query->where('term_id', $request->term_id);
         }
 
-        if ($request->has('subject_id')) {
+        if ($request->filled('subject_id')) {
             $query->where('subject_id', $request->subject_id);
         }
 
-        if ($request->has('is_ca_test')) {
+        if ($request->has('is_ca_test') && $request->is_ca_test !== '') {
             $query->where('is_ca_test', $request->boolean('is_ca_test'));
         }
 
