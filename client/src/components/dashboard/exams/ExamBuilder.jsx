@@ -5,10 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, ChevronRight, ChevronLeft, Save, Plus, 
   Trash2, Sparkles, AlertCircle, CheckCircle, 
-  Calendar, Clock, Award, ClipboardList
+  Calendar, Clock, Award, ClipboardList, Send
 } from 'lucide-react';
 import { examsApi } from '@/lib/exams-api';
 import { academicApi } from '@/lib/academic-api';
+import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
 export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExam = null }) {
