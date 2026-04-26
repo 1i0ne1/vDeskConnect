@@ -188,48 +188,72 @@ class VDeskConnectSeeder extends Seeder
         foreach ($topics as $i => $topic) {
             $schemeId = DB::table('schemes_of_work')->insertGetId([
                 'school_id' => $demoSchoolId,
-                'teacher_id' => $teacherIds[0],
+                'created_by' => $teacherIds[0],
                 'subject_id' => $subjectIds[0],
                 'grade_level_id' => $gradeIds[0],
                 'term_id' => $termId,
                 'week_number' => $i + 1,
                 'topic' => $topic,
-                'objectives' => 'Learn ' . $topic . ' fundamentals.',
+                'aspects' => json_encode([
+                    'objectives' => 'Learn ' . $topic . ' fundamentals.',
+                    'activities' => 'Class discussion and practice.',
+                    'resources' => 'Textbook and Whiteboard.',
+                    'evaluation' => 'Short quiz at the end.'
+                ]),
                 'status' => 'published',
                 'created_at' => $now,
             ]);
 
             DB::table('lesson_notes')->insert([
                 'school_id' => $demoSchoolId,
+                'scheme_id' => $schemeId,
                 'teacher_id' => $teacherIds[0],
-                'subject_id' => $subjectIds[0],
                 'grade_level_id' => $gradeIds[0],
+                'subject_id' => $subjectIds[0],
                 'term_id' => $termId,
                 'week_number' => $i + 1,
-                'title' => 'Detailed Notes on ' . $topic,
-                'content' => "## $topic\nFull explanation of $topic with examples.",
+                'topic' => $topic,
+                'aspects' => json_encode([
+                    'objective' => 'Learn ' . $topic . ' fundamentals.',
+                    'content' => "Full explanation of $topic with examples.",
+                    'methodology' => 'Demonstration and Practice.',
+                    'evaluation' => 'Short quiz at the end.',
+                    'materials' => 'Textbook, Whiteboard'
+                ]),
                 'status' => 'published',
                 'created_at' => $now,
             ]);
         }
 
         // ─────────────────────────────────────────────
-        //  6. CA WEEKS (Scores)
+        //  6. CA WEEKS & STUDENT GRADES
         // ─────────────────────────────────────────────
+        // Define weeks 3 and 6 as test weeks
+        for ($w = 1; $w <= 12; $w++) {
+            DB::table('ca_weeks')->insert([
+                'school_id' => $demoSchoolId,
+                'term_id' => $termId,
+                'grade_level_id' => $gradeIds[0],
+                'subject_id' => $subjectIds[0],
+                'week_number' => $w,
+                'is_test_week' => in_array($w, [3, 6]),
+                'is_exam_week' => ($w == 12),
+                'created_at' => $now,
+            ]);
+        }
+
         foreach ($studentIds as $sid) {
-            for ($w = 1; $w <= 3; $w++) {
-                DB::table('ca_weeks')->insert([
-                    'school_id' => $demoSchoolId,
-                    'academic_term_id' => $termId,
-                    'grade_level_id' => $gradeIds[0],
-                    'subject_id' => $subjectIds[0],
-                    'student_id' => $sid,
-                    'week_number' => $w,
-                    'score' => rand(5, 10),
-                    'max_score' => 10,
-                    'created_at' => $now,
-                ]);
-            }
+            DB::table('student_grades')->insert([
+                'school_id' => $demoSchoolId,
+                'student_id' => $sid,
+                'subject_id' => $subjectIds[0],
+                'term_id' => $termId,
+                'session_id' => $sessionId,
+                'ca_score' => rand(15, 35),
+                'exam_score' => rand(30, 60),
+                'total_score' => 0, // Will be computed in Phase 9 logic if needed, but let's set it
+                'created_at' => $now,
+            ]);
         }
 
         // ─────────────────────────────────────────────
