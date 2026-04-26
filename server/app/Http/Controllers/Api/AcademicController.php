@@ -2248,4 +2248,85 @@ class AcademicController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * AI Exam Generator.
+     * Generates structured exam questions.
+     */
+    public function generateExamAI(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'subject_id' => 'required|exists:subjects,id',
+            'grade_level_id' => 'required|exists:grade_levels,id',
+            'topics' => 'required|array',
+            'mcq_count' => 'nullable|integer|min:0|max:50',
+            'theory_count' => 'nullable|integer|min:0|max:20',
+            'difficulty' => 'nullable|in:easy,medium,hard',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $user = $request->user();
+            $gradeLevel = GradeLevel::findOrFail($request->grade_level_id);
+            $subject = Subject::findOrFail($request->subject_id);
+
+            $gradeInfo = [
+                'name' => $gradeLevel->name,
+                'short_name' => $gradeLevel->short_name,
+                'cycle' => $gradeLevel->cycle ?? 'General',
+            ];
+
+            $subjectInfo = [
+                'name' => $subject->name,
+                'code' => $subject->code ?? $subject->name,
+            ];
+
+            $aiService = new AiService();
+            $generatedExam = $aiService->generateExam(
+                $request->all(),
+                $gradeInfo,
+                $subjectInfo,
+                $request->topics,
+                [
+                    'mcq_count' => $request->mcq_count ?? 10,
+                    'theory_count' => $request->theory_count ?? 3,
+                    'difficulty' => $request->difficulty ?? 'medium',
+                ]
+            );
+
+            $usedFallback = !empty($generatedExam['_used_fallback']);
+            $fallbackReason = $generatedExam['_fallback_reason'] ?? null;
+
+            unset($generatedExam['_used_fallback'], $generatedExam['_fallback_reason']);
+
+            if ($usedFallback) {
+                return response()->json([
+                    'message' => 'AI unavailable — used smart template instead',
+                    'exam' => $generatedExam,
+                    'source' => 'smart_template',
+                    'ai_unavailable' => true,
+                    'ai_reason' => $fallbackReason ?? 'AI API error',
+                ], 207);
+            }
+
+            return response()->json([
+                'message' => 'Exam generated successfully with AI',
+                'exam' => $generatedExam,
+                'source' => 'ai_api',
+                'ai_unavailable' => false,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('AI exam generation failed: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to generate exam',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
