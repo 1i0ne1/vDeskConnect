@@ -270,7 +270,11 @@ export default function ExamsPage() {
                         >
                           <Trash2 size={18} />
                         </button>
-                        <button className="p-2 text-text-secondary hover:text-green-400 hover:bg-green-400/10 rounded-lg transition-all" title="View Submissions">
+                        <button 
+                          className="p-2 text-text-secondary hover:text-green-400 hover:bg-green-400/10 rounded-lg transition-all" 
+                          title="View Submissions"
+                          onClick={() => { setSelectedExamForGrading(exam); setIsGradingOpen(true); }}
+                        >
                           <ChevronRight size={20} />
                         </button>
                       </div>
@@ -313,6 +317,13 @@ export default function ExamsPage() {
         onExamCreated={fetchExams}
         initialExam={editingExam}
       />
+
+      {isGradingOpen && (
+        <GradingInterface 
+          exam={selectedExamForGrading}
+          onClose={() => { setIsGradingOpen(false); setSelectedExamForGrading(null); }}
+        />
+      )}
     </DashboardLayout>
   );
 }
