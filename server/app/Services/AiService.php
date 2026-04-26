@@ -736,4 +736,136 @@ Respond in JSON format:
     {
         return "## Section {$section}: {$topic}\n\nThis section covers the main concepts of {$topic} for {$subject} at the {$grade} level.\n\n**Learning Points:**\n• Understanding of core concepts\n• Practical applications\n• Skills development\n\n**Content:**\n[Teaching material for {$topic}]";
     }
+
+    /**
+     * Generate Exam questions using AI with smart fallback.
+     */
+    public function generateExam(array $examData, array $gradeInfo, array $subjectInfo, array $topics, array $config): array
+    {
+        Log::info('generateExam called', [
+            'hasApiKey' => !empty($this->apiKey),
+            'topics' => $topics,
+        ]);
+
+        if ($this->apiKey) {
+            return $this->generateExamWithAI($examData, $gradeInfo, $subjectInfo, $topics, $config);
+        }
+
+        Log::warning('AI API key not configured, using smart fallback for exam');
+        $result = $this->generateExamFallback($examData, $gradeInfo, $subjectInfo, $topics, $config);
+        $result['_used_fallback'] = true;
+        $result['_fallback_reason'] = 'AI API key not configured';
+        return $result;
+    }
+
+    /**
+     * Generate exam with real AI
+     */
+    protected function generateExamWithAI(array $examData, array $gradeInfo, array $subjectInfo, array $topics, array $config): array
+    {
+        $numMcq = $config['mcq_count'] ?? 5;
+        $numTheory = $config['theory_count'] ?? 2;
+        $difficulty = $config['difficulty'] ?? 'medium';
+
+        $prompt = "Generate a structured exam for {$subjectInfo['name']} for grade {$gradeInfo['name']}.
+        
+Topics: " . implode(', ', $topics) . "
+Difficulty: {$difficulty}
+
+Requirements:
+1. Generate {$numMcq} MCQ (multiple choice) questions. Each should have 4 options (A-D) and one correct answer.
+2. Generate {$numTheory} Theory questions. Each should have a question text and a model answer.
+3. Align with {$gradeInfo['cycle']} school curriculum standards.
+
+Respond in JSON format:
+{
+  'questions': [
+    {
+      'type': 'mcq',
+      'question_text': '...',
+      'options': ['...', '...', '...', '...'],
+      'correct_answer': 'A',
+      'marks': 1
+    },
+    {
+      'type': 'theory',
+      'question_text': '...',
+      'correct_answer': 'Model answer here...',
+      'marks': 5
+    }
+  ]
+}";
+
+        try {
+            $response = Http::timeout(90)->post("{$this->baseUrl}/models/{$this->model}:generateContent?key={$this->apiKey}", [
+                'contents' => [[
+                    'role' => 'user',
+                    'parts' => [['text' => $prompt]]
+                ]],
+                'generationConfig' => [
+                    'temperature' => 0.7,
+                    'maxOutputTokens' => 8000,
+                ]
+            ]);
+
+            if ($response->successful()) {
+                $text = $response->json('candidates.0.content.parts.0.text');
+                $text = trim($text);
+                if (preg_match('/\{[\s\S]*\}/', $text, $matches)) {
+                    $json = json_decode($matches[0], true);
+                    if ($json && isset($json['questions'])) {
+                        return $json;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('AI exam generation failed: ' . $e->getMessage());
+        }
+
+        return $this->generateExamFallback($examData, $examData, $gradeInfo, $subjectInfo, $topics, $config);
+    }
+
+    /**
+     * Smart fallback for exam generation
+     */
+    protected function generateExamFallback(array $examData, array $gradeInfo, array $subjectInfo, array $topics, array $config): array
+    {
+        $numMcq = $config['mcq_count'] ?? 5;
+        $numTheory = $config['theory_count'] ?? 2;
+        $subjectName = strtolower($subjectInfo['name']);
+        
+        $questions = [];
+
+        // Generate MCQ questions
+        for ($i = 1; $i <= $numMcq; $i++) {
+            $topic = $topics[array_rand($topics)] ?? 'General concepts';
+            $questions[] = [
+                'type' => 'mcq',
+                'question_text' => "Which of the following is a key characteristic of {$topic} in {$subjectInfo['name']}?",
+                'options' => [
+                    'Option A (Correct answer description)',
+                    'Option B (Incorrect distractor)',
+                    'Option C (Plausible distractor)',
+                    'Option D (Common misconception)'
+                ],
+                'correct_answer' => 'Option A (Correct answer description)',
+                'marks' => 1
+            ];
+        }
+
+        // Generate Theory questions
+        for ($i = 1; $i <= $numTheory; $i++) {
+            $topic = $topics[array_rand($topics)] ?? 'General principles';
+            $questions[] = [
+                'type' => 'theory',
+                'question_text' => "Explain the fundamental principles of {$topic} and discuss its importance in {$subjectInfo['name']}.",
+                'correct_answer' => "The fundamental principles involve [Concept 1], [Concept 2], and [Concept 3]. It is important because it allows students to [Application 1] and [Application 2].",
+                'marks' => 5
+            ];
+        }
+
+        return [
+            'questions' => $questions
+        ];
+    }
 }
