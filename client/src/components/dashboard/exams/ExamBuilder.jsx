@@ -63,8 +63,8 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
         academicApi.subjects.getAll(),
         academicApi.terms.getAll(),
       ]);
-      setGradeLevels(glRes.data || []);
-      setSubjects(subRes.data || []);
+      setGradeLevels(glRes.grade_levels || []);
+      setSubjects(subRes.subjects || []);
       setTerms(termRes.terms || []);
     } catch (error) {
       toast.error('Failed to load form data');

@@ -47,8 +47,8 @@ export default function ExamsPage() {
         academicApi.subjects.getAll(),
         academicApi.terms.getAll(), // This needs a session ID usually, but academicApi.terms.getAll() handles active session
       ]);
-      setGradeLevels(glRes.data || []);
-      setSubjects(subRes.data || []);
+      setGradeLevels(glRes.grade_levels || []);
+      setSubjects(subRes.subjects || []);
       setTerms(termRes.terms || []);
     } catch (error) {
       console.error('Error fetching filter data:', error);
