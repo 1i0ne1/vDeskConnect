@@ -77,10 +77,10 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
       let exam;
       if (initialExam) {
         const res = await examsApi.updateExam(initialExam.id, formData);
-        exam = res.exam;
+        exam = res.data;
       } else {
         const res = await examsApi.createExam(formData);
-        exam = res.exam;
+        exam = res.data;
       }
       setFormData(prev => ({ ...prev, id: exam.id }));
       setStep(2);
@@ -155,7 +155,7 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
         theory_count: 2,
       });
 
-      const generatedQuestions = res.exam.questions.map(q => ({
+      const generatedQuestions = res.data.questions.map(q => ({
         ...q,
         id: Date.now() + Math.random(),
       }));
