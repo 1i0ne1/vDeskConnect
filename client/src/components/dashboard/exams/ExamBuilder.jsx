@@ -139,6 +139,33 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
     }
   };
 
+  const handleSaveDraft = async () => {
+    setLoading(true);
+    try {
+      if (step === 1) {
+        let exam;
+        if (formData.id) {
+          const res = await examsApi.updateExam(formData.id, formData);
+          exam = res.data;
+        } else {
+          const res = await examsApi.createExam(formData);
+          exam = res.data;
+        }
+        setFormData(prev => ({ ...prev, id: exam.id }));
+        toast.success('Exam draft header saved');
+      } else if (step === 2) {
+        await examsApi.syncQuestions(formData.id, questions);
+        toast.success('Questions saved to draft');
+      }
+      onExamCreated?.();
+      onClose();
+    } catch (error) {
+      toast.error('Failed to save draft');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAiGenerate = async () => {
     if (!formData.subject_id || !formData.grade_level_id) {
       toast.error('Please select subject and grade level first');
@@ -553,10 +580,11 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
 
           <div className="flex items-center space-x-3">
             <button
-              onClick={onClose}
-              className="px-6 py-2 text-text-secondary hover:text-text-main font-bold transition-all"
+              onClick={handleSaveDraft}
+              disabled={loading}
+              className="px-6 py-2 text-text-secondary hover:text-text-main font-bold transition-all disabled:opacity-50"
             >
-              Save Draft
+              {loading ? 'Saving...' : 'Save Draft'}
             </button>
             {step < 3 ? (
               <button
