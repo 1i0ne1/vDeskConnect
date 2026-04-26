@@ -75,8 +75,8 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
     setLoading(true);
     try {
       let exam;
-      if (initialExam) {
-        const res = await examsApi.updateExam(initialExam.id, formData);
+      if (formData.id || (initialExam && initialExam.id)) {
+        const res = await examsApi.updateExam(formData.id || initialExam.id, formData);
         exam = res.data;
       } else {
         const res = await examsApi.createExam(formData);
@@ -85,7 +85,7 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
       setFormData(prev => ({ ...prev, id: exam.id }));
       setStep(2);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to save exam details');
+      toast.error(error.data?.message || error.message || 'Failed to save exam details');
     } finally {
       setLoading(false);
     }
@@ -144,8 +144,8 @@ export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExa
     try {
       if (step === 1) {
         let exam;
-        if (formData.id) {
-          const res = await examsApi.updateExam(formData.id, formData);
+        if (formData.id || (initialExam && initialExam.id)) {
+          const res = await examsApi.updateExam(formData.id || initialExam.id, formData);
           exam = res.data;
         } else {
           const res = await examsApi.createExam(formData);
