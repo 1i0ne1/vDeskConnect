@@ -15,6 +15,7 @@ export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState('gradebook');
   const [loading, setLoading] = useState(false);
   const [grades, setGrades] = useState([]);
+  const [reportCards, setReportCards] = useState([]);
   const [pins, setPins] = useState([]);
   const [gradeLevels, setGradeLevels] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -32,6 +33,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     if (activeTab === 'gradebook') fetchGrades();
+    if (activeTab === 'report_cards') fetchReportCards();
     if (activeTab === 'pins') fetchPins();
   }, [activeTab, filters]);
 
@@ -70,6 +72,53 @@ export default function ReportsPage() {
       setPins(res.data || []);
     } catch (error) {
       toast.error('Failed to load PINs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchReportCards = async () => {
+    if (!filters.grade_level_id || !filters.term_id) return;
+    setLoading(true);
+    try {
+      const res = await resultApi.reports.getAll(filters);
+      setReportCards(res.data || []);
+    } catch (error) {
+      toast.error('Failed to load report cards');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleComputeOverall = async () => {
+    if (!filters.grade_level_id || !filters.term_id) {
+      toast.error('Please select Grade Level and Term');
+      return;
+    }
+    setLoading(true);
+    try {
+      await resultApi.grades.computeOverall(filters);
+      toast.success('Overall positions calculated');
+      fetchReportCards();
+    } catch (error) {
+      toast.error('Failed to calculate positions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateReports = async () => {
+    if (!filters.grade_level_id || !filters.term_id) {
+      toast.error('Please select Grade Level and Term');
+      return;
+    }
+    setLoading(true);
+    try {
+      await resultApi.reports.generate(filters);
+      toast.success('Report cards generated successfully');
+      fetchReportCards();
+    } catch (error) {
+      toast.error('Failed to generate report cards');
     } finally {
       setLoading(false);
     }
@@ -331,21 +380,91 @@ export default function ReportsPage() {
             )}
 
             {activeTab === 'report_cards' && (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4">
-                  <FileText size={32} />
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-primary/5 rounded-xl border border-primary/20">
+                  <div>
+                    <h4 className="text-text-main font-bold">Process Class Reports</h4>
+                    <p className="text-text-secondary text-sm">Calculate class-wide rankings and generate PDF documents.</p>
+                  </div>
+                  <div className="flex space-x-3">
+                    <button 
+                      onClick={handleComputeOverall}
+                      disabled={loading}
+                      className="px-4 py-2 bg-white/10 hover:bg-white/20 text-text-main rounded-lg text-sm font-bold transition-all disabled:opacity-50"
+                    >
+                      1. Calculate Ranks
+                    </button>
+                    <button 
+                      onClick={handleGenerateReports}
+                      disabled={loading}
+                      className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all disabled:opacity-50"
+                    >
+                      2. Generate PDFs
+                    </button>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-text-main mb-2">Report Card Management</h3>
-                <p className="text-text-secondary max-w-md mx-auto mb-8">
-                  Bulk generate and publish termly report cards for the selected class and term.
-                </p>
-                <div className="flex items-center space-x-4">
-                  <button className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
-                    Generate Class Reports
-                  </button>
-                  <button className="px-6 py-2 bg-white/5 border border-white/10 text-text-main rounded-lg font-bold hover:bg-white/10 transition-all">
-                    Batch Publish
-                  </button>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-white/5 text-text-secondary text-xs uppercase tracking-wider">
+                        <th className="px-4 py-3 font-medium">Student</th>
+                        <th className="px-4 py-3 font-medium">Average</th>
+                        <th className="px-4 py-3 font-medium">Position</th>
+                        <th className="px-4 py-3 font-medium">Status</th>
+                        <th className="px-4 py-3 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {reportCards.length > 0 ? reportCards.map((rc) => (
+                        <tr key={rc.id} className="hover:bg-white/2 transition-colors">
+                          <td className="px-4 py-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center text-xs font-bold">
+                                {rc.student?.profile?.data?.first_name?.[0]}
+                              </div>
+                              <p className="text-text-main font-medium text-sm">
+                                {rc.student?.profile?.data?.first_name} {rc.student?.profile?.data?.last_name}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-text-main text-sm font-bold">{rc.overall_average?.toFixed(2)}%</td>
+                          <td className="px-4 py-4 text-text-secondary text-sm">
+                            {rc.overall_position} / {rc.total_students}
+                          </td>
+                          <td className="px-4 py-4">
+                            {rc.pdf_url ? (
+                              <span className="flex items-center space-x-1 text-green-500 text-xs font-medium">
+                                <CheckCircle size={12} />
+                                <span>Generated</span>
+                              </span>
+                            ) : (
+                              <span className="text-text-secondary text-xs">Pending PDF</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4">
+                            {rc.pdf_url && (
+                              <a 
+                                href={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}${rc.pdf_url}`} 
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center space-x-1 text-primary hover:underline text-sm font-medium"
+                              >
+                                <Download size={16} />
+                                <span>Download</span>
+                              </a>
+                            )}
+                          </td>
+                        </tr>
+                      )) : (
+                        <tr>
+                          <td colSpan="5" className="px-4 py-20 text-center text-text-secondary">
+                            No report cards found. Start by calculating ranks.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
