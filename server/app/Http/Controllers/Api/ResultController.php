@@ -173,4 +173,125 @@ class ResultController extends Controller
             'message' => "Successfully computed $processedCount grades across " . count($subjects) . " subjects."
         ]);
     }
+
+    /**
+     * Generate bulk Result PINs.
+     */
+    public function generatePins(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'count' => 'required|integer|min:1|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user = $request->user();
+        $schoolId = $user->school_id;
+        $count = $request->count;
+        $pins = [];
+
+        for ($i = 0; $i < $count; $i++) {
+            $pin = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 10));
+            
+            // Ensure uniqueness
+            while (DB::table('result_pins')->where('pin', $pin)->exists()) {
+                $pin = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 10));
+            }
+
+            $pins[] = [
+                'school_id' => $schoolId,
+                'pin' => $pin,
+                'used' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        DB::table('result_pins')->insert($pins);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Successfully generated $count result checking PINs."
+        ]);
+    }
+
+    /**
+     * List all generated PINs.
+     */
+    public function listPins(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $pins = DB::table('result_pins')
+            ->where('school_id', $user->school_id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $pins
+        ]);
+    }
+
+    /**
+     * Public endpoint to check result using a PIN.
+     */
+    public function checkResult(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'student_id' => 'required|string',
+            'pin' => 'required|string',
+            'term_id' => 'required|exists:academic_terms,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Find the PIN
+        $pinRecord = DB::table('result_pins')
+            ->where('pin', $request->pin)
+            ->first();
+
+        if (!$pinRecord) {
+            return response()->json(['message' => 'Invalid PIN'], 404);
+        }
+
+        if ($pinRecord->used && $pinRecord->student_id != $request->student_id) {
+            return response()->json(['message' => 'This PIN has already been used by another student'], 403);
+        }
+
+        // Find the student
+        $student = User::where('id', $request->student_id)
+            ->where('role', 'student')
+            ->first();
+
+        if (!$student) {
+            return response()->json(['message' => 'Student not found'], 404);
+        }
+
+        // Mark PIN as used if not already
+        if (!$pinRecord->used) {
+            DB::table('result_pins')
+                ->where('id', $pinRecord->id)
+                ->update([
+                    'used' => true,
+                    'student_id' => $student->id,
+                    'updated_at' => now()
+                ]);
+        }
+
+        // Fetch grades
+        $grades = StudentGrade::where('student_id', $student->id)
+            ->where('term_id', $request->term_id)
+            ->with(['subject', 'gradeLevel', 'term'])
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'student' => $student->load('profile'),
+            'data' => $grades
+        ]);
+    }
 }
