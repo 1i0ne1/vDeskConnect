@@ -362,6 +362,28 @@ class VDeskConnectSeeder extends Seeder
             ]);
         }
 
+        // ─────────────────────────────────────────────
+        //  12. REPORT CARDS
+        // ─────────────────────────────────────────────
+        $positions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        shuffle($positions);
+        
+        foreach ($studentIds as $index => $sid) {
+            DB::table('report_cards')->insert([
+                'school_id' => $demoSchoolId,
+                'student_id' => $sid,
+                'term_id' => $termId,
+                'session_id' => $sessionId,
+                'overall_average' => rand(65, 92) + (rand(0, 99) / 100),
+                'overall_position' => $positions[$index],
+                'total_students' => count($studentIds),
+                'published' => true,
+                'generated_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
         $output->writeln("");
         $output->writeln("<fg=white;bg=green;options=bold>  SUCCESS  </> <fg=green>Database seeded with COMPREHENSIVE bulk data!</>");
         $output->writeln("");
