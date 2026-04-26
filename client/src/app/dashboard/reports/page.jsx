@@ -53,7 +53,7 @@ export default function ReportsPage() {
   };
 
   const fetchGrades = async () => {
-    if (!filters.grade_level_id || !filters.term_id) return;
+    if (!filters.term_id) return;
     setLoading(true);
     try {
       const res = await resultApi.grades.getAll(filters);
@@ -78,7 +78,7 @@ export default function ReportsPage() {
   };
 
   const fetchReportCards = async () => {
-    if (!filters.grade_level_id || !filters.term_id) return;
+    if (!filters.term_id) return;
     setLoading(true);
     try {
       const res = await resultApi.reports.getAll(filters);
@@ -340,9 +340,9 @@ export default function ReportsPage() {
                     )) : (
                       <tr>
                         <td colSpan="7" className="px-4 py-20 text-center text-text-secondary">
-                          {filters.grade_level_id && filters.term_id 
-                            ? 'No grades found. Click "Compute Results" to process scores.' 
-                            : 'Select a Grade and Term to view the gradebook.'}
+                          {filters.term_id 
+                            ? 'No grades found. Select a specific Grade or click "Compute Results".' 
+                            : 'Select a Term to view the gradebook.'}
                         </td>
                       </tr>
                     )}
@@ -459,7 +459,9 @@ export default function ReportsPage() {
                       )) : (
                         <tr>
                           <td colSpan="5" className="px-4 py-20 text-center text-text-secondary">
-                            No report cards found. Start by calculating ranks.
+                            {filters.term_id 
+                              ? 'No report cards found for this term. Click "Calculate Ranks" to process.' 
+                              : 'Select a Term to view report cards.'}
                           </td>
                         </tr>
                       )}
