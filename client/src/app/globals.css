@@ -101,6 +101,17 @@
     --sidebar: #0A0A12;
   }
 
+  /* Style select options for dark mode compatibility */
+  select option {
+    background-color: white;
+    color: #2D2B55;
+  }
+
+  .dark select option {
+    background-color: #1A1A2E;
+    color: #E8E6F0;
+  }
+
   body {
     background-color: var(--bg-main);
     color: var(--text-primary);
