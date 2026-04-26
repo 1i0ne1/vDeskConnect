@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\AcademicController;
 use App\Http\Controllers\Api\LectureController;
 use App\Http\Controllers\Api\ExamController;
+use App\Http\Controllers\Api\ResultController;
 
 /*
 |--------------------------------------------------------------------------
