@@ -463,4 +463,34 @@ class ResultController extends Controller
             'message' => "Successfully generated $generatedCount report cards."
         ]);
     }
+
+    /**
+     * List generated report cards.
+     */
+    public function listReportCards(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $schoolId = $user->school_id;
+
+        $query = ReportCard::where('school_id', $schoolId)
+            ->with(['student.profile', 'term', 'session']);
+
+        if ($request->filled('grade_level_id')) {
+            $gradeLevelId = $request->grade_level_id;
+            $query->whereHas('student.profile', function($q) use ($gradeLevelId) {
+                $q->where('data->grade_level_id', $gradeLevelId);
+            });
+        }
+
+        if ($request->filled('term_id')) {
+            $query->where('term_id', $request->term_id);
+        }
+
+        $reportCards = $query->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $reportCards
+        ]);
+    }
 }
