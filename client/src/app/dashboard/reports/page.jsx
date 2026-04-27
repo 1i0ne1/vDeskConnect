@@ -490,7 +490,7 @@ export default function ReportsPage() {
                       )) : (
                         <tr>
                           <td colSpan="5" className="px-4 py-20 text-center text-text-secondary">
-                            {searchQuery ? 'No report cards match your search.' : 'No report cards found. Try adjusting your filters or click "Calculate Ranks".'}
+                            {searchQuery ? 'No report cards match your search.' : 'No report cards found for the selected filters. Click "Generate PDFs" to create them if grades are available.'}
                           </td>
                         </tr>
                       )}
