@@ -141,16 +141,41 @@ export default function ReportsPage() {
     }
   };
 
-  const handleDownloadZip = () => {
+  const handleDownloadZip = async () => {
     if (!filters.grade_level_id || !filters.term_id) {
       toast.error('Please select Grade Level and Term');
       return;
     }
-    const params = new URLSearchParams();
-    params.append('grade_level_id', filters.grade_level_id);
-    params.append('term_id', filters.term_id);
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/results/report-cards/download-zip?${params.toString()}`;
-    window.open(url, '_blank');
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.append('grade_level_id', filters.grade_level_id);
+      params.append('term_id', filters.term_id);
+      
+      const token = localStorage.getItem('token'); // Assuming token is stored here
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/results/report-cards/download-zip?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Download failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `report_cards_${filters.grade_level_id}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Download started');
+    } catch (error) {
+      toast.error('Failed to download ZIP');
+    } finally {
+      setLoading(false);
+    }
   };
 
 
