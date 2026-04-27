@@ -8,9 +8,10 @@ import {
   ClipboardCheck, MessageSquare 
 } from 'lucide-react';
 import { examsApi } from '@/lib/exams-api';
-import toast from 'react-hot-toast';
+import { useToast } from '@/contexts/ToastProvider';
 
 export default function GradingInterface({ exam, onClose }) {
+  const toast = useToast();
   const [submissions, setSubmissions] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [loading, setLoading] = useState(true);

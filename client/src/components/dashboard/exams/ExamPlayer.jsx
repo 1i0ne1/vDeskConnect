@@ -7,9 +7,10 @@ import {
   ChevronLeft, Send, Info, Eye, EyeOff 
 } from 'lucide-react';
 import { examsApi } from '@/lib/exams-api';
-import toast from 'react-hot-toast';
+import { useToast } from '@/contexts/ToastProvider';
 
 export default function ExamPlayer({ exam, onComplete }) {
+  const toast = useToast();
   const [timeLeft, setTimeLeft] = useState(exam.duration_minutes * 60);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [answers, setAnswers] = useState({});
