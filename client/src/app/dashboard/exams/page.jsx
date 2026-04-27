@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Search, Filter, Calendar, ClipboardList, 
@@ -21,22 +20,8 @@ export default function ExamsPage() {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // all, ca, final
-  
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const searchQuery = searchParams?.get('q') || '';
-
-  const handleSearchChange = (e) => {
-    const term = e.target.value;
-    const params = new URLSearchParams(searchParams?.toString() || '');
-    if (term) {
-      params.set('q', term);
-    } else {
-      params.delete('q');
-    }
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  };
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [isGradingOpen, setIsGradingOpen] = useState(false);
   const [editingExam, setEditingExam] = useState(null);
@@ -184,12 +169,15 @@ export default function ExamsPage() {
                 type="text"
                 placeholder="Search exams..."
                 value={searchQuery}
-                onChange={handleSearchChange}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
               />
             </div>
             
-            <button className="p-2 bg-white/5 border border-white/10 rounded-lg text-text-secondary hover:text-text-main hover:bg-white/10 transition-all">
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className={`p-2 rounded-lg transition-all ${showFilters ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border border-white/10 text-text-secondary hover:text-text-main hover:bg-white/10'}`}
+            >
               <Filter size={20} />
             </button>
 
@@ -210,6 +198,60 @@ export default function ExamsPage() {
             </button>
           </div>
         </div>
+
+        {/* Filters Panel */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="bg-bg-card p-4 rounded-card border border-white/5 shadow-soft grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">Grade Level</label>
+                  <select
+                    value={filters.grade_level_id}
+                    onChange={(e) => setFilters(prev => ({ ...prev, grade_level_id: e.target.value }))}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
+                  >
+                    <option value="">All Grades</option>
+                    {gradeLevels.map(g => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">Subject</label>
+                  <select
+                    value={filters.subject_id}
+                    onChange={(e) => setFilters(prev => ({ ...prev, subject_id: e.target.value }))}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
+                  >
+                    <option value="">All Subjects</option>
+                    {subjects.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">Term</label>
+                  <select
+                    value={filters.term_id}
+                    onChange={(e) => setFilters(prev => ({ ...prev, term_id: e.target.value }))}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
+                  >
+                    <option value="">All Terms</option>
+                    {terms.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Exams List */}
         <div className="grid grid-cols-1 gap-4">
@@ -315,12 +357,7 @@ export default function ExamsPage() {
                     Create Exam
                   </button>
                   <button 
-                    onClick={() => { 
-                      setFilters({ grade_level_id: '', subject_id: '', term_id: '' }); 
-                      const params = new URLSearchParams(searchParams?.toString() || '');
-                      params.delete('q');
-                      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-                    }}
+                    onClick={() => { setFilters({ grade_level_id: '', subject_id: '', term_id: '' }); setSearchQuery(''); }}
                     className="px-6 py-2 bg-white/5 text-text-main rounded-lg font-bold border border-white/10 hover:bg-white/10 transition-all"
                   >
                     Clear Filters
