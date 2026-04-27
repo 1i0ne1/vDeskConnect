@@ -461,7 +461,7 @@ export default function LecturesPage() {
             <div className="grid gap-4">
               {lectures.map((lecture, i) => (
                 <div key={lecture.id} ref={i === lectures.length - 1 ? lastElementRef : null} className="bg-bg-card p-4 rounded-card border border-white/5">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-text-primary">{lecture.title}</h3>
