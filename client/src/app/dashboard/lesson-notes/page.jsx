@@ -331,12 +331,8 @@ export default function LessonNotesPage() {
     <DashboardLayout title="Lesson Notes" subtitle="Create and manage your lesson notes">
       <div className="space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-text-primary">Lesson Notes</h1>
-            <p className="text-sm text-text-secondary">Plan your lessons based on schemes of work</p>
-          </div>
-          <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-bg-card p-4 rounded-card border border-white/5 shadow-soft">
+          <div className="flex items-center space-x-2 w-full md:w-auto">
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
               <input
@@ -355,7 +351,8 @@ export default function LessonNotesPage() {
               <Filter size={20} />
             </button>
           </div>
-          <div className="flex gap-2">
+
+          <div className="flex items-center space-x-4 w-full md:w-auto">
             <button
               onClick={() => { setShowAIModal(true); setAiForm({ scheme_id: '', aspects: [], target_audience_size: 30 }); }}
               className="flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600"
