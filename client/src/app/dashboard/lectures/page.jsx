@@ -426,16 +426,19 @@ export default function LecturesPage() {
                   <option value="">All Subjects</option>
                   {subjects.map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-        </div>
+                  ))}
+                </select>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Lecture List */}
         {loading ? (
           <div className="text-center py-8 text-text-secondary">Loading...</div>
         ) : lectures.length === 0 ? (
-          <div className="text-center py-8 bg-card dark:bg-gray-800 rounded-lg border border-border">
-            <Video className="w-12 h-12 mx-auto text-text-muted mb-2" />
+          <div className="text-center py-8 bg-bg-card rounded-card border border-white/5 border-dashed">
+            <Video className="w-12 h-12 mx-auto text-text-secondary mb-4 opacity-20" />
             <p className="text-text-secondary">No lectures found</p>
             <button
               onClick={() => {
@@ -454,9 +457,10 @@ export default function LecturesPage() {
             </button>
           </div>
         ) : (
-          <div className="grid gap-4">
-            {lectures.map(lecture => (
-              <div key={lecture.id} className="bg-card dark:bg-gray-800 p-4 rounded-lg border border-border">
+          <>
+            <div className="grid gap-4">
+              {lectures.map((lecture, i) => (
+                <div key={lecture.id} ref={i === lectures.length - 1 ? lastElementRef : null} className="bg-bg-card p-4 rounded-card border border-white/5">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
