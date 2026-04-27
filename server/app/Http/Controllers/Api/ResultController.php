@@ -116,16 +116,26 @@ class ResultController extends Controller
             $subjectScores = [];
 
             foreach ($students as $student) {
-                // 1. CA Score — ca_weeks is a schedule config table (no per-student scores yet).
-                //    Per-student CA score tracking will be added in a future phase.
-                $caTotal = 0;
+                // 1. CA Score — sum of all graded CA test (is_ca_test=true) submissions
+                //    for this student in this subject, grade level, and term.
+                $caTotal = ExamSubmission::whereHas('exam', function($q) use ($subject, $gradeLevelId, $termId) {
+                        $q->where('subject_id', $subject->id)
+                          ->where('grade_level_id', $gradeLevelId)
+                          ->where('term_id', $termId)
+                          ->where('published', true)
+                          ->where('is_ca_test', true);
+                    })
+                    ->where('student_id', $student->id)
+                    ->where('status', 'graded')
+                    ->sum('auto_score') ?? 0;
 
-                // 2. Get Exam Score (highest graded auto_score from published exams)
+                // 2. Exam Score — highest graded auto_score from published FINAL exams (is_ca_test=false)
                 $examScore = ExamSubmission::whereHas('exam', function($q) use ($subject, $gradeLevelId, $termId) {
                         $q->where('subject_id', $subject->id)
                           ->where('grade_level_id', $gradeLevelId)
                           ->where('term_id', $termId)
-                          ->where('published', true);
+                          ->where('published', true)
+                          ->where('is_ca_test', false);
                     })
                     ->where('student_id', $student->id)
                     ->where('status', 'graded')
