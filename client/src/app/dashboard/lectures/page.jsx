@@ -323,90 +323,109 @@ export default function LecturesPage() {
   const filteredGradeLevels = gradeLevels.filter(g => g.id == lectureForm.grade_level_id);
   const filteredSubjects = subjects.filter(s => s.id == lectureForm.subject_id);
 
-  const totalPages = Math.ceil(pagination.total / pagination.per_page);
+  const totalPages = hasMore ? Math.ceil((lectures.length + 1) / 20) : 1;
 
   return (
     <DashboardLayout>
       <div className="p-4 md:p-6 space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-text-primary">Lectures</h1>
-            <p className="text-sm text-text-secondary">Manage teaching sessions</p>
+        {/* Header */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-bg-card p-4 rounded-card border border-white/5 shadow-soft">
+          <div className="flex items-center space-x-2 w-full md:w-auto">
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
+              <input
+                type="text"
+                placeholder="Search lectures..."
+                value={filters.search}
+                onChange={e => handleFilterChange('search', e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+              />
+            </div>
+            
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className={`p-2 rounded-lg transition-all ${showFilters ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10'}`}
+            >
+              <Filter size={20} />
+            </button>
           </div>
-          <button
-            onClick={() => {
-              setBuilderForm({
-                title: '', description: '', content: '', teacher_id: '', grade_level_id: '',
-                subject_id: '', scheduled_at: '', duration_minutes: 40, type: 'async',
-                is_online: false, meeting_link: '', is_published: false,
-                sections: [{ title: '', content: '' }],
-                resources: [],
-              });
-              setShowBuilderModal(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark"
-          >
-            <Plus className="w-4 h-4" /> Create Lecture
-          </button>
-          <button
-            onClick={() => { setAiForm({ title: "", description: "", grade_level_id: "", subject_id: "", sections: 5 }); setShowAIModal(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600"
-          >
-            <Sparkles className="w-4 h-4" /> AI Builder
-          </button>
+
+          <div className="flex items-center space-x-4 w-full md:w-auto">
+            <button
+              onClick={() => { setAiForm({ title: "", description: "", grade_level_id: "", subject_id: "", sections: 5 }); setShowAIModal(true); }}
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600"
+            >
+              <Sparkles className="w-4 h-4" /> AI Builder
+            </button>
+            <button
+              onClick={() => {
+                setBuilderForm({
+                  title: '', description: '', content: '', teacher_id: '', grade_level_id: '',
+                  subject_id: '', scheduled_at: '', duration_minutes: 40, type: 'async',
+                  is_online: false, meeting_link: '', is_published: false,
+                  sections: [{ title: '', content: '' }],
+                  resources: [],
+                });
+                setShowBuilderModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark"
+            >
+              <Plus className="w-4 h-4" /> Create Lecture
+            </button>
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-3 bg-card dark:bg-gray-800 p-4 rounded-lg border border-border">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-            <input
-              type="text"
-              placeholder="Search lectures..."
-              value={filters.search}
-              onChange={e => handleFilterChange('search', e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary"
-            />
-          </div>
-          <select
-            value={filters.status}
-            onChange={e => handleFilterChange('status', e.target.value)}
-            className="px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary"
-          >
-            <option value="">All Status</option>
-            <option value="scheduled">Scheduled</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-          <select
-            value={filters.type}
-            onChange={e => handleFilterChange('type', e.target.value)}
-            className="px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary"
-          >
-            <option value="">All Types</option>
-            <option value="sync">Live (Sync)</option>
-            <option value="async">Recorded (Async)</option>
-            <option value="hybrid">Hybrid</option>
-          </select>
-          <select
-            value={filters.grade_level_id}
-            onChange={e => handleFilterChange('grade_level_id', e.target.value)}
-            className="px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary"
-          >
-            <option value="">All Grades</option>
-            {gradeLevels.map(g => (
-              <option key={g.id} value={g.id}>{g.name}</option>
-            ))}
-          </select>
-          <select
-            value={filters.subject_id}
-            onChange={e => handleFilterChange('subject_id', e.target.value)}
-            className="px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary"
-          >
-            <option value="">All Subjects</option>
-            {subjects.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
+        {/* Filters Panel */}
+        <AnimatePresence onExitComplete={() => {
+          setFilters({ search: '', status: '', type: '', grade_level_id: '', subject_id: '', term_id: '' });
+        }}>
+          {showFilters && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="bg-bg-card p-4 rounded-card border border-white/5 shadow-soft grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <select
+                  value={filters.status}
+                  onChange={e => handleFilterChange('status', e.target.value)}
+                  className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                >
+                  <option value="">All Status</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+                <select
+                  value={filters.type}
+                  onChange={e => handleFilterChange('type', e.target.value)}
+                  className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                >
+                  <option value="">All Types</option>
+                  <option value="sync">Live (Sync)</option>
+                  <option value="async">Recorded (Async)</option>
+                  <option value="hybrid">Hybrid</option>
+                </select>
+                <select
+                  value={filters.grade_level_id}
+                  onChange={e => handleFilterChange('grade_level_id', e.target.value)}
+                  className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                >
+                  <option value="">All Grades</option>
+                  {gradeLevels.map(g => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={filters.subject_id}
+                  onChange={e => handleFilterChange('subject_id', e.target.value)}
+                  className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                >
+                  <option value="">All Subjects</option>
+                  {subjects.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
         </div>
