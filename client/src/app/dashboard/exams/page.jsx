@@ -38,15 +38,18 @@ export default function ExamsPage() {
 
   useEffect(() => {
     fetchInitialData();
+  }, []);
+
+  useEffect(() => {
     fetchExams();
   }, [filters, activeTab]);
 
   const fetchInitialData = async () => {
     try {
       const [glRes, subRes, termRes] = await Promise.all([
-        academicApi.gradeLevels.getAll(),
-        academicApi.subjects.getAll(),
-        academicApi.terms.getActive(),
+        academicApi.gradeLevels.getAll().catch(() => ({ grade_levels: [] })),
+        academicApi.subjects.getAll().catch(() => ({ subjects: [] })),
+        academicApi.terms.getActive().catch(() => ({ terms: [] })),
       ]);
       setGradeLevels(glRes.grade_levels || glRes.data || []);
       setSubjects(subRes.subjects || subRes.data || []);
