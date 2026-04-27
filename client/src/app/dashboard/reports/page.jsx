@@ -427,6 +427,7 @@ export default function ReportsPage() {
                           {searchQuery ? 'No grades match your search.' : 'No grades found. Try adjusting your filters or click "Compute".'}
                         </td>
                       </tr>
+                    )}
                     {loadingMore && (
                       <tr>
                         <td colSpan="7" className="px-4 py-4 text-center">
