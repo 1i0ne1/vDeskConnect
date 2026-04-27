@@ -4,8 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AcademicTerm;
-use App\Models\AcademicSession;
-use App\Models\CaWeek;
 use App\Models\Exam;
 use App\Models\ExamSubmission;
 use App\Models\GradeLevel;
@@ -116,13 +114,11 @@ class ResultController extends Controller
             $subjectScores = [];
 
             foreach ($students as $student) {
-                // 1. Aggregate CA Scores (ca_weeks stores class-level config; use exam submission scores for CA)
-                $caTotal = CaWeek::where('term_id', $termId)
-                    ->where('grade_level_id', $gradeLevelId)
-                    ->where('subject_id', $subject->id)
-                    ->sum('score');
+                // 1. CA Score — ca_weeks is a schedule config table (no per-student scores yet).
+                //    Per-student CA score tracking will be added in a future phase.
+                $caTotal = 0;
 
-                // 2. Get Exam Score (Highest published submission auto_score)
+                // 2. Get Exam Score (highest graded auto_score from published exams)
                 $examScore = ExamSubmission::whereHas('exam', function($q) use ($subject, $gradeLevelId, $termId) {
                         $q->where('subject_id', $subject->id)
                           ->where('grade_level_id', $gradeLevelId)
