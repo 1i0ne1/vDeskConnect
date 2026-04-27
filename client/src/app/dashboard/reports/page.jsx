@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { 
   BarChart3, Users, FileText, Key, Search, 
   Filter, Download, RefreshCcw, CheckCircle, 
-  AlertCircle, ChevronRight, MoreVertical, Plus
+  AlertCircle, Plus
 } from 'lucide-react';
 import { academicApi } from '@/lib/academic-api';
 import { resultApi } from '@/lib/result-api';
@@ -21,10 +21,15 @@ export default function ReportsPage() {
   const [gradeLevels, setGradeLevels] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [terms, setTerms] = useState([]);
-  
-  const searchParams = useSearchParams();
-  const searchQuery = searchParams?.get('q') || '';
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState({
+    grade_level_id: '',
+    subject_id: '',
+    term_id: '',
+  });
 
+  // --- Filtered lists (client-side search) ---
   const filteredGrades = grades.filter(g => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -48,16 +53,10 @@ export default function ReportsPage() {
 
   const filteredPins = pins.filter(p => {
     if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return p.pin.toLowerCase().includes(q);
+    return p.pin.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  const [filters, setFilters] = useState({
-    grade_level_id: '',
-    subject_id: '',
-    term_id: '',
-  });
-
+  // --- Data Fetching ---
   useEffect(() => {
     fetchInitialData();
   }, []);
@@ -71,13 +70,13 @@ export default function ReportsPage() {
   const fetchInitialData = async () => {
     try {
       const [glRes, subRes, termRes] = await Promise.all([
-        academicApi.gradeLevels.getAll(),
-        academicApi.subjects.getAll(),
-        academicApi.terms.getActive(),
+        academicApi.gradeLevels.getAll().catch(() => ({ grade_levels: [] })),
+        academicApi.subjects.getAll().catch(() => ({ subjects: [] })),
+        academicApi.terms.getActive().catch(() => ({ terms: [] })),
       ]);
-      setGradeLevels(glRes.grade_levels || []);
-      setSubjects(subRes.subjects || []);
-      setTerms(termRes.terms || []);
+      setGradeLevels(glRes.grade_levels || glRes.data || []);
+      setSubjects(subRes.subjects || subRes.data || []);
+      setTerms(termRes.terms || termRes.data || []);
     } catch (error) {
       console.error('Error fetching filter data:', error);
     }
@@ -190,54 +189,37 @@ export default function ReportsPage() {
   return (
     <DashboardLayout title="Reports & Grades" subtitle="Manage student performance and results" role="admin">
       <div className="space-y-6">
+
         {/* Statistics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-bg-card p-6 rounded-card border border-white/5 shadow-soft flex items-center space-x-4">
-            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
-              <Users size={24} />
-            </div>
-            <div>
-              <p className="text-text-secondary text-xs font-medium uppercase tracking-wider">Students</p>
-              <h3 className="text-2xl font-bold text-text-main">
-                {[...new Set(grades.map(g => g.student_id))].length || 0}
-              </h3>
-            </div>
-          </div>
-          <div className="bg-bg-card p-6 rounded-card border border-white/5 shadow-soft flex items-center space-x-4">
-            <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center text-green-500">
-              <CheckCircle size={24} />
-            </div>
-            <div>
-              <p className="text-text-secondary text-xs font-medium uppercase tracking-wider">Processed</p>
-              <h3 className="text-2xl font-bold text-text-main">
-                {reportCards.length > 0 ? Math.round((reportCards.filter(rc => rc.pdf_url).length / reportCards.length) * 100) : 0}%
-              </h3>
-            </div>
-          </div>
-          <div className="bg-bg-card p-6 rounded-card border border-white/5 shadow-soft flex items-center space-x-4">
-            <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500">
-              <FileText size={24} />
-            </div>
-            <div>
-              <p className="text-text-secondary text-xs font-medium uppercase tracking-wider">Reports</p>
-              <h3 className="text-2xl font-bold text-text-main">{reportCards.length}</h3>
-            </div>
-          </div>
-          <div className="bg-bg-card p-6 rounded-card border border-white/5 shadow-soft flex items-center space-x-4">
-            <div className="w-12 h-12 bg-yellow-500/10 rounded-xl flex items-center justify-center text-yellow-500">
-              <Key size={24} />
-            </div>
-            <div>
-              <p className="text-text-secondary text-xs font-medium uppercase tracking-wider">PINs Available</p>
-              <h3 className="text-2xl font-bold text-text-main">{pins.filter(p => !p.used).length}</h3>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Students', value: [...new Set(grades.map(g => g.student_id))].length || 0, icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+            { label: 'Processed', value: `${reportCards.length > 0 ? Math.round((reportCards.filter(rc => rc.pdf_url).length / reportCards.length) * 100) : 0}%`, icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-500/10' },
+            { label: 'Reports', value: reportCards.length, icon: FileText, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+            { label: 'PINs Available', value: pins.filter(p => !p.used).length, icon: Key, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+          ].map((stat, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-bg-card p-4 rounded-card border border-white/5 shadow-soft flex items-center space-x-4"
+            >
+              <div className={`p-3 rounded-lg ${stat.bg} ${stat.color}`}>
+                <stat.icon size={24} />
+              </div>
+              <div>
+                <p className="text-text-secondary text-sm">{stat.label}</p>
+                <h3 className="text-2xl font-bold text-text-main">{stat.value}</h3>
+              </div>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Main Content Area */}
-        <div className="bg-bg-card rounded-card border border-white/5 shadow-soft overflow-hidden">
+        {/* Controls Bar */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-bg-card p-4 rounded-card border border-white/5 shadow-soft">
           {/* Tabs */}
-          <div className="flex border-b border-white/5">
+          <div className="flex items-center space-x-2 w-full md:w-auto">
             {[
               { id: 'gradebook', label: 'Gradebook', icon: BarChart3 },
               { id: 'report_cards', label: 'Report Cards', icon: FileText },
@@ -246,79 +228,150 @@ export default function ReportsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-6 py-4 text-sm font-medium transition-all relative ${
-                  activeTab === tab.id ? 'text-primary' : 'text-text-secondary hover:text-text-main'
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                    : 'text-text-secondary hover:bg-white/5 hover:text-text-main'
                 }`}
               >
-                <tab.icon size={18} />
+                <tab.icon size={16} />
                 <span>{tab.label}</span>
-                {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />
-                )}
               </button>
             ))}
           </div>
 
-          <div className="p-6">
-            {/* Filters Row */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-              <div className="flex flex-wrap items-center gap-4">
-                <select 
-                  value={filters.grade_level_id}
-                  onChange={(e) => setFilters({ ...filters, grade_level_id: e.target.value })}
-                  className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary"
-                >
-                  <option value="">All Grades</option>
-                  {gradeLevels.map(gl => <option key={gl.id} value={gl.id}>{gl.name}</option>)}
-                </select>
-                <select 
-                  value={filters.term_id}
-                  onChange={(e) => setFilters({ ...filters, term_id: e.target.value })}
-                  className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary"
-                >
-                  <option value="">Select Term</option>
-                  {terms.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </select>
-                {activeTab === 'gradebook' && (
-                  <select 
-                    value={filters.subject_id}
-                    onChange={(e) => setFilters({ ...filters, subject_id: e.target.value })}
-                    className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary"
-                  >
-                    <option value="">All Subjects</option>
-                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                )}
-              </div>
-
-              <div className="flex items-center space-x-3">
-                {activeTab === 'gradebook' && (
-                  <button 
-                    onClick={handleCompute}
-                    disabled={loading}
-                    className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
-                  >
-                    <RefreshCcw size={18} className={loading ? 'animate-spin' : ''} />
-                    <span>Compute Results</span>
-                  </button>
-                )}
-                {activeTab === 'pins' && (
-                  <button 
-                    onClick={handleGeneratePins}
-                    disabled={loading}
-                    className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
-                  >
-                    <Plus size={18} />
-                    <span>Generate Pins</span>
-                  </button>
-                )}
-                <button className="p-2 text-text-secondary hover:text-text-main bg-white/5 border border-white/10 rounded-lg transition-all">
-                  <Download size={20} />
-                </button>
-              </div>
+          {/* Right: Search + Filter + Actions */}
+          <div className="flex items-center space-x-3 w-full md:w-auto">
+            {/* Internal Search Bar */}
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
+              />
             </div>
 
-            {/* Tab Content */}
+            {/* Filter Toggle Button */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`p-2 rounded-lg transition-all ${
+                showFilters
+                  ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                  : 'bg-white/5 border border-white/10 text-text-secondary hover:text-text-main hover:bg-white/10'
+              }`}
+            >
+              <Filter size={20} />
+            </button>
+
+            {/* Action Buttons */}
+            {activeTab === 'gradebook' && (
+              <button
+                onClick={handleCompute}
+                disabled={loading}
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary to-primary-light text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+              >
+                <RefreshCcw size={18} className={loading ? 'animate-spin' : ''} />
+                <span>Compute</span>
+              </button>
+            )}
+            {activeTab === 'report_cards' && (
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleComputeOverall}
+                  disabled={loading}
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-text-main rounded-lg text-sm font-bold transition-all disabled:opacity-50 hover:scale-105 active:scale-95"
+                >
+                  1. Rank
+                </button>
+                <button
+                  onClick={handleGenerateReports}
+                  disabled={loading}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary to-primary-light text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  <FileText size={16} />
+                  <span>Generate</span>
+                </button>
+              </div>
+            )}
+            {activeTab === 'pins' && (
+              <button
+                onClick={handleGeneratePins}
+                disabled={loading}
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary to-primary-light text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+              >
+                <Plus size={18} />
+                <span>Generate PINs</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Animated Filter Panel */}
+        <AnimatePresence onExitComplete={() => {
+          setFilters({ grade_level_id: '', subject_id: '', term_id: '' });
+          setSearchQuery('');
+        }}>
+          {showFilters && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+              className="overflow-hidden"
+            >
+              <div className="bg-bg-card p-4 rounded-card border border-white/5 shadow-soft grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">Grade Level</label>
+                  <select
+                    value={filters.grade_level_id}
+                    onChange={(e) => setFilters(prev => ({ ...prev, grade_level_id: e.target.value }))}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
+                  >
+                    <option value="">All Grades</option>
+                    {gradeLevels.map(g => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">Subject</label>
+                  <select
+                    value={filters.subject_id}
+                    onChange={(e) => setFilters(prev => ({ ...prev, subject_id: e.target.value }))}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
+                  >
+                    <option value="">All Subjects</option>
+                    {subjects.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">Term</label>
+                  <select
+                    value={filters.term_id}
+                    onChange={(e) => setFilters(prev => ({ ...prev, term_id: e.target.value }))}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
+                  >
+                    <option value="">All Terms</option>
+                    {terms.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Main Content Card */}
+        <div className="bg-bg-card rounded-card border border-white/5 shadow-soft overflow-hidden">
+          <div className="p-6">
+
+            {/* Gradebook Tab */}
             {activeTab === 'gradebook' && (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
@@ -368,14 +421,13 @@ export default function ReportsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-4 text-text-secondary text-sm">
-                          {grade.position}
-                          {grade.position === 1 ? 'st' : grade.position === 2 ? 'nd' : grade.position === 3 ? 'rd' : 'th'}
+                          {grade.position}{grade.position === 1 ? 'st' : grade.position === 2 ? 'nd' : grade.position === 3 ? 'rd' : 'th'}
                         </td>
                       </tr>
                     )) : (
                       <tr>
                         <td colSpan="7" className="px-4 py-20 text-center text-text-secondary">
-                          {searchQuery ? 'No grades match your search.' : filters.term_id ? 'No grades found. Select a specific Grade or click "Compute Results".' : 'Select a Term to view the gradebook.'}
+                          {searchQuery ? 'No grades match your search.' : filters.term_id ? 'No grades found. Select a specific grade or click "Compute".' : 'Select a Term from the filter to view the gradebook.'}
                         </td>
                       </tr>
                     )}
@@ -384,6 +436,7 @@ export default function ReportsPage() {
               </div>
             )}
 
+            {/* Result PINs Tab */}
             {activeTab === 'pins' && (
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {filteredPins.map((pin) => (
@@ -412,6 +465,7 @@ export default function ReportsPage() {
               </div>
             )}
 
+            {/* Report Cards Tab */}
             {activeTab === 'report_cards' && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between p-4 bg-primary/5 rounded-xl border border-primary/20">
@@ -420,19 +474,20 @@ export default function ReportsPage() {
                     <p className="text-text-secondary text-sm">Calculate class-wide rankings and generate PDF documents.</p>
                   </div>
                   <div className="flex space-x-3">
-                    <button 
+                    <button
                       onClick={handleComputeOverall}
                       disabled={loading}
-                      className="px-4 py-2 bg-white/10 hover:bg-white/20 text-text-main rounded-lg text-sm font-bold transition-all disabled:opacity-50"
+                      className="px-4 py-2 bg-white/10 hover:bg-white/20 text-text-main rounded-lg text-sm font-bold transition-all disabled:opacity-50 hover:scale-105 active:scale-95"
                     >
                       1. Calculate Ranks
                     </button>
-                    <button 
+                    <button
                       onClick={handleGenerateReports}
                       disabled={loading}
-                      className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all disabled:opacity-50"
+                      className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary to-primary-light text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
                     >
-                      2. Generate PDFs
+                      <FileText size={16} />
+                      <span>2. Generate PDFs</span>
                     </button>
                   </div>
                 </div>
@@ -462,9 +517,7 @@ export default function ReportsPage() {
                             </div>
                           </td>
                           <td className="px-4 py-4 text-text-main text-sm font-bold">{Number(rc.overall_average || 0).toFixed(2)}%</td>
-                          <td className="px-4 py-4 text-text-secondary text-sm">
-                            {rc.overall_position} / {rc.total_students}
-                          </td>
+                          <td className="px-4 py-4 text-text-secondary text-sm">{rc.overall_position} / {rc.total_students}</td>
                           <td className="px-4 py-4">
                             {rc.pdf_url ? (
                               <span className="flex items-center space-x-1 text-green-500 text-xs font-medium">
@@ -477,8 +530,8 @@ export default function ReportsPage() {
                           </td>
                           <td className="px-4 py-4">
                             {rc.pdf_url && (
-                              <a 
-                                href={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}${rc.pdf_url}`} 
+                              <a
+                                href={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}${rc.pdf_url}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center space-x-1 text-primary hover:underline text-sm font-medium"
@@ -492,7 +545,7 @@ export default function ReportsPage() {
                       )) : (
                         <tr>
                           <td colSpan="5" className="px-4 py-20 text-center text-text-secondary">
-                            {searchQuery ? 'No report cards match your search.' : filters.term_id ? 'No report cards found for this term. Click "Calculate Ranks" to process.' : 'Select a Term to view report cards.'}
+                            {searchQuery ? 'No report cards match your search.' : filters.term_id ? 'No report cards found. Click "Calculate Ranks" to process.' : 'Select a Term from the filter to view report cards.'}
                           </td>
                         </tr>
                       )}
@@ -501,6 +554,7 @@ export default function ReportsPage() {
                 </div>
               </div>
             )}
+
           </div>
         </div>
       </div>
