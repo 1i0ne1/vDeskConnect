@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { 
   BarChart3, Users, FileText, Key, Search, 
@@ -21,6 +22,36 @@ export default function ReportsPage() {
   const [subjects, setSubjects] = useState([]);
   const [terms, setTerms] = useState([]);
   
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams?.get('q') || '';
+
+  const filteredGrades = grades.filter(g => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      g.student?.profile?.data?.first_name?.toLowerCase().includes(q) ||
+      g.student?.profile?.data?.last_name?.toLowerCase().includes(q) ||
+      g.student?.profile?.data?.admission_number?.toLowerCase().includes(q) ||
+      g.subject?.name?.toLowerCase().includes(q)
+    );
+  });
+
+  const filteredReportCards = reportCards.filter(rc => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      rc.student?.profile?.data?.first_name?.toLowerCase().includes(q) ||
+      rc.student?.profile?.data?.last_name?.toLowerCase().includes(q) ||
+      rc.student?.profile?.data?.admission_number?.toLowerCase().includes(q)
+    );
+  });
+
+  const filteredPins = pins.filter(p => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return p.pin.toLowerCase().includes(q);
+  });
+
   const [filters, setFilters] = useState({
     grade_level_id: '',
     subject_id: '',
@@ -303,7 +334,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {grades.length > 0 ? grades.map((grade) => (
+                    {filteredGrades.length > 0 ? filteredGrades.map((grade) => (
                       <tr key={grade.id} className="hover:bg-white/2 transition-colors">
                         <td className="px-4 py-4">
                           <div className="flex items-center space-x-3">
@@ -344,9 +375,7 @@ export default function ReportsPage() {
                     )) : (
                       <tr>
                         <td colSpan="7" className="px-4 py-20 text-center text-text-secondary">
-                          {filters.term_id 
-                            ? 'No grades found. Select a specific Grade or click "Compute Results".' 
-                            : 'Select a Term to view the gradebook.'}
+                          {searchQuery ? 'No grades match your search.' : filters.term_id ? 'No grades found. Select a specific Grade or click "Compute Results".' : 'Select a Term to view the gradebook.'}
                         </td>
                       </tr>
                     )}
@@ -357,7 +386,7 @@ export default function ReportsPage() {
 
             {activeTab === 'pins' && (
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {pins.map((pin) => (
+                {filteredPins.map((pin) => (
                   <div key={pin.id} className={`p-4 rounded-xl border border-white/5 shadow-soft transition-all ${
                     pin.used ? 'bg-white/2 opacity-60' : 'bg-primary/5 border-primary/20 hover:scale-105'
                   }`}>
@@ -375,9 +404,9 @@ export default function ReportsPage() {
                     </p>
                   </div>
                 ))}
-                {pins.length === 0 && (
+                {filteredPins.length === 0 && (
                   <div className="col-span-full py-20 text-center text-text-secondary">
-                    No PINs generated yet.
+                    {searchQuery ? 'No PINs match your search.' : 'No PINs generated yet.'}
                   </div>
                 )}
               </div>
@@ -420,7 +449,7 @@ export default function ReportsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                      {reportCards.length > 0 ? reportCards.map((rc) => (
+                      {filteredReportCards.length > 0 ? filteredReportCards.map((rc) => (
                         <tr key={rc.id} className="hover:bg-white/2 transition-colors">
                           <td className="px-4 py-4">
                             <div className="flex items-center space-x-3">
@@ -463,9 +492,7 @@ export default function ReportsPage() {
                       )) : (
                         <tr>
                           <td colSpan="5" className="px-4 py-20 text-center text-text-secondary">
-                            {filters.term_id 
-                              ? 'No report cards found for this term. Click "Calculate Ranks" to process.' 
-                              : 'Select a Term to view report cards.'}
+                            {searchQuery ? 'No report cards match your search.' : filters.term_id ? 'No report cards found for this term. Click "Calculate Ranks" to process.' : 'Select a Term to view report cards.'}
                           </td>
                         </tr>
                       )}
