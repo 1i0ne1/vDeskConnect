@@ -121,24 +121,6 @@ export default function ReportsPage() {
     }
   };
 
-  const handleComputeOverall = async () => {
-    if (!filters.grade_level_id || !filters.term_id) {
-      toast.error('Please select Grade Level and Term');
-      return;
-    }
-    setLoading(true);
-    try {
-      await resultApi.grades.computeOverall(filters);
-      toast.success('Overall positions calculated');
-      fetchReportCards();
-    } catch (error) {
-      const errData = error?.data;
-      const msg = errData?.message || error?.message || 'Failed to calculate positions';
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleGenerateReports = async () => {
     if (!filters.grade_level_id || !filters.term_id) {
@@ -450,23 +432,16 @@ export default function ReportsPage() {
                 <div className="flex items-center justify-between p-4 bg-primary/5 rounded-xl border border-primary/20">
                   <div>
                     <h4 className="text-text-main font-bold">Process Class Reports</h4>
-                    <p className="text-text-secondary text-sm">Calculate class-wide rankings and generate PDF documents.</p>
+                    <p className="text-text-secondary text-sm">Generate PDF documents for the selected class.</p>
                   </div>
                   <div className="flex space-x-3">
-                    <button
-                      onClick={handleComputeOverall}
-                      disabled={loading}
-                      className="px-4 py-2 bg-white/10 hover:bg-white/20 text-text-main rounded-lg text-sm font-bold transition-all disabled:opacity-50 hover:scale-105 active:scale-95"
-                    >
-                      1. Calculate Ranks
-                    </button>
                     <button
                       onClick={handleGenerateReports}
                       disabled={loading}
                       className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary to-primary-light text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
                     >
                       <FileText size={16} />
-                      <span>2. Generate PDFs</span>
+                      <span>Generate PDFs</span>
                     </button>
                   </div>
                 </div>
@@ -477,7 +452,6 @@ export default function ReportsPage() {
                       <tr className="border-b border-white/5 text-text-secondary text-xs uppercase tracking-wider">
                         <th className="px-4 py-3 font-medium">Student</th>
                         <th className="px-4 py-3 font-medium">Average</th>
-                        <th className="px-4 py-3 font-medium">Position</th>
                         <th className="px-4 py-3 font-medium">Status</th>
                         <th className="px-4 py-3 font-medium">Actions</th>
                       </tr>
@@ -496,7 +470,6 @@ export default function ReportsPage() {
                             </div>
                           </td>
                           <td className="px-4 py-4 text-text-main text-sm font-bold">{Number(rc.overall_average || 0).toFixed(2)}%</td>
-                          <td className="px-4 py-4 text-text-secondary text-sm">{rc.overall_position} / {rc.total_students}</td>
                           <td className="px-4 py-4">
                             {rc.pdf_url ? (
                               <span className="flex items-center space-x-1 text-green-500 text-xs font-medium">
