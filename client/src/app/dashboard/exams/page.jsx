@@ -203,7 +203,10 @@ export default function ExamsPage() {
         </div>
 
         {/* Filters Panel */}
-        <AnimatePresence>
+        <AnimatePresence onExitComplete={() => {
+          setFilters({ grade_level_id: '', subject_id: '', term_id: '' });
+          setSearchQuery('');
+        }}>
           {showFilters && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
