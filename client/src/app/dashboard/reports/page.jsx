@@ -154,16 +154,20 @@ export default function ReportsPage() {
 
   const handleCompute = async () => {
     if (!filters.grade_level_id || !filters.term_id) {
-      toast.error('Please select Grade Level and Term');
+      setShowFilters(true);
+      toast.error('Open the filter panel and select a Grade Level and Term first');
       return;
     }
     setLoading(true);
     try {
-      await resultApi.grades.compute(filters);
-      toast.success('Grades computed successfully');
+      const res = await resultApi.grades.compute(filters);
+      toast.success(`Grades computed successfully (${res.data?.processed ?? ''} records)`);
       fetchGrades();
     } catch (error) {
-      toast.error('Failed to compute grades');
+      const msg = error?.response?.data?.message || error?.response?.data?.errors
+        ? Object.values(error.response.data.errors).flat().join(', ')
+        : 'Failed to compute grades';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -371,6 +375,26 @@ export default function ReportsPage() {
 
             {/* Gradebook Tab */}
             {activeTab === 'gradebook' && (
+              <div>
+                {(!filters.grade_level_id || !filters.term_id) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 flex items-center gap-3 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-sm"
+                  >
+                    <AlertCircle size={16} className="shrink-0" />
+                    <span>
+                      The <strong>Compute</strong> button requires a <strong>Grade Level</strong> and <strong>Term</strong> to be selected.
+                      Data shown below reflects all existing computed grades.
+                    </span>
+                    <button
+                      onClick={() => setShowFilters(true)}
+                      className="ml-auto shrink-0 px-3 py-1 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 font-bold text-xs transition-all"
+                    >
+                      Open Filters
+                    </button>
+                  </motion.div>
+                )}
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
