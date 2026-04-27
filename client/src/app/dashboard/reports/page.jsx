@@ -456,6 +456,7 @@ export default function ReportsPage() {
                   </tbody>
                 </table>
               </div>
+              </div>
             )}
 
             {/* Result PINs Tab */}
