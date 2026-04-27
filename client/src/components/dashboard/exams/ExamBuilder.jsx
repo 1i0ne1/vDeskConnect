@@ -10,9 +10,10 @@ import {
 import { examsApi } from '@/lib/exams-api';
 import { academicApi } from '@/lib/academic-api';
 import { format } from 'date-fns';
-import toast from 'react-hot-toast';
+import { useToast } from '@/contexts/ToastProvider';
 
 export default function ExamBuilder({ isOpen, onClose, onExamCreated, initialExam = null }) {
+  const toast = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [gradeLevels, setGradeLevels] = useState([]);
