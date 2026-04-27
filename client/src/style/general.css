@@ -1,0 +1,116 @@
+/* Add to your auth.css file */
+/* Message Popup Animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.message-popup-enter {
+    animation: slideInRight 0.3s ease-out forwards;
+}
+
+.message-popup-exit {
+    animation: slideOutRight 0.3s ease-in forwards;
+}
+
+/* Message Popup Styles */
+.message-popup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px;
+    border-radius: 8px;
+    z-index: 10000;
+    min-width: 300px;
+    max-width: 400px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.message-popup.error {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+}
+
+.message-popup.success {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+}
+
+.message-popup.warning {
+    background-color: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #d97706;
+}
+
+.message-popup.info {
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+}
+
+.message-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex: 1;
+}
+
+.message-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.message-text {
+    flex: 1;
+}
+
+.message-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    text-transform: capitalize;
+}
+
+.message-description {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.message-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.message-close:hover {
+    opacity: 1;
+}
