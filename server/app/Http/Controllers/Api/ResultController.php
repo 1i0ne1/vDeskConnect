@@ -229,10 +229,23 @@ class ResultController extends Controller
         }
 
         $user = $request->user();
-        $schoolId = $user->school_id;
-        $gradeLevelId = $request->grade_level_id;
-        $termId = $request->term_id;
+        $count = $this->performOverallRanking($user->school_id, $request->grade_level_id, $request->term_id);
 
+        if ($count === 0) {
+            return response()->json(['message' => 'No grades found for this class/term.'], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Successfully computed overall positions for $count students."
+        ]);
+    }
+
+    /**
+     * Internal helper to calculate rankings and update report_cards table.
+     */
+    private function performOverallRanking(int $schoolId, int $gradeLevelId, int $termId): int
+    {
         // 1. Fetch all student grades for this class and term
         $allGrades = StudentGrade::where('school_id', $schoolId)
             ->where('grade_level_id', $gradeLevelId)
@@ -240,7 +253,7 @@ class ResultController extends Controller
             ->get();
 
         if ($allGrades->isEmpty()) {
-            return response()->json(['message' => 'No grades found for this class/term. Compute subject grades first.'], 404);
+            return 0;
         }
 
         // 2. Group by student and calculate average
@@ -267,16 +280,13 @@ class ResultController extends Controller
             ];
         }
 
-        // 3. Sort by total_score (or average)
+        // 3. Sort by total_score
         usort($rankings, function($a, $b) {
             return $b['total_score'] <=> $a['total_score'];
         });
 
-        // 4. Update or Create overall report card record (or just a ranking table?)
-        // For now, let's just return the rankings or store them in a summary table if needed.
-        // Actually, report_cards table is better for this.
-        
-        $term = AcademicTerm::findOrFail($termId);
+        // 4. Update or Create report_cards
+        $term = AcademicTerm::find($termId);
         $sessionId = $term->session_id;
 
         foreach ($rankings as $index => $rank) {
@@ -295,11 +305,7 @@ class ResultController extends Controller
             );
         }
 
-        return response()->json([
-            'status' => 'success',
-            'message' => "Successfully computed overall positions for " . count($rankings) . " students.",
-            'rankings' => $rankings
-        ]);
+        return count($rankings);
     }
 
     /**
@@ -448,6 +454,9 @@ class ResultController extends Controller
         $gradeLevelId = $request->grade_level_id;
         $termId = $request->term_id;
 
+        // Automatically rank/create report card records before generating PDFs
+        $this->performOverallRanking($schoolId, $gradeLevelId, $termId);
+
         // Fetch report cards for this class/term
         $reportCards = ReportCard::where('school_id', $schoolId)
             ->where('term_id', $termId)
@@ -458,7 +467,7 @@ class ResultController extends Controller
             ->get();
 
         if ($reportCards->isEmpty()) {
-            return response()->json(['message' => 'No report cards found. Compute overall results first.'], 404);
+            return response()->json(['message' => 'No students found with grades in this class/term.'], 404);
         }
 
         $term = AcademicTerm::find($termId);
