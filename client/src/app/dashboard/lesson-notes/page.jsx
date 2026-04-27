@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   BookOpen, Plus, Trash2, X, Edit2, CheckCircle, Sparkles,
   Filter, Calendar, Tag, Clock, Eye
@@ -16,6 +16,8 @@ import { useToast } from '@/contexts/ToastProvider';
 
 export default function LessonNotesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams?.get('q') || '';
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [lessonNotes, setLessonNotes] = useState([]);
@@ -275,6 +277,17 @@ export default function LessonNotesPage() {
     }
   };
 
+  const filteredLessonNotes = lessonNotes.filter(note => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      note.topic?.toLowerCase().includes(q) ||
+      note.subject?.name?.toLowerCase().includes(q) ||
+      note.gradeLevel?.name?.toLowerCase().includes(q) ||
+      note.term?.name?.toLowerCase().includes(q)
+    );
+  });
+
   // ==================== RENDER ====================
   return (
     <DashboardLayout title="Lesson Notes" subtitle="Create and manage your lesson notes">
@@ -355,21 +368,27 @@ export default function LessonNotesPage() {
         {/* Lesson Notes List */}
         {loading ? (
           <div className="text-center py-12 text-text-secondary">Loading lesson notes...</div>
-        ) : lessonNotes.length === 0 ? (
+        ) : filteredLessonNotes.length === 0 ? (
           <div className="bg-card dark:bg-gray-800 rounded-card border border-border p-8 text-center">
             <BookOpen className="w-12 h-12 text-text-muted mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-text-primary mb-2">No lesson notes yet</h3>
-            <p className="text-sm text-text-secondary mb-4">Create your first lesson note to get started</p>
-            <button
-              onClick={() => { setShowModal(true); setEditingNote(null); resetForm(); }}
-              className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark"
-            >
-              Create Note
-            </button>
+            <h3 className="text-lg font-semibold text-text-primary mb-2">
+              {searchQuery ? 'No lesson notes match your search' : 'No lesson notes yet'}
+            </h3>
+            <p className="text-sm text-text-secondary mb-4">
+              {searchQuery ? 'Try adjusting your search or filters' : 'Create your first lesson note to get started'}
+            </p>
+            {!searchQuery && (
+              <button
+                onClick={() => { setShowModal(true); setEditingNote(null); resetForm(); }}
+                className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark"
+              >
+                Create Note
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {lessonNotes.map(note => (
+            {filteredLessonNotes.map(note => (
               <div key={note.id} className="bg-card dark:bg-gray-800 rounded-card border border-border p-4 md:p-6 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
