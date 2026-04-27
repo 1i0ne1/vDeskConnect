@@ -376,7 +376,7 @@ export default function ExamsPage() {
                 </motion.div>
               ))
             )}
-            {loadingMore && (
+            {loadingMore ? (
               <div className="col-span-full py-4 flex items-center justify-center space-x-2 text-primary">
                 <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                 <span className="text-sm font-medium">Loading more examinations...</span>
