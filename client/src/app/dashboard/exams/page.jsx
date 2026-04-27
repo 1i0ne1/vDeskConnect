@@ -299,6 +299,7 @@ export default function ExamsPage() {
               filteredExams.map((exam, i) => (
                 <motion.div
                   key={exam.id}
+                  ref={i === filteredExams.length - 1 ? lastElementRef : null}
                   layout
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -374,6 +375,12 @@ export default function ExamsPage() {
                   </div>
                 </motion.div>
               ))
+            )}
+            {loadingMore && (
+              <div className="col-span-full py-4 flex items-center justify-center space-x-2 text-primary">
+                <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                <span className="text-sm font-medium">Loading more examinations...</span>
+              </div>
             ) : (
               <div className="col-span-full py-20 text-center bg-bg-card rounded-card border border-white/5 border-dashed">
                 <ClipboardList className="mx-auto text-text-secondary mb-4 opacity-20" size={64} />
