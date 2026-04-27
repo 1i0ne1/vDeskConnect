@@ -70,10 +70,30 @@ export default function ReportsPage() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'gradebook') fetchGrades();
-    if (activeTab === 'report_cards') fetchReportCards();
+    setPage(1);
+    setHasMore(true);
+    if (activeTab === 'gradebook') fetchGrades(1);
+    if (activeTab === 'report_cards') fetchReportCards(1);
     if (activeTab === 'pins') fetchPins();
   }, [activeTab, filters]);
+
+  useEffect(() => {
+    if (page > 1) {
+      if (activeTab === 'gradebook') fetchGrades(page, true);
+      if (activeTab === 'report_cards') fetchReportCards(page, true);
+    }
+  }, [page]);
+
+  const lastElementRef = useCallback(node => {
+    if (loading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, loadingMore, hasMore]);
 
   const fetchInitialData = async () => {
     try {
@@ -90,17 +110,21 @@ export default function ReportsPage() {
     }
   };
 
-  const fetchGrades = async () => {
-    setLoading(true);
+  const fetchGrades = async (pageNum = 1, isLoadMore = false) => {
+    if (isLoadMore) setLoadingMore(true);
+    else setLoading(true);
     try {
-      const res = await resultApi.grades.getAll(filters);
-      setGrades(res.data || []);
+      const res = await resultApi.grades.getAll({ ...filters, page: pageNum });
+      const newData = res.data || [];
+      setGrades(prev => pageNum === 1 ? newData : [...prev, ...newData]);
+      setHasMore(res.meta?.has_more || false);
     } catch (error) {
       const errData = error?.data;
-      const msg = errData?.message || error?.message || 'Failed to compute overall results';
+      const msg = errData?.message || error?.message || 'Failed to load grades';
       toast.error(msg);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -116,15 +140,19 @@ export default function ReportsPage() {
     }
   };
 
-  const fetchReportCards = async () => {
-    setLoading(true);
+  const fetchReportCards = async (pageNum = 1, isLoadMore = false) => {
+    if (isLoadMore) setLoadingMore(true);
+    else setLoading(true);
     try {
-      const res = await resultApi.reports.getAll(filters);
-      setReportCards(res.data || []);
+      const res = await resultApi.reports.getAll({ ...filters, page: pageNum });
+      const newData = res.data || [];
+      setReportCards(prev => pageNum === 1 ? newData : [...prev, ...newData]);
+      setHasMore(res.meta?.has_more || false);
     } catch (error) {
       toast.error('Failed to load report cards');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
