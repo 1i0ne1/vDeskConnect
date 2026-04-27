@@ -1638,16 +1638,16 @@ class AcademicController extends Controller
             ->with(['subject', 'gradeLevel', 'term', 'creator']);
 
         // Apply filters
-        if ($request->has('grade_level_id')) {
+        if ($request->filled('grade_level_id')) {
             $query->forGrade($request->grade_level_id);
         }
-        if ($request->has('subject_id')) {
+        if ($request->filled('subject_id')) {
             $query->forSubject($request->subject_id);
         }
-        if ($request->has('term_id')) {
+        if ($request->filled('term_id')) {
             $query->forTerm($request->term_id);
         }
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             if ($request->status === 'published') {
                 $query->published();
             } elseif ($request->status === 'draft') {
@@ -1938,19 +1938,19 @@ class AcademicController extends Controller
             ->with(['scheme', 'teacher', 'gradeLevel', 'subject', 'term']);
 
         // Apply filters
-        if ($request->has('teacher_id')) {
+        if ($request->filled('teacher_id')) {
             $query->forTeacher($request->teacher_id);
         }
-        if ($request->has('grade_level_id')) {
+        if ($request->filled('grade_level_id')) {
             $query->forGrade($request->grade_level_id);
         }
-        if ($request->has('subject_id')) {
+        if ($request->filled('subject_id')) {
             $query->forSubject($request->subject_id);
         }
-        if ($request->has('term_id')) {
+        if ($request->filled('term_id')) {
             $query->forTerm($request->term_id);
         }
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             if ($request->status === 'published') {
                 $query->published();
             } elseif ($request->status === 'draft') {
