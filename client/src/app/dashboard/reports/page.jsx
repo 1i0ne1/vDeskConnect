@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { 
   BarChart3, Users, FileText, Key, Search, 
-  Filter, Download, RefreshCcw, CheckCircle, 
-  AlertCircle, Plus
+  Filter, Download, CheckCircle, 
+  Plus
 } from 'lucide-react';
 import { academicApi } from '@/lib/academic-api';
 import { resultApi } from '@/lib/result-api';
@@ -153,27 +153,6 @@ export default function ReportsPage() {
     }
   };
 
-  const handleCompute = async () => {
-    if (!filters.grade_level_id || !filters.term_id) {
-      setShowFilters(true);
-      toast.error('Open the filter panel and select a Grade Level and Term first');
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await resultApi.grades.compute(filters);
-      toast.success(res.message || 'Grades computed successfully');
-      fetchGrades();
-    } catch (error) {
-      const errData = error?.data;
-      const msg = errData?.errors
-        ? Object.values(errData.errors).flat().join(', ')
-        : errData?.message || error?.message || 'Failed to compute grades';
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleGeneratePins = async () => {
     const count = prompt('How many PINs would you like to generate? (Max 500)', '50');
@@ -271,16 +250,6 @@ export default function ReportsPage() {
             </button>
 
             {/* Action Buttons */}
-            {activeTab === 'gradebook' && (
-              <button
-                onClick={handleCompute}
-                disabled={loading}
-                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary to-primary-light text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
-              >
-                <RefreshCcw size={18} className={loading ? 'animate-spin' : ''} />
-                <span>Compute</span>
-              </button>
-            )}
             {activeTab === 'report_cards' && (
               <div className="flex space-x-2">
                 <button
@@ -378,25 +347,6 @@ export default function ReportsPage() {
             {/* Gradebook Tab */}
             {activeTab === 'gradebook' && (
               <div>
-                {(!filters.grade_level_id || !filters.term_id) && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-4 flex items-center gap-3 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-sm"
-                  >
-                    <AlertCircle size={16} className="shrink-0" />
-                    <span>
-                      The <strong>Compute</strong> button requires a <strong>Grade Level</strong> and <strong>Term</strong> to be selected.
-                      Data shown below reflects all existing computed grades.
-                    </span>
-                    <button
-                      onClick={() => setShowFilters(true)}
-                      className="ml-auto shrink-0 px-3 py-1 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 font-bold text-xs transition-all"
-                    >
-                      Open Filters
-                    </button>
-                  </motion.div>
-                )}
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
