@@ -47,6 +47,8 @@ class VDeskConnectSeeder extends Seeder
             'active'     => true,
             'config'     => json_encode([
                 'academic_labels' => ['grade_label' => 'Class', 'term_label' => 'Term'],
+                'ca_weight' => 40,
+                'exam_weight' => 60,
             ]),
             'created_at' => $now,
             'updated_at' => $now,
@@ -332,17 +334,35 @@ class VDeskConnectSeeder extends Seeder
         // ─────────────────────────────────────────────
         $examsData = [
             [
-                'title' => 'Mid-Term Mathematics Exam',
-                'subject_id' => $subjectIds[0], // Math
+                'title' => 'Mathematics Mid-Term Exam',
+                'subject_id' => $subjectIds[0],
                 'type' => 'MCQ',
                 'duration_minutes' => 60,
                 'published' => true,
-                'total_marks' => 60,
+                'total_marks' => 100,
                 'is_ca_test' => false,
             ],
             [
+                'title' => 'Mathematics CA Test 1',
+                'subject_id' => $subjectIds[0],
+                'type' => 'MCQ',
+                'duration_minutes' => 20,
+                'published' => true,
+                'total_marks' => 20,
+                'is_ca_test' => true,
+            ],
+            [
+                'title' => 'Mathematics CA Test 2',
+                'subject_id' => $subjectIds[0],
+                'type' => 'MCQ',
+                'duration_minutes' => 20,
+                'published' => true,
+                'total_marks' => 20,
+                'is_ca_test' => true,
+            ],
+            [
                 'title' => 'Biology CA Test 1',
-                'subject_id' => $subjectIds[2], // Biology
+                'subject_id' => $subjectIds[2],
                 'type' => 'MCQ',
                 'duration_minutes' => 30,
                 'published' => true,
@@ -351,7 +371,7 @@ class VDeskConnectSeeder extends Seeder
             ],
             [
                 'title' => 'Physics Final Assessment',
-                'subject_id' => $subjectIds[3], // Physics
+                'subject_id' => $subjectIds[3],
                 'type' => 'Theory',
                 'duration_minutes' => 120,
                 'published' => true,
@@ -359,22 +379,22 @@ class VDeskConnectSeeder extends Seeder
                 'is_ca_test' => false,
             ],
             [
-                'title' => 'Chemistry Practical (Draft)',
-                'subject_id' => $subjectIds[4], // Chemistry
-                'type' => 'Mixed',
-                'duration_minutes' => 90,
-                'published' => false,
-                'total_marks' => 50,
-                'is_ca_test' => false,
-            ],
-            [
-                'title' => 'English Language CA Test 2',
-                'subject_id' => $subjectIds[1], // English
+                'title' => 'English Language CA Test 1',
+                'subject_id' => $subjectIds[1],
                 'type' => 'MCQ',
                 'duration_minutes' => 45,
                 'published' => true,
                 'total_marks' => 30,
                 'is_ca_test' => true,
+            ],
+            [
+                'title' => 'English Language Final Exam',
+                'subject_id' => $subjectIds[1],
+                'type' => 'MCQ',
+                'duration_minutes' => 90,
+                'published' => true,
+                'total_marks' => 100,
+                'is_ca_test' => false,
             ]
         ];
 
@@ -411,10 +431,14 @@ class VDeskConnectSeeder extends Seeder
                 // Only create submissions for published exams
                 $examData = collect($examsData)->firstWhere('title', DB::table('exams')->where('id', $eId)->value('title'));
                 if ($examData && $examData['published']) {
+                    $totalMarks = $examData['total_marks'];
+                    // Random score between 40% and 95% of total marks
+                    $score = rand($totalMarks * 0.4, $totalMarks * 0.95);
+                    
                     DB::table('exam_submissions')->insert([
                         'exam_id' => $eId,
                         'student_id' => $sid,
-                        'auto_score' => rand(20, 50),
+                        'auto_score' => $score,
                         'manual_score' => 0,
                         'status' => 'graded',
                         'submitted_at' => $now,
