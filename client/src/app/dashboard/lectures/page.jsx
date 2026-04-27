@@ -109,18 +109,32 @@ export default function LecturesPage() {
   const [builderLoading, setBuilderLoading] = useState(false);
   const [builderUploading, setBuilderUploading] = useState({});
 
-  const fetchLectures = useCallback(async () => {
-    setLoading(true);
+  const lastElementRef = useCallback(node => {
+    if (loading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, loadingMore, hasMore]);
+
+  const fetchLectures = useCallback(async (pageNum = 1, isLoadMore = false) => {
+    if (isLoadMore) setLoadingMore(true);
+    else setLoading(true);
     try {
-      const res = await academicApi.lectures.getAll({ ...filters, page: pagination.page, per_page: pagination.per_page });
-      setLectures(res.data || []);
-      setPagination(prev => ({ ...prev, total: res.total }));
+      const res = await academicApi.lectures.getAll({ ...filters, page: pageNum });
+      const newData = res.data || [];
+      setLectures(prev => pageNum === 1 ? newData : [...prev, ...newData]);
+      setHasMore(res.meta?.has_more || false);
     } catch (err) {
       toast.error('Failed to load lectures');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [filters, pagination.page, pagination.per_page, toast]);
+  }, [filters, toast]);
 
   const fetchMeta = useCallback(async () => {
     try {
