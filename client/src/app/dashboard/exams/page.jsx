@@ -107,8 +107,6 @@ export default function ExamsPage() {
     }
   };
 
-  const exams = exams;
-
   const getStatusBadge = (exam) => {
     if (!exam.published) return <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-500/10 text-gray-400 border border-gray-500/20">Draft</span>;
     
