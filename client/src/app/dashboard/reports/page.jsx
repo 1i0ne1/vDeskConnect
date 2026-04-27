@@ -89,7 +89,9 @@ export default function ReportsPage() {
       const res = await resultApi.grades.getAll(filters);
       setGrades(res.data || []);
     } catch (error) {
-      toast.error('Failed to load grades');
+      const errData = error?.data;
+      const msg = errData?.message || error?.message || 'Failed to compute overall results';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
