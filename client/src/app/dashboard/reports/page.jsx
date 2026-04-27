@@ -239,13 +239,6 @@ export default function ReportsPage() {
             {activeTab === 'report_cards' && (
               <div className="flex space-x-2">
                 <button
-                  onClick={handleComputeOverall}
-                  disabled={loading}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-text-main rounded-lg text-sm font-bold transition-all disabled:opacity-50 hover:scale-105 active:scale-95"
-                >
-                  1. Rank
-                </button>
-                <button
                   onClick={handleGenerateReports}
                   disabled={loading}
                   className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary to-primary-light text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
