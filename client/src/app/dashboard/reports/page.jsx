@@ -129,11 +129,13 @@ export default function ReportsPage() {
     }
     setLoading(true);
     try {
-      await resultApi.reports.generate(filters);
-      toast.success('Report cards generated successfully');
+      const res = await resultApi.reports.generate(filters);
+      toast.success(res.message || 'Report cards generated successfully');
       fetchReportCards();
     } catch (error) {
-      toast.error('Failed to generate report cards');
+      const errData = error?.data;
+      const msg = errData?.message || error?.message || 'Failed to generate report cards';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
