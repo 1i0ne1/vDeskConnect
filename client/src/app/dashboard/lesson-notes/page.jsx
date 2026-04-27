@@ -101,17 +101,22 @@ export default function LessonNotesPage() {
     }
   }, [toast]);
 
-  const fetchNotes = useCallback(async () => {
-    setLoading(true);
+  const fetchNotes = useCallback(async (pageNum = 1, isLoadMore = false) => {
+    if (isLoadMore) setLoadingMore(true);
+    else setLoading(true);
     try {
-      const notesRes = await academicApi.lessonNotes.getAll(filters);
-      setLessonNotes(notesRes.lesson_notes || []);
+      const params = { ...filters, page: pageNum, search: searchQuery };
+      const notesRes = await academicApi.lessonNotes.getAll(params);
+      const newData = notesRes.lesson_notes || notesRes.data || [];
+      setLessonNotes(prev => pageNum === 1 ? newData : [...prev, ...newData]);
+      setHasMore(notesRes.meta?.has_more || false);
     } catch (err) {
       toast.error('Failed to load lesson notes');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [filters, toast]);
+  }, [filters, searchQuery, toast]);
 
   useEffect(() => {
     const token = api.getToken();
@@ -122,8 +127,18 @@ export default function LessonNotesPage() {
   useEffect(() => {
     const token = api.getToken();
     if (!token) return;
-    fetchNotes();
-  }, [fetchNotes]);
+    setPage(1);
+    setHasMore(true);
+    fetchNotes(1);
+  }, [filters, searchQuery, fetchNotes, router]);
+
+  useEffect(() => {
+    if (page > 1) {
+      const token = api.getToken();
+      if (!token) return;
+      fetchNotes(page, true);
+    }
+  }, [page, fetchNotes]);
 
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
@@ -308,16 +323,8 @@ export default function LessonNotesPage() {
     }
   };
 
-  const filteredLessonNotes = lessonNotes.filter(note => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      note.topic?.toLowerCase().includes(q) ||
-      note.subject?.name?.toLowerCase().includes(q) ||
-      note.gradeLevel?.name?.toLowerCase().includes(q) ||
-      note.term?.name?.toLowerCase().includes(q)
-    );
-  });
+  // Note: filtering is now done server-side via API
+  const notes = lessonNotes;
 
   // ==================== RENDER ====================
   return (
