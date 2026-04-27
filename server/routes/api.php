@@ -224,6 +224,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/overall/compute', [ResultController::class, 'computeOverallResults']);
         Route::get('/report-cards', [ResultController::class, 'listReportCards']);
         Route::post('/report-cards/generate', [ResultController::class, 'generateReportCards']);
+        Route::get('/report-cards/download-zip', [ResultController::class, 'downloadZip']);
         Route::get('/pins', [ResultController::class, 'listPins']);
         Route::post('/pins/generate', [ResultController::class, 'generatePins']);
         Route::post('/check', [ResultController::class, 'checkResult']);
