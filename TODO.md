@@ -40,7 +40,7 @@ This document outlines the complete implementation roadmap for building the **Ac
 
 **Implementation Order (Infinite Scroll):**
 1. [ ] **Reports Tab** — Gradebook, Report Cards, PINs
-2. [ ] **Exams Tab** — Exams list
+2. [x] **Exams Tab** — Exams list (✅ *Completed — Fixed: search/filter sent to API*)
 3. [ ] **Lesson Notes Tab** — Notes list
 4. [ ] **Lectures Tab** — Lectures list
 5. [ ] **Classes Tab** — Student/section lists
