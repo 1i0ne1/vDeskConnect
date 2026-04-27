@@ -36,11 +36,17 @@ class ExamController extends Controller
             $query->where('is_ca_test', $request->boolean('is_ca_test'));
         }
 
-        $exams = $query->orderBy('created_at', 'desc')->get();
+        $exams = $query->orderBy('created_at', 'desc')->paginate($request->get('per_page', 20));
 
         return response()->json([
             'status' => 'success',
-            'data' => $exams
+            'data' => $exams->items(),
+            'meta' => [
+                'current_page' => $exams->currentPage(),
+                'last_page' => $exams->lastPage(),
+                'total' => $exams->total(),
+                'has_more' => $exams->hasMorePages()
+            ]
         ]);
     }
 
@@ -189,11 +195,17 @@ class ExamController extends Controller
         $submissions = ExamSubmission::where('exam_id', $exam->id)
             ->with(['student.profile'])
             ->orderBy('submitted_at', 'desc')
-            ->get();
+            ->paginate($request->get('per_page', 20));
 
         return response()->json([
             'status' => 'success',
-            'data' => $submissions
+            'data' => $submissions->items(),
+            'meta' => [
+                'current_page' => $submissions->currentPage(),
+                'last_page' => $submissions->lastPage(),
+                'total' => $submissions->total(),
+                'has_more' => $submissions->hasMorePages()
+            ]
         ]);
     }
 

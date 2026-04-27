@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Search, Filter, Calendar, ClipboardList, 
@@ -33,6 +33,12 @@ export default function ExamsPage() {
     term_id: '',
   });
 
+  // --- Infinite Scroll States ---
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const observer = useRef();
+
   const [gradeLevels, setGradeLevels] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [terms, setTerms] = useState([]);
@@ -42,8 +48,25 @@ export default function ExamsPage() {
   }, []);
 
   useEffect(() => {
-    fetchExams();
+    setPage(1);
+    setHasMore(true);
+    fetchExams(1);
   }, [filters, activeTab]);
+
+  useEffect(() => {
+    if (page > 1) fetchExams(page, true);
+  }, [page]);
+
+  const lastElementRef = useCallback(node => {
+    if (loading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, loadingMore, hasMore]);
 
   const fetchInitialData = async () => {
     try {
@@ -60,19 +83,23 @@ export default function ExamsPage() {
     }
   };
 
-  const fetchExams = async () => {
-    setLoading(true);
+  const fetchExams = async (pageNum = 1, isLoadMore = false) => {
+    if (isLoadMore) setLoadingMore(true);
+    else setLoading(true);
     try {
-      const params = { ...filters };
+      const params = { ...filters, page: pageNum };
       if (activeTab === 'ca') params.is_ca_test = true;
       if (activeTab === 'final') params.is_ca_test = false;
       
       const res = await examsApi.getExams(params);
-      setExams(res.data || []);
+      const newData = res.data || [];
+      setExams(prev => pageNum === 1 ? newData : [...prev, ...newData]);
+      setHasMore(res.meta?.has_more || false);
     } catch (error) {
       toast.error('Failed to fetch exams');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 

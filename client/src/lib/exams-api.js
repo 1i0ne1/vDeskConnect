@@ -39,8 +39,9 @@ export const examsApi = {
   },
 
   // List student submissions for an exam
-  getSubmissions: async (examId) => {
-    return await api.get(`/exams/${examId}/submissions`);
+  getSubmissions: async (examId, params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return await api.get(`/exams/${examId}/submissions${query ? `?${query}` : ''}`);
   },
 
   // Get detailed submission data (including answers)
