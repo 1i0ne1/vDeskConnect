@@ -426,7 +426,7 @@ export default function ReportsPage() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between p-4 bg-primary/5 rounded-xl border border-primary/20">
                   <div>
-                    <h4 className="text-text-main font-bold">Process Class Reports</h4>
+                    <h4 className="text-text-main font-bold">Process Class Reports ({reportCards.length} found)</h4>
                     <p className="text-text-secondary text-sm">Generate PDF documents for the selected class.</p>
                   </div>
                   <div className="flex space-x-3">
@@ -436,7 +436,7 @@ export default function ReportsPage() {
                       className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary to-primary-light text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
                     >
                       <FileText size={16} />
-                      <span>Generate PDFs</span>
+                      <span>{reportCards.length > 0 ? 'Regenerate All' : 'Generate PDFs'}</span>
                     </button>
                   </div>
                 </div>
