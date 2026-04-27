@@ -110,15 +110,19 @@ class ResultController extends Controller
         }
         $subjects = $subjectsQuery->get();
 
+        $school = $user->school;
+        $config = $school->config;
+        $caWeight = $config['ca_weight'] ?? 40;
+        $examWeight = $config['exam_weight'] ?? 60;
+
         $processedCount = 0;
 
         foreach ($subjects as $subject) {
             $subjectScores = [];
 
             foreach ($students as $student) {
-                // 1. CA Score — sum of all graded CA test (is_ca_test=true) submissions
-                //    for this student in this subject, grade level, and term.
-                $caTotal = ExamSubmission::whereHas('exam', function($q) use ($subject, $gradeLevelId, $termId) {
+                // 1. CA Score — Scaled sum of all graded CA tests
+                $caSubmissions = ExamSubmission::whereHas('exam', function($q) use ($subject, $gradeLevelId, $termId) {
                         $q->where('subject_id', $subject->id)
                           ->where('grade_level_id', $gradeLevelId)
                           ->where('term_id', $termId)
@@ -127,10 +131,20 @@ class ResultController extends Controller
                     })
                     ->where('student_id', $student->id)
                     ->where('status', 'graded')
-                    ->sum('auto_score') ?? 0;
+                    ->with('exam')
+                    ->get();
 
-                // 2. Exam Score — highest graded auto_score from published FINAL exams (is_ca_test=false)
-                $examScore = ExamSubmission::whereHas('exam', function($q) use ($subject, $gradeLevelId, $termId) {
+                $caObtained = 0;
+                $caMaxPossible = 0;
+                foreach ($caSubmissions as $sub) {
+                    $caObtained += $sub->auto_score + ($sub->manual_score ?? 0);
+                    $caMaxPossible += $sub->exam->total_marks ?? 0;
+                }
+
+                $caFinal = ($caMaxPossible > 0) ? ($caObtained / $caMaxPossible) * $caWeight : 0;
+
+                // 2. Exam Score — Scaled highest graded FINAL exam
+                $examSubmission = ExamSubmission::whereHas('exam', function($q) use ($subject, $gradeLevelId, $termId) {
                         $q->where('subject_id', $subject->id)
                           ->where('grade_level_id', $gradeLevelId)
                           ->where('term_id', $termId)
@@ -139,16 +153,27 @@ class ResultController extends Controller
                     })
                     ->where('student_id', $student->id)
                     ->where('status', 'graded')
-                    ->max('auto_score') ?? 0;
+                    ->with('exam')
+                    ->orderBy('auto_score', 'desc')
+                    ->first();
 
-                $totalScore = $caTotal + $examScore;
+                $examObtained = 0;
+                $examMaxPossible = 0;
+                if ($examSubmission) {
+                    $examObtained = $examSubmission->auto_score + ($examSubmission->manual_score ?? 0);
+                    $examMaxPossible = $examSubmission->exam->total_marks ?? 0;
+                }
+
+                $examFinal = ($examMaxPossible > 0) ? ($examObtained / $examMaxPossible) * $examWeight : 0;
+
+                $totalScore = round($caFinal + $examFinal, 2);
                 
                 $gradeInfo = $gradeScale->getGradeForScore($totalScore);
 
                 $subjectScores[] = [
                     'student_id' => $student->id,
-                    'ca_score' => $caTotal,
-                    'exam_score' => $examScore,
+                    'ca_score' => round($caFinal, 2),
+                    'exam_score' => round($examFinal, 2),
                     'total_score' => $totalScore,
                     'grade' => $gradeInfo['grade'] ?? 'F',
                     'remark' => $gradeInfo['remark'] ?? 'Fail',
