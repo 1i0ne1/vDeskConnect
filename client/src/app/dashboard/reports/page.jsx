@@ -152,7 +152,7 @@ export default function ReportsPage() {
       params.append('grade_level_id', filters.grade_level_id);
       params.append('term_id', filters.term_id);
       
-      const token = localStorage.getItem('token'); // Assuming token is stored here
+      const token = api.getToken();
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/results/report-cards/download-zip?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`
