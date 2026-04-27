@@ -116,14 +116,13 @@ class ResultController extends Controller
             $subjectScores = [];
 
             foreach ($students as $student) {
-                // 1. Aggregate CA Scores
-                $caTotal = CaWeek::where('academic_term_id', $termId)
+                // 1. Aggregate CA Scores (ca_weeks stores class-level config; use exam submission scores for CA)
+                $caTotal = CaWeek::where('term_id', $termId)
                     ->where('grade_level_id', $gradeLevelId)
                     ->where('subject_id', $subject->id)
-                    ->where('student_id', $student->id)
                     ->sum('score');
 
-                // 2. Get Exam Score (Highest published submission)
+                // 2. Get Exam Score (Highest published submission auto_score)
                 $examScore = ExamSubmission::whereHas('exam', function($q) use ($subject, $gradeLevelId, $termId) {
                         $q->where('subject_id', $subject->id)
                           ->where('grade_level_id', $gradeLevelId)
@@ -132,7 +131,7 @@ class ResultController extends Controller
                     })
                     ->where('student_id', $student->id)
                     ->where('status', 'graded')
-                    ->max('score') ?? 0;
+                    ->max('auto_score') ?? 0;
 
                 $totalScore = $caTotal + $examScore;
                 
