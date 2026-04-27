@@ -49,11 +49,17 @@ class ResultController extends Controller
             $query->where('term_id', $request->term_id);
         }
 
-        $grades = $query->get();
+        $grades = $query->paginate($request->get('per_page', 20));
 
         return response()->json([
             'status' => 'success',
-            'data' => $grades
+            'data' => $grades->items(),
+            'meta' => [
+                'current_page' => $grades->currentPage(),
+                'last_page' => $grades->lastPage(),
+                'total' => $grades->total(),
+                'has_more' => $grades->hasMorePages()
+            ]
         ]);
     }
 
@@ -546,10 +552,17 @@ class ResultController extends Controller
             $query->where('term_id', $request->term_id);
         }
 
-        $reportCards = $query->get();
+        $reportCards = $query->paginate($request->get('per_page', 20));
+
         return response()->json([
             'status' => 'success',
-            'data' => $reportCards
+            'data' => $reportCards->items(),
+            'meta' => [
+                'current_page' => $reportCards->currentPage(),
+                'last_page' => $reportCards->lastPage(),
+                'total' => $reportCards->total(),
+                'has_more' => $reportCards->hasMorePages()
+            ]
         ]);
     }
 
