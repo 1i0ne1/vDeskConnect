@@ -10,9 +10,10 @@ import {
 } from 'lucide-react';
 import { academicApi } from '@/lib/academic-api';
 import { resultApi } from '@/lib/result-api';
-import toast from 'react-hot-toast';
+import { useToast } from '@/contexts/ToastProvider';
 
 export default function ReportsPage() {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState('gradebook');
   const [loading, setLoading] = useState(false);
   const [grades, setGrades] = useState([]);
