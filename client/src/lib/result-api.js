@@ -7,6 +7,8 @@ export const resultApi = {
       if (filters.grade_level_id) params.append('grade_level_id', filters.grade_level_id);
       if (filters.subject_id) params.append('subject_id', filters.subject_id);
       if (filters.term_id) params.append('term_id', filters.term_id);
+      if (filters.page) params.append('page', filters.page);
+      if (filters.per_page) params.append('per_page', filters.per_page);
       return api.get(`/results/grades?${params.toString()}`);
     },
     compute: (data) => api.post('/results/grades/compute', data),
@@ -17,6 +19,8 @@ export const resultApi = {
       const params = new URLSearchParams();
       if (filters.grade_level_id) params.append('grade_level_id', filters.grade_level_id);
       if (filters.term_id) params.append('term_id', filters.term_id);
+      if (filters.page) params.append('page', filters.page);
+      if (filters.per_page) params.append('per_page', filters.per_page);
       return api.get(`/results/report-cards?${params.toString()}`);
     },
     generate: (data) => api.post('/results/report-cards/generate', data),
