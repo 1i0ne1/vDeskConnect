@@ -384,8 +384,8 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {filteredGrades.length > 0 ? filteredGrades.map((grade) => (
-                      <tr key={grade.id} className="hover:bg-white/2 transition-colors">
+                    {filteredGrades.length > 0 ? filteredGrades.map((grade, index) => (
+                      <tr key={grade.id} ref={index === filteredGrades.length - 1 ? lastElementRef : null} className="hover:bg-white/2 transition-colors">
                         <td className="px-4 py-4">
                           <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
@@ -425,6 +425,24 @@ export default function ReportsPage() {
                       <tr>
                         <td colSpan="7" className="px-4 py-20 text-center text-text-secondary">
                           {searchQuery ? 'No grades match your search.' : 'No grades found. Try adjusting your filters or click "Compute".'}
+                        </td>
+                      </tr>
+                    {loadingMore && (
+                      <tr>
+                        <td colSpan="7" className="px-4 py-4 text-center">
+                          <div className="flex items-center justify-center space-x-2 text-primary">
+                            <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                            <span className="text-sm font-medium">Loading more results...</span>
+                          </div>
+                        </td>
+                      </tr>
+                    {loadingMore && (
+                      <tr>
+                        <td colSpan="4" className="px-4 py-4 text-center">
+                          <div className="flex items-center justify-center space-x-2 text-primary">
+                            <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                            <span className="text-sm font-medium">Loading more results...</span>
+                          </div>
                         </td>
                       </tr>
                     )}
@@ -498,8 +516,8 @@ export default function ReportsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                      {filteredReportCards.length > 0 ? filteredReportCards.map((rc) => (
-                        <tr key={rc.id} className="hover:bg-white/2 transition-colors">
+                    {filteredReportCards.length > 0 ? filteredReportCards.map((rc, index) => (
+                        <tr key={rc.id} ref={index === filteredReportCards.length - 1 ? lastElementRef : null} className="hover:bg-white/2 transition-colors">
                           <td className="px-4 py-4">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center text-xs font-bold">
