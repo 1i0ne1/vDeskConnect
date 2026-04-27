@@ -275,11 +275,11 @@ class ResultController extends Controller
         // For now, let's just return the rankings or store them in a summary table if needed.
         // Actually, report_cards table is better for this.
         
-        $term = AcademicTerm::find($termId);
-        $sessionId = $term->academic_session_id;
+        $term = AcademicTerm::findOrFail($termId);
+        $sessionId = $term->session_id;
 
         foreach ($rankings as $index => $rank) {
-            DB::table('report_cards')->updateOrInsert(
+            ReportCard::updateOrCreate(
                 [
                     'school_id' => $schoolId,
                     'student_id' => $rank['student_id'],
@@ -290,8 +290,6 @@ class ResultController extends Controller
                     'overall_average' => $rank['average'],
                     'overall_position' => $index + 1,
                     'total_students' => count($rankings),
-                    'updated_at' => now(),
-                    'created_at' => now(),
                 ]
             );
         }
