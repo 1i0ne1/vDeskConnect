@@ -5,6 +5,25 @@ This document outlines the complete implementation roadmap for building the **Ac
 
 ---
 
+## 🌟 NEXT IMMEDIATE PHASE: UI Search & Filter Standardization
+
+**Status:** ⏳ **PENDING / IN PROGRESS**
+
+**Goal:** Replicate the highly successful, animated, and independent search/filter mechanism from the Exams section across all other modules in the application. This includes the shiny beautiful buttons, internal search bar, animated filter search button mechanism, and clearing logic `onExitComplete`.
+
+**Implementation Order:**
+1. [ ] **Reports Tab** (Internal search bar + animated filter panel)
+2. [ ] **Lesson Notes Tab** (Internal search bar + animated filter panel)
+3. [x] **Exams Tab** (✅ *Already Completed*)
+4. [ ] **Lectures Tab** (Internal search bar + animated filter panel)
+5. [ ] **Classes Tab** (Internal search bar + animated filter panel)
+6. [ ] **Academic Tab** (Internal search bar + animated filter panel)
+7. [ ] **Staff Tab** (Internal search bar + animated filter panel)
+8. [ ] **Teachers Tab** (Internal search bar + animated filter panel)
+9. [ ] **Students Tab** (Internal search bar + animated filter panel)
+
+---
+
 ## ✅ Phase 1: COMPLETE — Academic Session Configuration
 
 **Status:** ✅ **FULLY IMPLEMENTED** (Completed April 10, 2026)
