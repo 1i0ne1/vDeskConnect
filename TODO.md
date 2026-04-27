@@ -13,7 +13,7 @@ This document outlines the complete implementation roadmap for building the **Ac
 
 > **Important Architecture Note:** The global/external search bar in the top navigation will be fully disconnected from the local page search mechanics in all these modules. Each page will rely exclusively on its own internal search. The global search bar will be reserved for a completely different global feature later.
 
-**Implementation Order:**
+**Implementation Order (Search/Filter):**
 1. [x] **Reports Tab** (✅ *Completed*)
 2. [ ] **Lesson Notes Tab** (Internal search bar + animated filter panel)
 3. [x] **Exams Tab** (✅ *Already Completed*)
@@ -23,6 +23,30 @@ This document outlines the complete implementation roadmap for building the **Ac
 7. [ ] **Staff Tab** (Internal search bar + animated filter panel)
 8. [ ] **Teachers Tab** (Internal search bar + animated filter panel)
 9. [ ] **Students Tab** (Internal search bar + animated filter panel)
+
+---
+
+## 📜 MANDATORY FEATURE: Infinite Scroll — All List Tabs
+
+**Status:** ⏳ **PENDING** — Must be implemented alongside or immediately after Search/Filter standardization.
+
+**Goal:** Every tab or section that displays a list of data (exams, lesson notes, reports, lectures, students, staff, teachers, classes, etc.) **must** support infinite scroll. Loading all records at once is not acceptable at scale.
+
+**Architecture:**
+- Backend: All list endpoints must support `?page=N&per_page=20` (Laravel `paginate()`)
+- Frontend: Use an `IntersectionObserver` (or equivalent) to detect when the user scrolls near the bottom of the list, then fetch the next page and **append** results (do not replace)
+- Show a subtle loading spinner at the bottom while fetching the next page
+- Show a "You've reached the end" message when no more pages are available
+
+**Implementation Order (Infinite Scroll):**
+1. [ ] **Reports Tab** — Gradebook, Report Cards, PINs
+2. [ ] **Exams Tab** — Exams list
+3. [ ] **Lesson Notes Tab** — Notes list
+4. [ ] **Lectures Tab** — Lectures list
+5. [ ] **Classes Tab** — Student/section lists
+6. [ ] **Staff Tab** — Staff list
+7. [ ] **Teachers Tab** — Teachers list
+8. [ ] **Students Tab** — Students list
 
 ---
 
