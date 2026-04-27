@@ -450,11 +450,26 @@ class ResultController extends Controller
         }
 
         $user = $request->user();
-        $schoolId = $user->school_id;
-        $gradeLevelId = $request->grade_level_id;
-        $termId = $request->term_id;
+        $generatedCount = $this->performPdfGeneration($user, $request->grade_level_id, $request->term_id);
 
-        // Automatically rank/create report card records before generating PDFs
+        if ($generatedCount === 0) {
+            return response()->json(['message' => 'No students found with grades in this class/term.'], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Successfully generated $generatedCount report cards."
+        ]);
+    }
+
+    /**
+     * Internal helper to generate PDFs for all report cards in a class/term.
+     */
+    private function performPdfGeneration($user, int $gradeLevelId, int $termId): int
+    {
+        $schoolId = $user->school_id;
+        
+        // Automatically rank/create report card records first
         $this->performOverallRanking($schoolId, $gradeLevelId, $termId);
 
         // Fetch report cards for this class/term
@@ -467,7 +482,7 @@ class ResultController extends Controller
             ->get();
 
         if ($reportCards->isEmpty()) {
-            return response()->json(['message' => 'No students found with grades in this class/term.'], 404);
+            return 0;
         }
 
         $term = AcademicTerm::find($termId);
@@ -477,8 +492,6 @@ class ResultController extends Controller
         $generatedCount = 0;
         foreach ($reportCards as $reportCard) {
             $student = $reportCard->student;
-            
-            // Get all subject grades for this student
             $grades = StudentGrade::where('student_id', $student->id)
                 ->where('term_id', $termId)
                 ->with('subject')
@@ -495,8 +508,6 @@ class ResultController extends Controller
             ];
 
             $pdf = Pdf::loadView('reports.report_card', $data);
-            
-            // Save PDF to storage
             $fileName = "report_card_{$student->id}_{$termId}.pdf";
             $filePath = "reports/{$schoolId}/{$termId}/{$fileName}";
             
@@ -510,10 +521,7 @@ class ResultController extends Controller
             $generatedCount++;
         }
 
-        return response()->json([
-            'status' => 'success',
-            'message' => "Successfully generated $generatedCount report cards."
-        ]);
+        return $generatedCount;
     }
 
     /**
@@ -563,6 +571,9 @@ class ResultController extends Controller
         $schoolId = $user->school_id;
         $gradeLevelId = $request->grade_level_id;
         $termId = $request->term_id;
+
+        // Ensure all report cards are generated before zipping
+        $this->performPdfGeneration($user, $gradeLevelId, $termId);
 
         $reportCards = ReportCard::where('school_id', $schoolId)
             ->where('term_id', $termId)
