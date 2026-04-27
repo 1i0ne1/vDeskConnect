@@ -83,7 +83,6 @@ export default function ReportsPage() {
   };
 
   const fetchGrades = async () => {
-    if (!filters.term_id) return;
     setLoading(true);
     try {
       const res = await resultApi.grades.getAll(filters);
@@ -108,7 +107,6 @@ export default function ReportsPage() {
   };
 
   const fetchReportCards = async () => {
-    if (!filters.term_id) return;
     setLoading(true);
     try {
       const res = await resultApi.reports.getAll(filters);
@@ -427,7 +425,7 @@ export default function ReportsPage() {
                     )) : (
                       <tr>
                         <td colSpan="7" className="px-4 py-20 text-center text-text-secondary">
-                          {searchQuery ? 'No grades match your search.' : filters.term_id ? 'No grades found. Select a specific grade or click "Compute".' : 'Select a Term from the filter to view the gradebook.'}
+                          {searchQuery ? 'No grades match your search.' : 'No grades found. Try adjusting your filters or click "Compute".'}
                         </td>
                       </tr>
                     )}
@@ -545,7 +543,7 @@ export default function ReportsPage() {
                       )) : (
                         <tr>
                           <td colSpan="5" className="px-4 py-20 text-center text-text-secondary">
-                            {searchQuery ? 'No report cards match your search.' : filters.term_id ? 'No report cards found. Click "Calculate Ranks" to process.' : 'Select a Term from the filter to view report cards.'}
+                            {searchQuery ? 'No report cards match your search.' : 'No report cards found. Try adjusting your filters or click "Calculate Ranks".'}
                           </td>
                         </tr>
                       )}
