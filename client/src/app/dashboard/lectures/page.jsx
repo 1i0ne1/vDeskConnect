@@ -578,7 +578,7 @@ export default function LecturesPage() {
                     </button>
                     <button
                       onClick={() => handleDelete(lecture.id)}
-                      className="p-2 text-error hover:text-error/80"
+                      className="p-2 text-text-secondary hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -586,33 +586,14 @@ export default function LecturesPage() {
                 </div>
               </div>
             ))}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-text-secondary">
-              Showing {(pagination.page - 1) * pagination.per_page + 1} to {Math.min(pagination.page * pagination.per_page, pagination.total)} of {pagination.total}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))}
-                disabled={pagination.page === 1}
-                className="p-2 border border-border rounded-lg disabled:opacity-50"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="text-sm">Page {pagination.page} of {totalPages}</span>
-              <button
-                onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))}
-                disabled={pagination.page >= totalPages}
-                className="p-2 border border-border rounded-lg disabled:opacity-50"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
             </div>
-          </div>
+            {loadingMore && (
+              <div className="py-4 flex items-center justify-center space-x-2 text-primary">
+                <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                <span className="text-sm font-medium">Loading more lectures...</span>
+              </div>
+            )}
+          </>
         )}
 
         {/* Create/Edit Modal */}

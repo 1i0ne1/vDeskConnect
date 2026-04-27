@@ -17,7 +17,7 @@ This document outlines the complete implementation roadmap for building the **Ac
 1. [x] **Reports Tab** (✅ *Completed*)
 2. [x] **Lesson Notes Tab** (✅ *Completed — Search bar + animated filter panel + infinite scroll*)
 3. [x] **Exams Tab** (✅ *Completed — Fixed: search sent to API for correct infinite scroll*)
-4. [ ] **Lectures Tab** (Internal search bar + animated filter panel)
+4. [x] **Lectures Tab** (✅ *Completed — Search bar + animated filter panel + infinite scroll*)
 5. [ ] **Classes Tab** (Internal search bar + animated filter panel)
 6. [ ] **Academic Tab** (Internal search bar + animated filter panel)
 7. [ ] **Staff Tab** (Internal search bar + animated filter panel)
@@ -42,7 +42,7 @@ This document outlines the complete implementation roadmap for building the **Ac
 1. [ ] **Reports Tab** — Gradebook, Report Cards, PINs
 2. [x] **Exams Tab** — Exams list (✅ *Completed — search/filter sent to API*)
 3. [x] **Lesson Notes Tab** — Notes list (✅ *Completed — search/filter sent to API*)
-4. [ ] **Lectures Tab** — Lectures list
+4. [x] **Lectures Tab** — Lectures list (✅ *Completed — search/filter sent to API*)
 5. [ ] **Classes Tab** — Student/section lists
 6. [ ] **Staff Tab** — Staff list
 7. [ ] **Teachers Tab** — Teachers list
