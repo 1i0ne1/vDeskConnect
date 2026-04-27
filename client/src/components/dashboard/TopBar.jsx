@@ -1,9 +1,36 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Bell, Search, User, Settings, Menu } from 'lucide-react';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 
 export default function TopBar({ title, subtitle, user, onMobileMenuToggle }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Sync state with URL
+  useEffect(() => {
+    setSearchTerm(searchParams?.get('q') || '');
+  }, [searchParams]);
+
+  const handleSearchChange = (e) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+    
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    if (term.trim()) {
+      params.set('q', term.trim());
+    } else {
+      params.delete('q');
+    }
+    
+    // Use replace to avoid building up a massive browser history
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
   return (
     <header className="sticky top-0 z-30 glass-header px-3 md:px-6 py-3 md:py-4 overflow-x-hidden">
       <div className="flex items-center justify-between min-w-0">
@@ -25,11 +52,13 @@ export default function TopBar({ title, subtitle, user, onMobileMenuToggle }) {
         {/* Right: Actions */}
         <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
           {/* Search - Glass Input */}
-          <div className="hidden lg:flex items-center gap-2 glass-input rounded-btn px-3 py-2 w-48 xl:w-64">
+          <div className="hidden lg:flex items-center gap-2 glass-input rounded-btn px-3 py-2 w-48 xl:w-64 focus-within:ring-1 focus-within:ring-primary/50 transition-all">
             <Search size={16} className="text-text-muted flex-shrink-0" />
             <input
               type="text"
               placeholder="Search..."
+              value={searchTerm}
+              onChange={handleSearchChange}
               className="bg-transparent text-sm text-text-primary placeholder-text-muted outline-none flex-1 min-w-0"
             />
           </div>
