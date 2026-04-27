@@ -205,7 +205,11 @@ class VDeskConnectSeeder extends Seeder
         //  6. SCHEME OF WORK & LESSON NOTES (Markdown Rich)
         // ─────────────────────────────────────────────
         $topics = ['Algebra Basics', 'Equations', 'Probability', 'Geometry', 'Calculus Intro'];
-        foreach ($topics as $i => $topic) {
+        // Add more topics for infinite scroll testing
+        $moreTopics = ['Fractions', 'Decimals', 'Percentages', 'Ratios', 'Proportions', 'Word Problems', 'Data Interpretation', 'Statistics', 'Measurement', 'Triangles', 'Circles', 'Area and Perimeter', 'Volume', 'Angles', 'Lines and Angles', 'Coordinates', 'Sets', 'Indices', 'Logarithms', 'Sequences', 'Matrices'];
+        $allTopics = array_merge($topics, $moreTopics);
+        
+        foreach ($allTopics as $i => $topic) {
             $schemeId = DB::table('schemes_of_work')->insertGetId([
                 'school_id' => $demoSchoolId,
                 'created_by' => $teacherIds[0],
