@@ -141,6 +141,18 @@ export default function ReportsPage() {
     }
   };
 
+  const handleDownloadZip = () => {
+    if (!filters.grade_level_id || !filters.term_id) {
+      toast.error('Please select Grade Level and Term');
+      return;
+    }
+    const params = new URLSearchParams();
+    params.append('grade_level_id', filters.grade_level_id);
+    params.append('term_id', filters.term_id);
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/results/report-cards/download-zip?${params.toString()}`;
+    window.open(url, '_blank');
+  };
+
 
   const handleGeneratePins = async () => {
     const count = prompt('How many PINs would you like to generate? (Max 500)', '50');
@@ -430,6 +442,15 @@ export default function ReportsPage() {
                     <p className="text-text-secondary text-sm">Generate PDF documents for the selected class.</p>
                   </div>
                   <div className="flex space-x-3">
+                    {reportCards.length > 0 && reportCards.some(rc => rc.pdf_url) && (
+                      <button
+                        onClick={handleDownloadZip}
+                        className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-text-main rounded-lg text-sm font-bold transition-all hover:scale-105 active:scale-95"
+                      >
+                        <Download size={16} />
+                        <span>Download All (ZIP)</span>
+                      </button>
+                    )}
                     <button
                       onClick={handleGenerateReports}
                       disabled={loading}
