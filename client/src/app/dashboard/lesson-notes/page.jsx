@@ -336,6 +336,25 @@ export default function LessonNotesPage() {
             <h1 className="text-xl md:text-2xl font-bold text-text-primary">Lesson Notes</h1>
             <p className="text-sm text-text-secondary">Plan your lessons based on schemes of work</p>
           </div>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
+              <input
+                type="text"
+                placeholder="Search lesson notes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+              />
+            </div>
+            
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className={`p-2 rounded-lg transition-all ${showFilters ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10'}`}
+            >
+              <Filter size={20} />
+            </button>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={() => { setShowAIModal(true); setAiForm({ scheme_id: '', aspects: [], target_audience_size: 30 }); }}
@@ -354,54 +373,74 @@ export default function LessonNotesPage() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-card dark:bg-gray-800 rounded-card border border-border p-4 md:p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Filter className="w-4 h-4 text-text-secondary" />
-            <h2 className="text-sm font-semibold text-text-primary">Filters</h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <select
-              value={filters.grade_level_id}
-              onChange={e => handleFilterChange('grade_level_id', e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm text-text-primary"
+        {/* Filters Panel */}
+        <AnimatePresence onExitComplete={() => {
+          setFilters({ grade_level_id: '', subject_id: '', term_id: '', status: '' });
+          setSearchQuery('');
+        }}>
+          {showFilters && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
             >
-              <option value="">All Grades</option>
-              {gradeLevels.map(g => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
-            <select
-              value={filters.subject_id}
-              onChange={e => handleFilterChange('subject_id', e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm text-text-primary"
-            >
-              <option value="">All Subjects</option>
-              {subjects.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-            <select
-              value={filters.term_id}
-              onChange={e => handleFilterChange('term_id', e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm text-text-primary"
-            >
-              <option value="">All Terms</option>
-              {terms.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
-            <select
-              value={filters.status}
-              onChange={e => handleFilterChange('status', e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm text-text-primary"
-            >
-              <option value="">All Status</option>
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
-          </div>
-        </div>
+              <div className="bg-bg-card p-4 rounded-card border border-white/5 shadow-soft grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">Grade Level</label>
+                  <select
+                    value={filters.grade_level_id}
+                    onChange={e => handleFilterChange('grade_level_id', e.target.value)}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                  >
+                    <option value="">All Grades</option>
+                    {gradeLevels.map(g => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">Subject</label>
+                  <select
+                    value={filters.subject_id}
+                    onChange={e => handleFilterChange('subject_id', e.target.value)}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                  >
+                    <option value="">All Subjects</option>
+                    {subjects.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">Term</label>
+                  <select
+                    value={filters.term_id}
+                    onChange={e => handleFilterChange('term_id', e.target.value)}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                  >
+                    <option value="">All Terms</option>
+                    {terms.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">Status</label>
+                  <select
+                    value={filters.status}
+                    onChange={e => handleFilterChange('status', e.target.value)}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                  >
+                    <option value="">All Status</option>
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                  </select>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Lesson Notes List */}
         {loading ? (
