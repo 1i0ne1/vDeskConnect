@@ -295,91 +295,93 @@ export default function ExamsPage() {
                 <p className="text-text-secondary">Loading examinations...</p>
               </div>
             ) : exams.length > 0 ? (
-              exams.map((exam, i) => (
-                <motion.div
-                  key={exam.id}
-                  ref={i === exams.length - 1 ? lastElementRef : null}
-                  layout
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="group bg-bg-card p-5 rounded-card border border-white/5 shadow-soft hover:border-primary/30 transition-all cursor-pointer"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4" onClick={() => handleEdit(exam)}>
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                        exam.is_ca_test ? 'bg-yellow-500/10 text-yellow-500' : 'bg-blue-500/10 text-blue-500'
-                      }`}>
-                        {exam.is_ca_test ? <Award size={24} /> : <ClipboardList size={24} />}
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="text-text-main font-bold text-lg">{exam.title}</h3>
-                          {getStatusBadge(exam)}
+              <>
+                {exams.map((exam, i) => (
+                  <motion.div
+                    key={exam.id}
+                    ref={i === exams.length - 1 ? lastElementRef : null}
+                    layout
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="group bg-bg-card p-5 rounded-card border border-white/5 shadow-soft hover:border-primary/30 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4" onClick={() => handleEdit(exam)}>
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                          exam.is_ca_test ? 'bg-yellow-500/10 text-yellow-500' : 'bg-blue-500/10 text-blue-500'
+                        }`}>
+                          {exam.is_ca_test ? <Award size={24} /> : <ClipboardList size={24} />}
                         </div>
-                        <div className="flex items-center space-x-4 text-sm text-text-secondary">
-                          <span className="flex items-center space-x-1">
-                            <Users size={14} />
-                            <span>{exam.grade_level?.name}</span>
-                          </span>
-                          <span className="flex items-center space-x-1">
-                            <CheckCircle size={14} />
-                            <span>{exam.subject?.name}</span>
-                          </span>
-                          <span className="flex items-center space-x-1">
-                            <Clock size={14} />
-                            <span>{exam.duration_minutes} mins</span>
-                          </span>
+                        <div>
+                          <div className="flex items-center space-x-2 mb-1">
+                            <h3 className="text-text-main font-bold text-lg">{exam.title}</h3>
+                            {getStatusBadge(exam)}
+                          </div>
+                          <div className="flex items-center space-x-4 text-sm text-text-secondary">
+                            <span className="flex items-center space-x-1">
+                              <Users size={14} />
+                              <span>{exam.grade_level?.name}</span>
+                            </span>
+                            <span className="flex items-center space-x-1">
+                              <CheckCircle size={14} />
+                              <span>{exam.subject?.name}</span>
+                            </span>
+                            <span className="flex items-center space-x-1">
+                              <Clock size={14} />
+                              <span>{exam.duration_minutes} mins</span>
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right hidden md:block">
-                        <p className="text-text-main font-medium">{exam.start_at ? format(new Date(exam.start_at), 'MMM d, h:mm a') : 'Not scheduled'}</p>
-                        <p className="text-text-secondary text-xs">{exam.term?.name}</p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button 
-                          className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all" 
-                          title="View Details"
-                          onClick={() => handleEdit(exam)}
-                        >
-                          <Eye size={18} />
-                        </button>
-                        <button 
-                          className="p-2 text-text-secondary hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all" 
-                          title="Edit Exam"
-                          onClick={() => handleEdit(exam)}
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button 
-                          className="p-2 text-text-secondary hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all" 
-                          title="Delete Exam"
-                          onClick={() => handleDelete(exam.id)}
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                        <button 
-                          className="p-2 text-text-secondary hover:text-green-400 hover:bg-green-400/10 rounded-lg transition-all" 
-                          title="View Submissions"
-                          onClick={() => { setSelectedExamForGrading(exam); setIsGradingOpen(true); }}
-                        >
-                          <ChevronRight size={20} />
-                        </button>
+                      <div className="flex items-center space-x-4">
+                        <div className="text-right hidden md:block">
+                          <p className="text-text-main font-medium">{exam.start_at ? format(new Date(exam.start_at), 'MMM d, h:mm a') : 'Not scheduled'}</p>
+                          <p className="text-text-secondary text-xs">{exam.term?.name}</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button 
+                            className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all" 
+                            title="View Details"
+                            onClick={() => handleEdit(exam)}
+                          >
+                            <Eye size={18} />
+                          </button>
+                          <button 
+                            className="p-2 text-text-secondary hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all" 
+                            title="Edit Exam"
+                            onClick={() => handleEdit(exam)}
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button 
+                            className="p-2 text-text-secondary hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all" 
+                            title="Delete Exam"
+                            onClick={() => handleDelete(exam.id)}
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                          <button 
+                            className="p-2 text-text-secondary hover:text-green-400 hover:bg-green-400/10 rounded-lg transition-all" 
+                            title="View Submissions"
+                            onClick={() => { setSelectedExamForGrading(exam); setIsGradingOpen(true); }}
+                          >
+                            <ChevronRight size={20} />
+                          </button>
+                        </div>
                       </div>
                     </div>
+                  </motion.div>
+                ))}
+                {loadingMore && (
+                  <div className="col-span-full py-4 flex items-center justify-center space-x-2 text-primary">
+                    <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    <span className="text-sm font-medium">Loading more examinations...</span>
                   </div>
-                </motion.div>
-              ))
-            )}
-            {loadingMore ? (
-              <div className="col-span-full py-4 flex items-center justify-center space-x-2 text-primary">
-                <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                <span className="text-sm font-medium">Loading more examinations...</span>
-              </div>
+                )}
+              </>
             ) : (
               <div className="col-span-full py-20 text-center bg-bg-card rounded-card border border-white/5 border-dashed">
                 <ClipboardList className="mx-auto text-text-secondary mb-4 opacity-20" size={64} />
