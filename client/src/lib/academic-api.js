@@ -129,6 +129,8 @@ export const academicApi = {
   lessonNotes: {
     getAll: (filters = {}) => {
       const params = new URLSearchParams();
+      if (filters.page) params.append('page', filters.page);
+      if (filters.search) params.append('search', filters.search);
       if (filters.teacher_id) params.append('teacher_id', filters.teacher_id);
       if (filters.grade_level_id) params.append('grade_level_id', filters.grade_level_id);
       if (filters.subject_id) params.append('subject_id', filters.subject_id);

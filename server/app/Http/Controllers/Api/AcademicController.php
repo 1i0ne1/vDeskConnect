@@ -1937,6 +1937,23 @@ class AcademicController extends Controller
         $query = LessonNote::forSchool($user->school_id)
             ->with(['scheme', 'teacher', 'gradeLevel', 'subject', 'term']);
 
+        // Apply search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('topic', 'like', "%{$search}%")
+                  ->orWhereHas('subject', function($sq) use ($search) {
+                      $sq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('gradeLevel', function($sq) use ($search) {
+                      $sq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('term', function($sq) use ($search) {
+                      $sq->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
         // Apply filters
         if ($request->filled('teacher_id')) {
             $query->forTeacher($request->teacher_id);
@@ -1958,9 +1975,20 @@ class AcademicController extends Controller
             }
         }
 
-        $notes = $query->ordered()->get();
+        // Pagination
+        $perPage = $request->integer('per_page', 20);
+        $page = $request->integer('page', 1);
+        $paginated = $query->ordered()->paginate($perPage, ['*'], 'page', $page);
 
-        return response()->json(['lesson_notes' => $notes]);
+        return response()->json([
+            'lesson_notes' => $paginated->items(),
+            'meta' => [
+                'current_page' => $paginated->currentPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+                'has_more' => $paginated->hasMorePages(),
+            ]
+        ]);
     }
 
     /**
