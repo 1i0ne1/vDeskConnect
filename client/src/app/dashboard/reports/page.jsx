@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { academicApi } from '@/lib/academic-api';
 import { resultApi } from '@/lib/result-api';
+import { api } from '@/lib/api';
 import { useToast } from '@/contexts/ToastProvider';
 
 export default function ReportsPage() {
