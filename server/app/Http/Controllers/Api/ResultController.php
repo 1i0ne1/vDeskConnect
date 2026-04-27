@@ -33,6 +33,11 @@ class ResultController extends Controller
         $query = StudentGrade::where('school_id', $schoolId)
             ->with(['student.profile', 'subject', 'gradeLevel', 'term']);
 
+        // If student, only show their own grades
+        if ($user->role === 'student') {
+            $query->where('student_id', $user->id);
+        }
+
         if ($request->filled('grade_level_id')) {
             $query->where('grade_level_id', $request->grade_level_id);
         }
