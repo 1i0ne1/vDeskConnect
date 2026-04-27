@@ -25,6 +25,7 @@ class ResultController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        \Log::info('ResultController@index called', $request->all());
         $user = $request->user();
         $schoolId = $user->school_id;
 
