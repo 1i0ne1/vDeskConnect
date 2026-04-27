@@ -436,6 +436,15 @@ export default function ReportsPage() {
                           </div>
                         </td>
                       </tr>
+                    {loadingMore && (
+                      <tr>
+                        <td colSpan="4" className="px-4 py-4 text-center">
+                          <div className="flex items-center justify-center space-x-2 text-primary">
+                            <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                            <span className="text-sm font-medium">Loading more results...</span>
+                          </div>
+                        </td>
+                      </tr>
                     )}
                   </tbody>
                 </table>
