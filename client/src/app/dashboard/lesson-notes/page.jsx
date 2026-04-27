@@ -66,23 +66,30 @@ export default function LessonNotesPage() {
   const [aiForm, setAiForm] = useState({ scheme_id: '', aspects: [], target_audience_size: 30 });
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const fetchInitialData = useCallback(async () => {
     try {
-      const [notesRes, gradesRes, subjectsRes, termsRes, schemesRes] = await Promise.all([
-        academicApi.lessonNotes.getAll(filters),
+      const [gradesRes, subjectsRes, termsRes, schemesRes] = await Promise.all([
         academicApi.gradeLevels.getAll().catch(() => ({ grade_levels: [] })),
         api.get('/academic/subjects').catch(() => ({ subjects: [] })),
         api.get('/academic/terms').catch(() => ({ terms: [] })),
         academicApi.schemes.getAll().catch(() => ({ schemes: [] })),
       ]);
-      setLessonNotes(notesRes.lesson_notes || []);
       setGradeLevels(gradesRes.grade_levels || []);
       setSubjects(subjectsRes.subjects || []);
       setTerms(termsRes.terms || []);
       setSchemes(schemesRes.schemes || []);
     } catch (err) {
-      toast.error('Failed to load data');
+      toast.error('Failed to load initial data');
+    }
+  }, [toast]);
+
+  const fetchNotes = useCallback(async () => {
+    setLoading(true);
+    try {
+      const notesRes = await academicApi.lessonNotes.getAll(filters);
+      setLessonNotes(notesRes.lesson_notes || []);
+    } catch (err) {
+      toast.error('Failed to load lesson notes');
     } finally {
       setLoading(false);
     }
@@ -91,8 +98,14 @@ export default function LessonNotesPage() {
   useEffect(() => {
     const token = api.getToken();
     if (!token) { router.push('/login'); return; }
-    fetchData();
-  }, [fetchData, router]);
+    fetchInitialData();
+  }, [fetchInitialData, router]);
+
+  useEffect(() => {
+    const token = api.getToken();
+    if (!token) return;
+    fetchNotes();
+  }, [fetchNotes]);
 
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
@@ -121,7 +134,7 @@ export default function LessonNotesPage() {
       setShowModal(false);
       setEditingNote(null);
       resetForm();
-      fetchData();
+      fetchNotes();
     } catch (err) {
       toast.error(err.data?.message || 'Failed to save lesson note');
     } finally {
@@ -149,7 +162,7 @@ export default function LessonNotesPage() {
     try {
       await academicApi.lessonNotes.delete(id);
       toast.success('Lesson note deleted');
-      fetchData();
+      fetchNotes();
     } catch (err) {
       toast.error('Failed to delete lesson note');
     }
@@ -159,7 +172,7 @@ export default function LessonNotesPage() {
     try {
       await academicApi.lessonNotes.publish(id);
       toast.success('Lesson note published');
-      fetchData();
+      fetchNotes();
     } catch (err) {
       toast.error('Failed to publish lesson note');
     }
