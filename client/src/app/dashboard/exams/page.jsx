@@ -51,7 +51,7 @@ export default function ExamsPage() {
     setPage(1);
     setHasMore(true);
     fetchExams(1);
-  }, [filters, activeTab]);
+  }, [filters, activeTab, searchQuery]);
 
   useEffect(() => {
     if (page > 1) fetchExams(page, true);
@@ -87,7 +87,11 @@ export default function ExamsPage() {
     if (isLoadMore) setLoadingMore(true);
     else setLoading(true);
     try {
-      const params = { ...filters, page: pageNum };
+      const params = { 
+        ...filters, 
+        page: pageNum,
+        search: searchQuery 
+      };
       if (activeTab === 'ca') params.is_ca_test = true;
       if (activeTab === 'final') params.is_ca_test = false;
       
@@ -103,10 +107,7 @@ export default function ExamsPage() {
     }
   };
 
-  const filteredExams = exams.filter(exam => 
-    exam.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    exam.subject?.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const exams = exams;
 
   const getStatusBadge = (exam) => {
     if (!exam.published) return <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-500/10 text-gray-400 border border-gray-500/20">Draft</span>;
