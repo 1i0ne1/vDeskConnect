@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Search, Filter, Calendar, ClipboardList, 
@@ -20,7 +21,22 @@ export default function ExamsPage() {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // all, ca, final
-  const [searchQuery, setSearchQuery] = useState('');
+  
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const searchQuery = searchParams?.get('q') || '';
+
+  const handleSearchChange = (e) => {
+    const term = e.target.value;
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    if (term) {
+      params.set('q', term);
+    } else {
+      params.delete('q');
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [isGradingOpen, setIsGradingOpen] = useState(false);
   const [editingExam, setEditingExam] = useState(null);
@@ -168,7 +184,7 @@ export default function ExamsPage() {
                 type="text"
                 placeholder="Search exams..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchChange}
                 className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
               />
             </div>
@@ -299,7 +315,12 @@ export default function ExamsPage() {
                     Create Exam
                   </button>
                   <button 
-                    onClick={() => { setFilters({ grade_level_id: '', subject_id: '', term_id: '' }); setSearchQuery(''); }}
+                    onClick={() => { 
+                      setFilters({ grade_level_id: '', subject_id: '', term_id: '' }); 
+                      const params = new URLSearchParams(searchParams?.toString() || '');
+                      params.delete('q');
+                      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+                    }}
                     className="px-6 py-2 bg-white/5 text-text-main rounded-lg font-bold border border-white/10 hover:bg-white/10 transition-all"
                   >
                     Clear Filters
