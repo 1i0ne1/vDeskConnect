@@ -15,7 +15,7 @@ This document outlines the complete implementation roadmap for building the **Ac
 
 **Implementation Order (Search/Filter):**
 1. [x] **Reports Tab** (✅ *Completed*)
-2. [ ] **Lesson Notes Tab** (Internal search bar + animated filter panel)
+2. [x] **Lesson Notes Tab** (✅ *Completed — Search bar + animated filter panel + infinite scroll*)
 3. [x] **Exams Tab** (✅ *Completed — Fixed: search sent to API for correct infinite scroll*)
 4. [ ] **Lectures Tab** (Internal search bar + animated filter panel)
 5. [ ] **Classes Tab** (Internal search bar + animated filter panel)
@@ -40,8 +40,8 @@ This document outlines the complete implementation roadmap for building the **Ac
 
 **Implementation Order (Infinite Scroll):**
 1. [ ] **Reports Tab** — Gradebook, Report Cards, PINs
-2. [x] **Exams Tab** — Exams list (✅ *Completed — Fixed: search/filter sent to API*)
-3. [ ] **Lesson Notes Tab** — Notes list
+2. [x] **Exams Tab** — Exams list (✅ *Completed — search/filter sent to API*)
+3. [x] **Lesson Notes Tab** — Notes list (✅ *Completed — search/filter sent to API*)
 4. [ ] **Lectures Tab** — Lectures list
 5. [ ] **Classes Tab** — Student/section lists
 6. [ ] **Staff Tab** — Staff list
