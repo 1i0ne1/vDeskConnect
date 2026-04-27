@@ -10,9 +10,10 @@ import {
 import { api } from '@/lib/api';
 import { academicApi } from '@/lib/academic-api';
 import { resultApi } from '@/lib/result-api';
-import toast from 'react-hot-toast';
+import { useToast } from '@/contexts/ToastProvider';
 
 export default function StudentResultsPage() {
+  const toast = useToast();
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -74,7 +75,7 @@ export default function StudentResultsPage() {
       toast.success('Results unlocked successfully!');
     } catch (error) {
       console.error('Check result error:', error);
-      toast.error(error.response?.data?.message || 'Invalid PIN or error unlocking results');
+      toast.error(error.data?.message || error.message || 'Invalid PIN or error unlocking results');
     } finally {
       setChecking(false);
     }

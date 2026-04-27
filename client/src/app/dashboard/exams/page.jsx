@@ -14,9 +14,10 @@ import GradingInterface from '@/components/dashboard/exams/GradingInterface';
 import { examsApi } from '@/lib/exams-api';
 import { academicApi } from '@/lib/academic-api';
 import { format } from 'date-fns';
-import toast from 'react-hot-toast';
+import { useToast } from '@/contexts/ToastProvider';
 
 export default function ExamsPage() {
+  const toast = useToast();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // all, ca, final
