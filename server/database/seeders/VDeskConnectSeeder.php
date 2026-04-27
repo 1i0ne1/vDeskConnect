@@ -250,24 +250,55 @@ class VDeskConnectSeeder extends Seeder
         }
 
         // ─────────────────────────────────────────────
-        //  7. LECTURES (Markdown Rich)
+        //  7. LECTURES (Markdown Rich + Multiple for infinite scroll testing)
         // ─────────────────────────────────────────────
-        DB::table('lectures')->insert([
-            'school_id' => $demoSchoolId,
-            'teacher_id' => $teacherIds[0],
-            'grade_level_id' => $gradeIds[0],
-            'subject_id' => $subjectIds[0],
-            'title' => 'Quantum Mathematics Basics',
-            'description' => 'Introduction to quantum math concepts using Markdown formatting.',
-            'scheduled_at' => $now->addDays(2),
-            'duration_minutes' => 60,
-            'status' => 'scheduled',
-            'type' => 'async',
-            'content' => "## Quantum Math Introduction\n\nQuantum math is fascinating. Here's a brief breakdown:\n\n### Core Formulas\n$ E = mc^2 $\n\n```javascript\nconsole.log('Welcome to Quantum Math');\n```\n\n---\nCheck the resources tab for more.",
-            'is_published' => true,
-            'created_by' => $teacherIds[0],
-            'created_at' => $now,
-        ]);
+        $lectureTitles = [
+            'Quantum Mathematics Basics',
+            'Introduction to Algebra',
+            'Solving Linear Equations',
+            'Quadratic Equations Deep Dive',
+            'Geometry: Lines and Angles',
+            'Introduction to Probability',
+            'Statistics and Data Analysis',
+            'Trigonometry Fundamentals',
+            'Calculus: Limits and Derivatives',
+            'Mathematical Induction',
+            'Number Theory Basics',
+            'Set Theory Introduction',
+            'Functions and Relations',
+            'Sequences and Series',
+            'Complex Numbers',
+            'Vectors in Mathematics',
+            'Matrices and Determinants',
+            'Differential Equations',
+            'Integration Techniques',
+            'Coordinate Geometry',
+        ];
+        
+        $lectureStatuses = ['scheduled', 'in_progress', 'completed'];
+        $lectureTypes = ['sync', 'async', 'hybrid'];
+        
+        foreach ($lectureTitles as $li => $lectureTitle) {
+            $lectureStatus = $lectureStatuses[array_rand($lectureStatuses)];
+            $lectureType = $lectureTypes[array_rand($lectureTypes)];
+            
+            DB::table('lectures')->insert([
+                'school_id' => $demoSchoolId,
+                'teacher_id' => $teacherIds[0],
+                'grade_level_id' => $gradeIds[array_rand($gradeIds)],
+                'subject_id' => $subjectIds[array_rand($subjectIds)],
+                'title' => $lectureTitle,
+                'description' => "A comprehensive lecture on $lectureTitle with detailed explanations and examples.",
+                'scheduled_at' => $now->copy()->addDays(rand(1, 30)),
+                'duration_minutes' => rand(30, 120),
+                'status' => $lectureStatus,
+                'type' => $lectureType,
+                'content' => "## $lectureTitle\n\nThis lecture covers the fundamental concepts of $lectureTitle.\n\n### Key Topics\n- Introduction to $lectureTitle\n- Core principles\n- Practical applications\n- Problem-solving techniques",
+                'is_published' => true,
+                'created_by' => $teacherIds[0],
+                'created_at' => $now,
+            ]);
+        }
 
         // ─────────────────────────────────────────────
         //  8. CA WEEKS & STUDENT GRADES

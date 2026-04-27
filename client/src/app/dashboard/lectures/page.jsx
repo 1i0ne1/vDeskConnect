@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Video, Plus, Trash2, Edit2, X, Play, PlayCircle, CheckCircle, Calendar,
   Clock, BookOpen, Users, Link as LinkIcon, FileText, Search,
@@ -48,10 +49,16 @@ export default function LecturesPage() {
   const [loading, setLoading] = useState(true);
   const [lectures, setLectures] = useState([]);
   const [filters, setFilters] = useState({ search: '', status: '', type: '', grade_level_id: '', subject_id: '', term_id: '' });
+  const [showFilters, setShowFilters] = useState(false);
   const [gradeLevels, setGradeLevels] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [teachers, setTeachers] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, per_page: 20, total: 0 });
+  
+  // --- Infinite Scroll States ---
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const observer = useRef();
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
