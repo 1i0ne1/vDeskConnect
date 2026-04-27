@@ -123,25 +123,6 @@ export default function ReportsPage() {
   };
 
 
-  const handleGenerateReports = async () => {
-    if (!filters.grade_level_id || !filters.term_id) {
-      toast.error('Please select Grade Level and Term');
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await resultApi.reports.generate(filters);
-      toast.success(res.message || 'Report cards generated successfully');
-      fetchReportCards();
-    } catch (error) {
-      const errData = error?.data;
-      const msg = errData?.message || error?.message || 'Failed to generate report cards';
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDownloadZip = async () => {
     if (!filters.grade_level_id || !filters.term_id) {
       toast.error('Please select Grade Level and Term');
@@ -171,7 +152,8 @@ export default function ReportsPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      toast.success('Download started');
+      toast.success('Reports generated and download started!');
+      fetchReportCards();
     } catch (error) {
       toast.error('Failed to download ZIP');
     } finally {
@@ -276,18 +258,6 @@ export default function ReportsPage() {
             </button>
 
             {/* Action Buttons */}
-            {activeTab === 'report_cards' && (
-              <div className="flex space-x-2">
-                <button
-                  onClick={handleGenerateReports}
-                  disabled={loading}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary to-primary-light text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
-                >
-                  <FileText size={16} />
-                  <span>Generate</span>
-                </button>
-              </div>
-            )}
             {activeTab === 'pins' && (
               <button
                 onClick={handleGeneratePins}
@@ -468,22 +438,17 @@ export default function ReportsPage() {
                     <p className="text-text-secondary text-sm">Generate PDF documents for the selected class.</p>
                   </div>
                   <div className="flex space-x-3">
-                    {reportCards.length > 0 && reportCards.some(rc => rc.pdf_url) && (
-                      <button
-                        onClick={handleDownloadZip}
-                        className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-text-main rounded-lg text-sm font-bold transition-all hover:scale-105 active:scale-95"
-                      >
-                        <Download size={16} />
-                        <span>Download All (ZIP)</span>
-                      </button>
-                    )}
                     <button
-                      onClick={handleGenerateReports}
+                      onClick={handleDownloadZip}
                       disabled={loading}
                       className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary to-primary-light text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
                     >
-                      <FileText size={16} />
-                      <span>{reportCards.length > 0 ? 'Regenerate All' : 'Generate PDFs'}</span>
+                      {loading ? (
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <Download size={16} />
+                      )}
+                      <span>Generate & Download ZIP</span>
                     </button>
                   </div>
                 </div>
@@ -539,7 +504,7 @@ export default function ReportsPage() {
                       )) : (
                         <tr>
                           <td colSpan="5" className="px-4 py-20 text-center text-text-secondary">
-                            {searchQuery ? 'No report cards match your search.' : 'No report cards found for the selected filters. Click "Generate PDFs" to create them if grades are available.'}
+                            {searchQuery ? 'No report cards match your search.' : 'No report cards found for the selected filters. Click "Generate & Download ZIP" to create them.'}
                           </td>
                         </tr>
                       )}
