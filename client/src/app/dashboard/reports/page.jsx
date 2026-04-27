@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { 
@@ -17,6 +17,7 @@ export default function ReportsPage() {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState('gradebook');
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [grades, setGrades] = useState([]);
   const [reportCards, setReportCards] = useState([]);
   const [pins, setPins] = useState([]);
@@ -30,6 +31,11 @@ export default function ReportsPage() {
     subject_id: '',
     term_id: '',
   });
+
+  // --- Infinite Scroll States ---
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const observer = useRef();
 
   // --- Filtered lists (client-side search) ---
   const filteredGrades = grades.filter(g => {
