@@ -101,10 +101,12 @@ class ResultController extends Controller
         if ($subjectId) {
             $subjectsQuery->where('id', $subjectId);
         } else {
-            // Find subjects mapped to this grade level
-            $subjectsQuery->whereHas('gradeLevels', function($q) use ($gradeLevelId) {
-                $q->where('grade_level_id', $gradeLevelId);
-            });
+            // Find subjects mapped to this grade level via the pivot table
+            $mappedSubjectIds = DB::table('grade_level_subjects')
+                ->where('grade_level_id', $gradeLevelId)
+                ->where('school_id', $schoolId)
+                ->pluck('subject_id');
+            $subjectsQuery->whereIn('id', $mappedSubjectIds);
         }
         $subjects = $subjectsQuery->get();
 
