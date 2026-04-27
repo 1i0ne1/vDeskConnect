@@ -132,7 +132,9 @@ export default function ReportsPage() {
       toast.success('Overall positions calculated');
       fetchReportCards();
     } catch (error) {
-      toast.error('Failed to calculate positions');
+      const errData = error?.data;
+      const msg = errData?.message || error?.message || 'Failed to calculate positions';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
