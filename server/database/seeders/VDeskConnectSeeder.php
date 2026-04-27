@@ -330,40 +330,98 @@ class VDeskConnectSeeder extends Seeder
         // ─────────────────────────────────────────────
         //  9. EXAMS & SUBMISSIONS
         // ─────────────────────────────────────────────
-        $examId = DB::table('exams')->insertGetId([
-            'school_id' => $demoSchoolId,
-            'title' => 'Mid-Term Mathematics Exam',
-            'subject_id' => $subjectIds[0],
-            'grade_level_id' => $gradeIds[0],
-            'term_id' => $termId,
-            'duration_minutes' => 60,
-            'type' => 'MCQ',
-            'published' => true,
-            'total_marks' => 60,
-            'created_at' => $now,
-        ]);
+        $examsData = [
+            [
+                'title' => 'Mid-Term Mathematics Exam',
+                'subject_id' => $subjectIds[0], // Math
+                'type' => 'MCQ',
+                'duration_minutes' => 60,
+                'published' => true,
+                'total_marks' => 60,
+                'is_ca_test' => false,
+            ],
+            [
+                'title' => 'Biology CA Test 1',
+                'subject_id' => $subjectIds[2], // Biology
+                'type' => 'MCQ',
+                'duration_minutes' => 30,
+                'published' => true,
+                'total_marks' => 20,
+                'is_ca_test' => true,
+            ],
+            [
+                'title' => 'Physics Final Assessment',
+                'subject_id' => $subjectIds[3], // Physics
+                'type' => 'Theory',
+                'duration_minutes' => 120,
+                'published' => true,
+                'total_marks' => 100,
+                'is_ca_test' => false,
+            ],
+            [
+                'title' => 'Chemistry Practical (Draft)',
+                'subject_id' => $subjectIds[4], // Chemistry
+                'type' => 'Mixed',
+                'duration_minutes' => 90,
+                'published' => false,
+                'total_marks' => 50,
+                'is_ca_test' => false,
+            ],
+            [
+                'title' => 'English Language CA Test 2',
+                'subject_id' => $subjectIds[1], // English
+                'type' => 'MCQ',
+                'duration_minutes' => 45,
+                'published' => true,
+                'total_marks' => 30,
+                'is_ca_test' => true,
+            ]
+        ];
 
-        for ($q = 1; $q <= 5; $q++) {
-            DB::table('exam_questions')->insert([
-                'exam_id' => $examId,
-                'question_text' => "What is 2 + $q?",
-                'type' => 'mcq',
-                'options' => json_encode(['A' => $q+1, 'B' => $q+2, 'C' => $q+3, 'D' => $q+4]),
-                'correct_answer' => 'B',
-                'marks' => 12,
+        $examIds = [];
+        foreach ($examsData as $exam) {
+            $examIds[] = DB::table('exams')->insertGetId([
+                'school_id' => $demoSchoolId,
+                'title' => $exam['title'],
+                'subject_id' => $exam['subject_id'],
+                'grade_level_id' => $gradeIds[0],
+                'term_id' => $termId,
+                'duration_minutes' => $exam['duration_minutes'],
+                'type' => $exam['type'],
+                'published' => $exam['published'],
+                'total_marks' => $exam['total_marks'],
+                'is_ca_test' => $exam['is_ca_test'],
+                'created_at' => $now,
             ]);
         }
 
-        foreach ($studentIds as $sid) {
-            $subId = DB::table('exam_submissions')->insertGetId([
-                'exam_id' => $examId,
-                'student_id' => $sid,
-                'auto_score' => rand(30, 60),
-                'manual_score' => 0,
-                'status' => 'graded',
-                'submitted_at' => $now,
-                'created_at' => $now,
-            ]);
+        foreach ($examIds as $eId) {
+            for ($q = 1; $q <= 5; $q++) {
+                DB::table('exam_questions')->insert([
+                    'exam_id' => $eId,
+                    'question_text' => "Sample Question $q for exam ID $eId?",
+                    'type' => 'mcq',
+                    'options' => json_encode(['A' => 'Option 1', 'B' => 'Option 2', 'C' => 'Option 3', 'D' => 'Option 4']),
+                    'correct_answer' => 'B',
+                    'marks' => 10,
+                ]);
+            }
+
+            foreach ($studentIds as $sid) {
+                // Only create submissions for published exams
+                $examData = collect($examsData)->firstWhere('title', DB::table('exams')->where('id', $eId)->value('title'));
+                if ($examData && $examData['published']) {
+                    DB::table('exam_submissions')->insert([
+                        'exam_id' => $eId,
+                        'student_id' => $sid,
+                        'auto_score' => rand(20, 50),
+                        'manual_score' => 0,
+                        'status' => 'graded',
+                        'submitted_at' => $now,
+                        'created_at' => $now,
+                    ]);
+                }
+            }
         }
 
         // ─────────────────────────────────────────────
