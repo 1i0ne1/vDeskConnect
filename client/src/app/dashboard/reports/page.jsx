@@ -161,12 +161,13 @@ export default function ReportsPage() {
     setLoading(true);
     try {
       const res = await resultApi.grades.compute(filters);
-      toast.success(`Grades computed successfully (${res.data?.processed ?? ''} records)`);
+      toast.success(res.message || 'Grades computed successfully');
       fetchGrades();
     } catch (error) {
-      const msg = error?.response?.data?.message || error?.response?.data?.errors
-        ? Object.values(error.response.data.errors).flat().join(', ')
-        : 'Failed to compute grades';
+      const errData = error?.data;
+      const msg = errData?.errors
+        ? Object.values(errData.errors).flat().join(', ')
+        : errData?.message || error?.message || 'Failed to compute grades';
       toast.error(msg);
     } finally {
       setLoading(false);
