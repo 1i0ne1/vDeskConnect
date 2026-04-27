@@ -160,12 +160,21 @@ export default function LecturesPage() {
   useEffect(() => {
     const token = api.getToken();
     if (!token) return;
-    fetchLectures();
-  }, [fetchLectures]);
+    setPage(1);
+    setHasMore(true);
+    fetchLectures(1);
+  }, [filters]);
+
+  useEffect(() => {
+    if (page > 1) {
+      const token = api.getToken();
+      if (!token) return;
+      fetchLectures(page, true);
+    }
+  }, [page]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
-    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const handleSubmit = async (e) => {
