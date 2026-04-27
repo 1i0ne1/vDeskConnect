@@ -539,10 +539,61 @@ class ResultController extends Controller
         }
 
         $reportCards = $query->get();
-
         return response()->json([
             'status' => 'success',
             'data' => $reportCards
         ]);
+    }
+
+    /**
+     * Download all generated report cards as a ZIP.
+     */
+    public function downloadZip(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'grade_level_id' => 'required|exists:grade_levels,id',
+            'term_id' => 'required|exists:academic_terms,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user = $request->user();
+        $schoolId = $user->school_id;
+        $gradeLevelId = $request->grade_level_id;
+        $termId = $request->term_id;
+
+        $reportCards = ReportCard::where('school_id', $schoolId)
+            ->where('term_id', $termId)
+            ->whereHas('student.profile', function($q) use ($gradeLevelId) {
+                $q->where('data->grade_level_id', $gradeLevelId);
+            })
+            ->whereNotNull('pdf_url')
+            ->get();
+
+        if ($reportCards->isEmpty()) {
+            return response()->json(['message' => 'No generated report cards found to download.'], 404);
+        }
+
+        $zip = new \ZipArchive();
+        $fileName = "report_cards_grade_{$gradeLevelId}_term_{$termId}.zip";
+        $tempDir = storage_path('app/temp');
+        if (!file_exists($tempDir)) mkdir($tempDir, 0755, true);
+        $zipPath = "{$tempDir}/{$fileName}";
+
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+            foreach ($reportCards as $rc) {
+                $relativePath = str_replace('/storage/', '', $rc->pdf_url);
+                $fullPath = storage_path("app/public/{$relativePath}");
+                if (file_exists($fullPath)) {
+                    $studentName = str_replace(' ', '_', $rc->student->profile->data['first_name'] . '_' . $rc->student->profile->data['last_name']);
+                    $zip->addFile($fullPath, "{$studentName}.pdf");
+                }
+            }
+            $zip->close();
+        }
+
+        return response()->download($zipPath)->deleteFileAfterSend(true);
     }
 }
