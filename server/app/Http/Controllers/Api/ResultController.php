@@ -385,10 +385,16 @@ class ResultController extends Controller
             ->with(['subject', 'gradeLevel', 'term'])
             ->get();
 
+        // Fetch report card
+        $reportCard = ReportCard::where('student_id', $student->id)
+            ->where('term_id', $request->term_id)
+            ->first();
+
         return response()->json([
             'status' => 'success',
             'student' => $student->load('profile'),
-            'data' => $grades
+            'data' => $grades,
+            'reportCard' => $reportCard
         ]);
     }
 
