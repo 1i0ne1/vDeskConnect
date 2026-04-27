@@ -17,16 +17,22 @@ import { useToast } from '@/contexts/ToastProvider';
 
 export default function LessonNotesPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const searchQuery = searchParams?.get('q') || '';
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [lessonNotes, setLessonNotes] = useState([]);
   const [filters, setFilters] = useState({ grade_level_id: '', subject_id: '', term_id: '', status: '' });
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [gradeLevels, setGradeLevels] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [terms, setTerms] = useState([]);
   const [schemes, setSchemes] = useState([]);
+
+  // --- Infinite Scroll States ---
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const observer = useRef();
 
   // Helper: strip markdown formatting for clean text preview
   const stripMarkdown = (text) => {
@@ -66,6 +72,17 @@ export default function LessonNotesPage() {
   });
   const [aiForm, setAiForm] = useState({ scheme_id: '', aspects: [], target_audience_size: 30 });
   const [submitting, setSubmitting] = useState(false);
+
+  const lastElementRef = useCallback(node => {
+    if (loading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, loadingMore, hasMore]);
 
   const fetchInitialData = useCallback(async () => {
     try {
