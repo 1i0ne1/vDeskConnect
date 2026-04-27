@@ -16,7 +16,7 @@ This document outlines the complete implementation roadmap for building the **Ac
 **Implementation Order (Search/Filter):**
 1. [x] **Reports Tab** (✅ *Completed*)
 2. [ ] **Lesson Notes Tab** (Internal search bar + animated filter panel)
-3. [x] **Exams Tab** (✅ *Already Completed*)
+3. [x] **Exams Tab** (✅ *Completed — Fixed: search sent to API for correct infinite scroll*)
 4. [ ] **Lectures Tab** (Internal search bar + animated filter panel)
 5. [ ] **Classes Tab** (Internal search bar + animated filter panel)
 6. [ ] **Academic Tab** (Internal search bar + animated filter panel)
