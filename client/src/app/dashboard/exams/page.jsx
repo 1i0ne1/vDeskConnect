@@ -296,11 +296,11 @@ export default function ExamsPage() {
                 <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                 <p className="text-text-secondary">Loading examinations...</p>
               </div>
-            ) : filteredExams.length > 0 ? (
-              filteredExams.map((exam, i) => (
+            ) : exams.length > 0 ? (
+              exams.map((exam, i) => (
                 <motion.div
                   key={exam.id}
-                  ref={i === filteredExams.length - 1 ? lastElementRef : null}
+                  ref={i === exams.length - 1 ? lastElementRef : null}
                   layout
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
