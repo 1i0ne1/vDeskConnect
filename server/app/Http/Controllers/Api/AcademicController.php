@@ -2393,4 +2393,61 @@ class AcademicController extends Controller
             ], 500);
         }
     }
+
+    // ==================== SCHOOL CONFIGURATION ====================
+
+    /**
+     * Get school configuration (weights, labels, etc.)
+     */
+    public function getSchoolConfig(Request $request): JsonResponse
+    {
+        $school = $request->user()->school;
+        return response()->json([
+            'config' => $school->config ?? [
+                'ca_weight' => 40,
+                'exam_weight' => 60,
+                'academic_labels' => ['grade_label' => 'Class', 'term_label' => 'Term']
+            ]
+        ]);
+    }
+
+    /**
+     * Update school configuration
+     */
+    public function updateSchoolConfig(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'ca_weight' => 'required|integer|min:0|max:100',
+            'exam_weight' => 'required|integer|min:0|max:100',
+            'academic_labels' => 'nullable|array',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        if (($request->ca_weight + $request->exam_weight) !== 100) {
+            return response()->json([
+                'message' => 'The sum of CA and Exam weights must be exactly 100.'
+            ], 422);
+        }
+
+        $school = $request->user()->school;
+        $currentConfig = $school->config ?? [];
+        $newConfig = array_merge($currentConfig, [
+            'ca_weight' => $request->ca_weight,
+            'exam_weight' => $request->exam_weight,
+        ]);
+        
+        if ($request->has('academic_labels')) {
+            $newConfig['academic_labels'] = $request->academic_labels;
+        }
+
+        $school->update(['config' => $newConfig]);
+
+        return response()->json([
+            'message' => 'School settings updated successfully',
+            'config' => $newConfig
+        ]);
+    }
 }

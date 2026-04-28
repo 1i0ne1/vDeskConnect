@@ -170,6 +170,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('lesson-notes/{id}', [AcademicController::class, 'updateLessonNote']);
         Route::delete('lesson-notes/{id}', [AcademicController::class, 'deleteLessonNote']);
         Route::put('lesson-notes/{id}/publish', [AcademicController::class, 'publishLessonNote']);
+
+        // School Config
+        Route::get('config', [AcademicController::class, 'getSchoolConfig']);
+        Route::put('config', [AcademicController::class, 'updateSchoolConfig']);
     });
 
     // AI Endpoints (outside academic group)

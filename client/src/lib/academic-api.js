@@ -261,6 +261,12 @@ export const academicApi = {
     getAll: (lectureId) => api.get(`/lectures/${lectureId}/attendance`),
     mark: (lectureId, data) => api.post(`/lectures/${lectureId}/attendance`, data),
   },
+
+  // School Settings
+  school: {
+    getConfig: () => api.get('/academic/config'),
+    updateConfig: (data) => api.put('/academic/config', data),
+  },
 };
 
 export default academicApi;
