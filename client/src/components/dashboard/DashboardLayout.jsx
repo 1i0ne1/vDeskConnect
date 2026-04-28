@@ -80,7 +80,7 @@ export default function DashboardLayout({ children, title, subtitle, role = 'adm
       <div className="fixed bottom-0 left-0 w-96 h-96 bg-primary-light/10 rounded-full blur-3xl translate-y-1/2 pointer-events-none" />
 
       <Sidebar
-        role={role}
+        role={role === 'admin' && user?.role ? user.role : role}
         user={user}
         onLogout={handleLogout}
         onToggle={handleSidebarToggle}
