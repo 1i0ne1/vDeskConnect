@@ -77,4 +77,9 @@ class Lecture extends Model
     {
         return $this->hasMany(Attendance::class);
     }
+
+    public function studentProgress(): HasMany
+    {
+        return $this->hasMany(StudentLectureProgress::class);
+    }
 }
