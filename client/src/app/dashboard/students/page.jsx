@@ -58,8 +58,8 @@ export default function StudentsPage() {
     }
     
     try {
-      const currentPage = isFirstPage ? 1 : page;
-      const res = await api.get(`/students?search=${encodeURIComponent(search)}&page=${currentPage}&per_page=20`);
+      const normalizedSearch = search.trim().toLowerCase();
+      const res = await api.get(`/students?search=${encodeURIComponent(normalizedSearch)}&page=${currentPage}&per_page=20`);
       
       const newStudents = res.data || [];
       if (isFirstPage) {
