@@ -550,20 +550,15 @@ This document outlines the complete implementation roadmap for building the **Ac
 
 **Why Eleventh:** Students must be assigned to grade levels and sections.
 
-### 11.1 Student-Grade-Section Linking
-- [ ] **Backend**: Update `users` or create `student_enrollments` table
-  - Columns: `id`, `school_id`, `student_id` (FK to users), `grade_level_id` (FK), `section_id` (FK, nullable), `session_id` (FK), `enrollment_date`, `status` (active, graduated, withdrawn), timestamps
-- [ ] **Backend**: API endpoints
+- [x] **Backend**: Create `student_enrollments` table
+- [x] **Backend**: API endpoints
   - `GET /api/students/{id}/enrollments` — Get student's enrollment history
   - `POST /api/students/enroll` — Enroll student in grade+section
-  - `PUT /api/students/enrollments/{id}` — Update enrollment (e.g., change section)
-- [ ] **Frontend**: Update `/dashboard/students` page
-  - Add fields to Add/Edit student modals:
-    - Grade Level (dropdown, required)
-    - Section (dropdown, optional)
-    - Session (auto-current, dropdown)
-  - Student detail view: Show enrollment info, change grade/section
-  - Bulk enrollment: CSV upload with grade+section columns
+  - `PUT /api/students/enrollments/{id}` — Update enrollment
+- [x] **Frontend**: Update `/dashboard/students` page
+  - Add fields to Add/Edit student modals (Grade, Section)
+  - Student detail view: Show enrollment info
+  - Enrollment History timeline
 
 ---
 
