@@ -326,7 +326,7 @@ export default function LecturesPage() {
   const totalPages = hasMore ? Math.ceil((lectures.length + 1) / 20) : 1;
 
   return (
-    <DashboardLayout>
+    <DashboardLayout title="Lectures">
       <div className="p-4 md:p-6 space-y-4">
         {/* Header */}
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-bg-card p-4 rounded-card border border-white/5 shadow-soft">
@@ -459,7 +459,7 @@ export default function LecturesPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {lectures.map((lecture, i) => (
                   <div key={lecture.id} ref={i === lectures.length - 1 ? lastElementRef : null} className="bg-bg-card p-4 rounded-card border border-white/5">
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
