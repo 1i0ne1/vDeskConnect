@@ -494,19 +494,25 @@ export default function MarketplacePage() {
                     </div>
                     
                     <div className="h-64 flex items-end justify-between space-x-2 px-4">
-                      {stats.sales_history?.map((data, i) => (
-                        <div key={i} className="flex-1 flex flex-col items-center group relative">
-                          <div 
-                            className="w-full bg-primary/20 border-t-2 border-primary rounded-t-lg transition-all group-hover:bg-primary/40"
-                            style={{ height: `${(data.revenue / Math.max(...stats.sales_history.map(s => s.revenue))) * 100}%` }}
-                          >
-                             <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-bg-card border border-white/10 px-2 py-1 rounded text-[10px] font-bold text-text-main opacity-0 group-hover:opacity-100 transition-all shadow-xl whitespace-nowrap">
-                               ₦{parseFloat(data.revenue).toLocaleString()}
-                             </div>
+                      {stats.sales_history?.map((data, i) => {
+                        const maxRevenue = Math.max(...stats.sales_history.map(s => parseFloat(s.revenue) || 0), 1);
+                        const heightPercentage = (parseFloat(data.revenue) / maxRevenue) * 100;
+                        
+                        return (
+                          <div key={i} className="flex-1 flex flex-col items-center group relative h-full justify-end">
+                            <motion.div 
+                              initial={{ height: 0 }}
+                              animate={{ height: `${Math.max(heightPercentage, 2)}%` }}
+                              className="w-full bg-primary/20 border-t-2 border-primary rounded-t-lg transition-all group-hover:bg-primary/40"
+                            >
+                               <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-bg-card border border-white/10 px-2 py-1 rounded text-[10px] font-bold text-text-main opacity-0 group-hover:opacity-100 transition-all shadow-xl whitespace-nowrap z-10">
+                                 ₦{parseFloat(data.revenue).toLocaleString()}
+                               </div>
+                            </motion.div>
+                            <span className="mt-3 text-[10px] font-bold text-text-secondary uppercase">{data.month}</span>
                           </div>
-                          <span className="mt-3 text-[10px] font-bold text-text-secondary uppercase">{data.month}</span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                  </div>
 

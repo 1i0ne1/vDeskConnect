@@ -281,12 +281,13 @@ class MarketplaceController extends Controller
             ->whereIn('status', ['paid', 'delivered'])
             ->where('order_date', '>=', now()->subMonths(6))
             ->select(
+                DB::raw("to_char(order_date, 'YYYY-MM') as month_key"),
                 DB::raw("to_char(order_date, 'Mon') as month"),
                 DB::raw("SUM(amount) as revenue"),
                 DB::raw("COUNT(*) as count")
             )
-            ->groupBy('month')
-            ->orderBy(DB::raw("MIN(order_date)"))
+            ->groupBy('month_key', 'month')
+            ->orderBy('month_key')
             ->get();
 
         $topBooks = MarketplaceOrder::where('marketplace_orders.school_id', $schoolId)
