@@ -76,7 +76,7 @@ const STUDENT_NAV = [
   { label: 'My Exams', icon: FileText, href: '/dashboard/exams' },
   { label: 'Results', icon: Award, href: '/dashboard/results' },
   { label: 'Events', icon: Calendar, href: '/dashboard/events' },
-  { label: 'Fees', icon: CreditCard, href: '/dashboard/fees' },
+  { label: 'Marketplace', icon: ShoppingCart, href: '/dashboard/marketplace' },
   { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
 ];
 
