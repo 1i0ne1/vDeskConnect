@@ -14,7 +14,7 @@ This document outlines the complete implementation roadmap for building the **Ac
 > **Important Architecture Note:** The global/external search bar in the top navigation will be fully disconnected from the local page search mechanics in all these modules. Each page will rely exclusively on its own internal search. The global search bar will be reserved for a completely different global feature later.
 
 **Implementation Order (Search/Filter):**
-1. [x] **Reports Tab** (✅ *Completed*)
+1. [x] **Reports Tab** (✅ *Completed — Internal search bar + animated filter panel + infinite scroll*)
 2. [x] **Lesson Notes Tab** (✅ *Completed — Search bar + animated filter panel + infinite scroll*)
 3. [x] **Exams Tab** (✅ *Completed — Fixed: search sent to API for correct infinite scroll*)
 4. [x] **Lectures Tab** (✅ *Completed — Search bar + animated filter panel + infinite scroll*)
@@ -39,7 +39,7 @@ This document outlines the complete implementation roadmap for building the **Ac
 - Show a "You've reached the end" message when no more pages are available
 
 **Implementation Order (Infinite Scroll):**
-1. [ ] **Reports Tab** — Gradebook, Report Cards, PINs
+1. [x] **Reports Tab** — Gradebook, Report Cards (✅ *Completed — search/filter sent to API*)
 2. [x] **Exams Tab** — Exams list (✅ *Completed — search/filter sent to API*)
 3. [x] **Lesson Notes Tab** — Notes list (✅ *Completed — search/filter sent to API*)
 4. [x] **Lectures Tab** — Lectures list (✅ *Completed — search/filter sent to API*)
