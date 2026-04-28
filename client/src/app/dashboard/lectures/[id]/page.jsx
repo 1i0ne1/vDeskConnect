@@ -299,22 +299,7 @@ export default function LecturePlayerPage() {
 
   return (
     <DashboardLayout>
-      {/* Mobile backdrop */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-      
-      <div className="flex flex-col md:flex-row h-[calc(100vh-64px)] bg-gray-50 dark:bg-gray-900">
-        {/* Mobile sidebar backdrop */}
-        {sidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-30 md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
+      <div className="flex flex-col md:flex-row h-[calc(100vh-64px)] bg-gray-50 dark:bg-gray-900 overflow-hidden">
         
         {/* Sidebar - slides on mobile, toggles on desktop */}
         <aside className={`
