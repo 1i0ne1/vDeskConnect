@@ -1676,9 +1676,24 @@ class AcademicController extends Controller
             }
         }
 
-        $schemes = $query->orderBy('week_number')->get();
+        // Apply Search (Topic)
+        if ($request->filled('search')) {
+            $query->where('topic', 'ILIKE', '%' . $request->search . '%');
+        }
 
-        return response()->json(['schemes' => $schemes]);
+        $perPage = $request->get('per_page', 15);
+        $schemes = $query->orderBy('week_number')->paginate($perPage);
+
+        return response()->json([
+            'status' => 'success',
+            'schemes' => $schemes->items(),
+            'meta' => [
+                'current_page' => $schemes->currentPage(),
+                'last_page' => $schemes->lastPage(),
+                'total' => $schemes->total(),
+                'has_more' => $schemes->hasMorePages()
+            ]
+        ]);
     }
 
     /**

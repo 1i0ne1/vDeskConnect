@@ -21,14 +21,20 @@ export default function ClassesPage() {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [gradeLevels, setGradeLevels] = useState([]);
-  const [filters, setFilters] = useState({ search: '', cycle: '' });
+  const [filters, setFilters] = useState({ search: '', status: '' });
   const [showFilters, setShowFilters] = useState(false);
   
-  // --- Infinite Scroll States ---
+  // --- Infinite Scroll States (Grade Levels) ---
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const observer = useRef();
+
+  // --- Infinite Scroll States (Schemes) ---
+  const [schemePage, setSchemePage] = useState(1);
+  const [hasMoreSchemes, setHasMoreSchemes] = useState(true);
+  const [loadingMoreSchemes, setLoadingMoreSchemes] = useState(false);
+  const schemeObserver = useRef();
 
   const [selectedGrade, setSelectedGrade] = useState(null);
   const [gradeDetail, setGradeDetail] = useState(null);
@@ -129,12 +135,36 @@ export default function ClassesPage() {
     }
   }, [toast]);
 
-  const fetchSchemes = useCallback(async (gradeLevelId, filters = {}) => {
+  const lastSchemeRef = useCallback(node => {
+    if (detailLoading || loadingMoreSchemes) return;
+    if (schemeObserver.current) schemeObserver.current.disconnect();
+    schemeObserver.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMoreSchemes) {
+        setSchemePage(prev => prev + 1);
+      }
+    });
+    if (node) schemeObserver.current.observe(node);
+  }, [detailLoading, loadingMoreSchemes, hasMoreSchemes]);
+
+  const fetchSchemes = useCallback(async (gradeLevelId, filters = {}, pageNum = 1, isLoadMore = false) => {
+    if (isLoadMore) setLoadingMoreSchemes(true);
+    // Only set detailLoading if it's the first page to avoid flashing
+    else if (pageNum === 1) setDetailLoading(true);
+
     try {
-      const res = await academicApi.schemes.getAll({ grade_level_id: gradeLevelId, ...filters });
-      setSchemes(res.schemes || []);
+      const res = await academicApi.schemes.getAll({ 
+        grade_level_id: gradeLevelId, 
+        ...filters,
+        page: pageNum
+      });
+      const newData = res.schemes || [];
+      setSchemes(prev => pageNum === 1 ? newData : [...prev, ...newData]);
+      setHasMoreSchemes(res.meta?.has_more || false);
     } catch (err) {
       toast.error('Failed to load schemes');
+    } finally {
+      setDetailLoading(false);
+      setLoadingMoreSchemes(false);
     }
   }, [toast]);
 
@@ -144,12 +174,21 @@ export default function ClassesPage() {
     fetchData();
   }, [fetchData, router]);
 
-  // Load schemes when scheme tab is activated
+  // Handle scheme tab changes or filter updates
   useEffect(() => {
     if (selectedGrade && activeDetailTab === 'scheme') {
-      fetchSchemes(selectedGrade, schemeFilters);
+      setSchemePage(1);
+      setHasMoreSchemes(true);
+      fetchSchemes(selectedGrade, schemeFilters, 1);
     }
   }, [activeDetailTab, selectedGrade, schemeFilters, fetchSchemes]);
+
+  // Handle scheme pagination
+  useEffect(() => {
+    if (schemePage > 1 && selectedGrade && activeDetailTab === 'scheme') {
+      fetchSchemes(selectedGrade, schemeFilters, schemePage, true);
+    }
+  }, [schemePage, selectedGrade, activeDetailTab, schemeFilters, fetchSchemes]);
 
   const handleAssignTeacher = async (e) => {
     e.preventDefault();
@@ -331,6 +370,8 @@ export default function ClassesPage() {
       } else {
         toast.success('Scheme aspects regenerated with AI!');
       }
+      // Refresh the specific entry in the list if needed, or just reload page 1
+      fetchSchemes(selectedGrade, schemeFilters, 1);
     } catch (err) {
       console.error('AI regeneration failed:', err);
       const msg = err.data?.message || err.data?.error || err.message || 'Failed to regenerate with AI';
@@ -401,7 +442,8 @@ export default function ClassesPage() {
 
       setShowSchemeAIModal(false);
       setSchemeAIForm({ week_number: '', subject_id: '', term_id: '', topic: '' });
-      fetchSchemes(selectedGrade, schemeFilters);
+      setSchemePage(1);
+      fetchSchemes(selectedGrade, schemeFilters, 1);
     } catch (err) {
       console.error('AI Scheme generation failed:', err);
       const msg = err.data?.message || err.data?.error || err.message || 'Failed to generate scheme with AI';
@@ -490,7 +532,7 @@ export default function ClassesPage() {
 
             {/* Filters Panel */}
             <AnimatePresence onExitComplete={() => {
-              setFilters({ search: '', cycle: '' });
+              setFilters({ search: '', status: '' });
             }}>
               {showFilters && (
                 <motion.div
@@ -501,15 +543,14 @@ export default function ClassesPage() {
                 >
                   <div className="bg-card dark:bg-gray-800 p-4 rounded-card border border-border shadow-soft grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <select
-                      value={filters.cycle}
-                      onChange={e => setFilters(prev => ({ ...prev, cycle: e.target.value }))}
+                      value={filters.status}
+                      onChange={e => setFilters(prev => ({ ...prev, status: e.target.value }))}
                       className="px-3 py-2 bg-white/5 border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
                     >
-                      <option value="">All Cycles</option>
-                      <option value="Junior">Junior</option>
-                      <option value="Senior">Senior</option>
-                      <option value="Primary">Primary</option>
-                      <option value="Nursery">Nursery</option>
+                      <option value="">All Statuses</option>
+                      <option value="active">Active</option>
+                      <option value="draft">Draft</option>
+                      <option value="inactive">Inactive</option>
                     </select>
                   </div>
                 </motion.div>
@@ -778,16 +819,25 @@ export default function ClassesPage() {
                     </div>
 
                     {/* Filters */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                      <div>
+                        <label className="block text-xs md:text-sm font-medium text-text-secondary mb-1">Search Topic</label>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+                          <input
+                            type="text"
+                            placeholder="Topic..."
+                            value={schemeFilters.search || ''}
+                            onChange={e => setSchemeFilters(prev => ({ ...prev, search: e.target.value }))}
+                            className="w-full pl-9 pr-3 py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm md:text-base text-text-primary"
+                          />
+                        </div>
+                      </div>
                       <div>
                         <label className="block text-xs md:text-sm font-medium text-text-secondary mb-1">Subject</label>
                         <select
                           value={schemeFilters.subject_id}
-                          onChange={e => {
-                            const newFilters = { ...schemeFilters, subject_id: e.target.value };
-                            setSchemeFilters(newFilters);
-                            fetchSchemes(selectedGrade, newFilters);
-                          }}
+                          onChange={e => setSchemeFilters(prev => ({ ...prev, subject_id: e.target.value }))}
                           className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm md:text-base text-text-primary"
                         >
                           <option value="">All Subjects</option>
@@ -800,11 +850,7 @@ export default function ClassesPage() {
                         <label className="block text-xs md:text-sm font-medium text-text-secondary mb-1">Term</label>
                         <select
                           value={schemeFilters.term_id}
-                          onChange={e => {
-                            const newFilters = { ...schemeFilters, term_id: e.target.value };
-                            setSchemeFilters(newFilters);
-                            fetchSchemes(selectedGrade, newFilters);
-                          }}
+                          onChange={e => setSchemeFilters(prev => ({ ...prev, term_id: e.target.value }))}
                           className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm md:text-base text-text-primary"
                         >
                           <option value="">All Terms</option>
@@ -820,8 +866,12 @@ export default function ClassesPage() {
                       <p className="text-text-secondary text-center py-8 text-sm">No schemes created yet. Click "Add Week" to create one.</p>
                     ) : (
                       <div className="space-y-3">
-                        {schemes.map(scheme => (
-                          <div key={scheme.id} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg">
+                        {schemes.map((scheme, sIdx) => (
+                          <div 
+                            key={scheme.id} 
+                            ref={sIdx === schemes.length - 1 ? lastSchemeRef : null}
+                            className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg"
+                          >
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-2">
@@ -878,6 +928,12 @@ export default function ClassesPage() {
                             </div>
                           </div>
                         ))}
+                        {loadingMoreSchemes && (
+                          <div className="py-4 flex items-center justify-center space-x-2 text-primary">
+                            <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                            <span className="text-sm font-medium">Loading more schemes...</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

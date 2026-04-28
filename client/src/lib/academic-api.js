@@ -115,6 +115,8 @@ export const academicApi = {
       if (filters.subject_id) params.append('subject_id', filters.subject_id);
       if (filters.term_id) params.append('term_id', filters.term_id);
       if (filters.status) params.append('status', filters.status);
+      if (filters.search) params.append('search', filters.search);
+      if (filters.page) params.append('page', filters.page);
       return api.get(`/academic/schemes?${params.toString()}`);
     },
     create: (data) => api.post('/academic/schemes', data),
