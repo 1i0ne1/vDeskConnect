@@ -701,6 +701,67 @@ class VDeskConnectSeeder extends Seeder
                 'updated_at' => $now,
             ]);
         }
+        
+        // ─────────────────────────────────────────────
+        //  13. MARKETPLACE (Textbooks & Orders)
+        // ─────────────────────────────────────────────
+        $output->writeln("<fg=yellow>Seeding 30 textbooks and 150 orders...</>");
+        
+        $bookTitles = [
+            'Essential Mathematics', 'New General Mathematics', 'Intensive English', 
+            'Oxford English', 'Modern Biology', 'Comprehensive Physics', 
+            'Simplified Chemistry', 'Economics for Schools', 'Government Essentials',
+            'Civic Education', 'Agricultural Science', 'Further Mathematics',
+            'Technical Drawing', 'Home Economics', 'Basic Technology',
+            'Computer Studies', 'Data Processing', 'Visual Arts', 'Music Theory',
+            'Physical Education', 'Basic Science', 'Social Studies', 'History',
+            'Geography', 'French Basics', 'Yoruba Language', 'Igbo Language',
+            'Hausa Language', 'Literature in English', 'CRS/IRS Study'
+        ];
+
+        $bookIds = [];
+        foreach ($bookTitles as $idx => $title) {
+            $isElectronic = $idx % 3 === 0;
+            $bookIds[] = DB::table('textbooks')->insertGetId([
+                'school_id' => $demoSchoolId,
+                'title' => $title . " for " . ($idx < 15 ? 'Junior' : 'Senior') . " Secondary",
+                'grade_level_id' => $gradeIds[array_rand($gradeIds)],
+                'subject_id' => $subjectIds[array_rand($subjectIds)],
+                'price' => rand(2500, 15000),
+                'is_electronic' => $isElectronic,
+                'file_url' => $isElectronic ? 'https://vdeskconnect.edu/library/ebooks/book_' . $idx . '.pdf' : null,
+                'physical_form_url' => !$isElectronic ? 'https://vdeskconnect.edu/forms/collect_' . $idx . '.pdf' : null,
+                'description' => "Official textbook for students. Covers the complete syllabus with exercises and solutions.",
+                'stock_count' => !$isElectronic ? rand(20, 100) : null,
+                'available' => true,
+                'created_at' => $now->copy()->subMonths(3),
+                'updated_at' => $now,
+            ]);
+        }
+
+        $orderStatuses = ['pending', 'paid', 'delivered'];
+        foreach ($studentIds as $sid) {
+            // Each student makes 1-3 orders across the last 3 months
+            $numOrders = rand(1, 3);
+            for ($o = 0; $o < $numOrders; $o++) {
+                $bookId = $bookIds[array_rand($bookIds)];
+                $book = DB::table('textbooks')->where('id', $bookId)->first();
+                $status = $orderStatuses[array_rand($orderStatuses)];
+                $orderDate = $now->copy()->subDays(rand(0, 90));
+
+                DB::table('marketplace_orders')->insert([
+                    'school_id' => $demoSchoolId,
+                    'student_id' => $sid,
+                    'textbook_id' => $bookId,
+                    'amount' => $book->price,
+                    'status' => $status,
+                    'payment_ref' => 'PAY-' . strtoupper(Str::random(10)),
+                    'order_date' => $orderDate,
+                    'created_at' => $orderDate,
+                    'updated_at' => $orderDate,
+                ]);
+            }
+        }
 
         $output->writeln("");
         $output->writeln("<fg=white;bg=green;options=bold>  SUCCESS  </> <fg=green>Database seeded with COMPREHENSIVE bulk data!</>");
