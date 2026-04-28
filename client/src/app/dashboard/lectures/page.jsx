@@ -499,21 +499,21 @@ export default function LecturesPage() {
                           </span>
                         </div>
                         
-                        <p className="text-xs text-text-muted mt-3 line-clamp-3 h-[48px]">{lecture.description || "No description provided."}</p>
+                        <p className="text-xs text-text-muted mt-2 line-clamp-3 min-h-[48px]">{lecture.description || "No description provided."}</p>
                         
                         {lecture.meeting_link && (
                           <a
                             href={lecture.meeting_link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2"
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
                           >
                             <LinkIcon className="w-3 h-3" /> Join Meeting
                           </a>
                         )}
                       </div>
                       
-                      <div className="flex items-center justify-between pt-3 border-t border-white/5 mt-auto">
+                      <div className="flex items-center justify-between pt-2 border-t border-white/5 mt-auto">
                         <div className="flex items-center gap-1">
                           {lecture.status === 'scheduled' && (
                             <button
