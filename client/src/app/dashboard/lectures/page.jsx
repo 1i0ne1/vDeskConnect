@@ -421,9 +421,7 @@ export default function LecturesPage() {
         </div>
 
         {/* Filters Panel */}
-        <AnimatePresence onExitComplete={() => {
-          setFilters({ search: '', status: '', type: '', grade_level_id: '', subject_id: '', term_id: '' });
-        }}>
+        <AnimatePresence>
           {showFilters && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}

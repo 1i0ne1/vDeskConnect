@@ -166,7 +166,16 @@ export const academicApi = {
 
   // Lectures
   lectures: {
-    getAll: (filters) => api.get('/lectures', filters),
+    getAll: (filters = {}) => {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          params.append(key, value);
+        }
+      });
+      const queryString = params.toString();
+      return api.get(`/lectures${queryString ? `?${queryString}` : ''}`);
+    },
     getOne: (id) => api.get(`/lectures/${id}`),
     create: (data) => api.post('/lectures', data),
     update: (id, data) => api.put(`/lectures/${id}`, data),
