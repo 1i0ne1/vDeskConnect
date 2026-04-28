@@ -661,6 +661,123 @@ export default function StudentsPage() {
           </div>
         </div>
       )}
+      {/* View Student Profile Modal */}
+      <AnimatePresence>
+        {viewingStudent && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-bg-card w-full max-w-2xl rounded-card border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Profile Header */}
+              <div className="relative h-32 bg-gradient-to-r from-primary/30 to-primary-light/30">
+                <button 
+                  onClick={() => setViewingStudent(null)}
+                  className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
+                <div className="absolute -bottom-12 left-8">
+                  <div className="w-24 h-24 rounded-2xl bg-bg-card border-4 border-bg-card shadow-xl flex items-center justify-center overflow-hidden">
+                    {viewingStudent.avatar_url ? (
+                      <img src={viewingStudent.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-primary/20 flex items-center justify-center text-3xl font-bold text-primary">
+                        {viewingStudent.first_name?.[0]?.toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Body */}
+              <div className="pt-16 px-8 pb-8 overflow-y-auto">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                  <div>
+                    <h2 className="text-2xl font-bold text-text-main">{fullName(viewingStudent)}</h2>
+                    <p className="text-text-secondary flex items-center gap-2 mt-1">
+                      <GraduationCap size={16} />
+                      {viewingStudent.grade_level_name || 'Not Assigned'} • {viewingStudent.admission_number}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                      viewingStudent.banned 
+                        ? 'bg-error/20 text-error border border-error/20' 
+                        : 'bg-success/20 text-success border border-success/20'
+                    }`}>
+                      {viewingStudent.banned ? 'Banned' : 'Active'}
+                    </span>
+                    <button 
+                      onClick={() => { openEditModal(viewingStudent); setViewingStudent(null); }}
+                      className="p-2 rounded-lg bg-white/5 border border-white/10 text-text-secondary hover:text-primary transition-colors"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
+                      <Users size={14} /> Personal Details
+                    </h3>
+                    <div className="space-y-3">
+                      <DetailRow icon={Mail} label="Email Address" value={viewingStudent.email} />
+                      <DetailRow icon={Phone} label="Phone Number" value={viewingStudent.phone || 'Not Provided'} />
+                      <DetailRow icon={Calendar} label="Date of Birth" value={viewingStudent.date_of_birth || 'Not Provided'} />
+                      <DetailRow icon={MapPin} label="Residential Address" value={viewingStudent.address || 'Not Provided'} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
+                      <Shield size={14} /> Guardian Details
+                    </h3>
+                    <div className="space-y-3">
+                      <DetailRow icon={UserPlus} label="Guardian Name" value={viewingStudent.guardian_name || 'Not Provided'} />
+                      <DetailRow icon={Phone} label="Guardian Phone" value={viewingStudent.guardian_phone || 'Not Provided'} />
+                      <DetailRow icon={Mail} label="Guardian Email" value={viewingStudent.guardian_email || 'Not Provided'} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Enrollment History */}
+                <div className="mt-8 space-y-4">
+                  <h3 className="text-sm font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
+                    <History size={14} /> Enrollment History
+                  </h3>
+                  <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
+                    {loadingHistory ? (
+                      <div className="p-8 flex justify-center"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /></div>
+                    ) : enrollmentHistory.length === 0 ? (
+                      <div className="p-8 text-center text-text-secondary text-sm">No enrollment records found.</div>
+                    ) : (
+                      <div className="divide-y divide-white/5">
+                        {enrollmentHistory.map((h, i) => (
+                          <div key={i} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                            <div>
+                              <p className="text-sm font-medium text-text-main">{h.grade_level_name} - {h.section_name}</p>
+                              <p className="text-xs text-text-secondary">{format(new Date(h.enrollment_date), 'MMMM do, yyyy')}</p>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              h.status === 'active' ? 'text-success bg-success/10' : 'text-text-muted bg-white/10'
+                            }`}>
+                              {h.status}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 }
