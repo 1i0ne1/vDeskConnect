@@ -127,7 +127,7 @@ export default function LecturesPage() {
       const res = await academicApi.lectures.getAll({ ...filters, page: pageNum });
       const newData = res.data || [];
       setLectures(prev => pageNum === 1 ? newData : [...prev, ...newData]);
-      setHasMore(res.meta?.has_more || false);
+      setHasMore(res.current_page < res.last_page);
     } catch (err) {
       toast.error('Failed to load lectures');
     } finally {
