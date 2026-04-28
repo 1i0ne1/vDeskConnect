@@ -41,6 +41,40 @@ export default function ClassesPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [activeDetailTab, setActiveDetailTab] = useState('overview');
 
+  // Client-side pagination and search for detail tabs
+  const [detailSearchQuery, setDetailSearchQuery] = useState('');
+  const [detailDisplayCount, setDetailDisplayCount] = useState(20);
+
+  // Reset when tab changes
+  useEffect(() => {
+    setDetailSearchQuery('');
+    setDetailDisplayCount(20);
+  }, [activeDetailTab, selectedGrade]);
+
+  const handleDetailObserver = useCallback(node => {
+    if (detailLoading) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        setDetailDisplayCount(prev => prev + 20);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [detailLoading]);
+
+  // Helper for filtering and paginating detail arrays
+  const getFilteredAndPaginated = (items, filterFn) => {
+    if (!items) return { items: [], total: 0 };
+    const filtered = detailSearchQuery
+      ? items.filter(filterFn)
+      : items;
+    return {
+      items: filtered.slice(0, detailDisplayCount),
+      total: filtered.length,
+      hasMore: filtered.length > detailDisplayCount
+    };
+  };
+
   // Teacher assignment state
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assignForm, setAssignForm] = useState({ teacher_id: '', subject_id: '', section_id: '' });
@@ -481,6 +515,29 @@ export default function ClassesPage() {
       .trim();
   };
 
+  // --- Derived data for detail tabs ---
+  const { items: displaySections, total: totalSections, hasMore: hasMoreDetailSections } = getFilteredAndPaginated(gradeDetail?.sections, s => 
+    s.name.toLowerCase().includes(detailSearchQuery.toLowerCase()) || 
+    (s.room_number || '').toLowerCase().includes(detailSearchQuery.toLowerCase())
+  );
+
+  const { items: displaySubjects, total: totalSubjects, hasMore: hasMoreDetailSubjects } = getFilteredAndPaginated(gradeDetail?.subjects, s => 
+    s.subject_name.toLowerCase().includes(detailSearchQuery.toLowerCase()) ||
+    (s.subject_code || '').toLowerCase().includes(detailSearchQuery.toLowerCase())
+  );
+
+  const { items: displayStudents, total: totalStudents, hasMore: hasMoreDetailStudents } = getFilteredAndPaginated(gradeDetail?.students, s => 
+    (s.first_name + ' ' + s.last_name).toLowerCase().includes(detailSearchQuery.toLowerCase()) ||
+    (s.admission_number || '').toLowerCase().includes(detailSearchQuery.toLowerCase()) ||
+    (s.email || '').toLowerCase().includes(detailSearchQuery.toLowerCase())
+  );
+
+  const { items: displayTeachers, total: totalTeachers, hasMore: hasMoreDetailTeachers } = getFilteredAndPaginated(gradeDetail?.teachers, t => 
+    t.name.toLowerCase().includes(detailSearchQuery.toLowerCase()) ||
+    t.email.toLowerCase().includes(detailSearchQuery.toLowerCase()) ||
+    (t.subjects || []).join(' ').toLowerCase().includes(detailSearchQuery.toLowerCase())
+  );
+
   // ==================== RENDER ====================
   return (
     <DashboardLayout title="Classes" subtitle="Manage your classes and grade levels">
@@ -647,18 +704,33 @@ export default function ClassesPage() {
                 {/* Sections Tab */}
                 {activeDetailTab === 'sections' && (
                   <div className="bg-card dark:bg-gray-800 rounded-card border border-border p-4 md:p-6">
-                    <h2 className="text-base md:text-lg font-semibold text-text-primary mb-4">Sections</h2>
-                    {gradeDetail.sections.length === 0 ? (
-                      <p className="text-text-secondary text-center py-8 text-sm">No sections created yet.</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                      <h2 className="text-base md:text-lg font-semibold text-text-primary">Sections ({totalSections})</h2>
+                      <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+                        <input
+                          type="text"
+                          placeholder="Search sections..."
+                          value={detailSearchQuery}
+                          onChange={e => setDetailSearchQuery(e.target.value)}
+                          className="w-full pl-9 pr-3 py-1.5 md:py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                        />
+                      </div>
+                    </div>
+                    {displaySections.length === 0 ? (
+                      <p className="text-text-secondary text-center py-8 text-sm">No sections found.</p>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                        {gradeDetail.sections.map(sec => (
-                          <div key={sec.id} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg">
+                        {displaySections.map((sec, idx) => (
+                          <div key={sec.id} ref={idx === displaySections.length - 1 ? handleDetailObserver : null} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg">
                             <h3 className="font-semibold text-text-primary text-sm md:text-base">{sec.name}</h3>
                             <p className="text-xs text-text-muted mt-1">Room: {sec.room_number || 'N/A'} • Capacity: {sec.capacity || 'N/A'}</p>
                           </div>
                         ))}
                       </div>
+                    )}
+                    {hasMoreDetailSections && (
+                      <div className="py-4 text-center text-xs text-text-secondary">Scroll for more...</div>
                     )}
                   </div>
                 )}
@@ -666,13 +738,25 @@ export default function ClassesPage() {
                 {/* Subjects Tab */}
                 {activeDetailTab === 'subjects' && (
                   <div className="bg-card dark:bg-gray-800 rounded-card border border-border p-4 md:p-6">
-                    <h2 className="text-base md:text-lg font-semibold text-text-primary mb-4">Subjects</h2>
-                    {gradeDetail.subjects.length === 0 ? (
-                      <p className="text-text-secondary text-center py-8 text-sm">No subjects assigned yet.</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                      <h2 className="text-base md:text-lg font-semibold text-text-primary">Subjects ({totalSubjects})</h2>
+                      <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+                        <input
+                          type="text"
+                          placeholder="Search subjects..."
+                          value={detailSearchQuery}
+                          onChange={e => setDetailSearchQuery(e.target.value)}
+                          className="w-full pl-9 pr-3 py-1.5 md:py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                        />
+                      </div>
+                    </div>
+                    {displaySubjects.length === 0 ? (
+                      <p className="text-text-secondary text-center py-8 text-sm">No subjects found.</p>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                        {gradeDetail.subjects.map(sub => (
-                          <div key={sub.id} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg">
+                        {displaySubjects.map((sub, idx) => (
+                          <div key={sub.id} ref={idx === displaySubjects.length - 1 ? handleDetailObserver : null} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg">
                             <h3 className="font-semibold text-text-primary text-sm md:text-base">{sub.subject_name}</h3>
                             <p className="text-xs text-text-muted">{sub.subject_code}</p>
                             <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full ${
@@ -682,23 +766,38 @@ export default function ClassesPage() {
                         ))}
                       </div>
                     )}
+                    {hasMoreDetailSubjects && (
+                      <div className="py-4 text-center text-xs text-text-secondary">Scroll for more...</div>
+                    )}
                   </div>
                 )}
 
                 {/* Students Tab */}
                 {activeDetailTab === 'students' && (
                   <div className="bg-card dark:bg-gray-800 rounded-card border border-border p-4 md:p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-base md:text-lg font-semibold text-text-primary">Students</h2>
-                      <button
-                        onClick={handleOpenStudentAssign}
-                        className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 text-xs md:text-sm bg-primary text-white rounded-lg hover:bg-primary-dark"
-                      >
-                        <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                        Assign Students
-                      </button>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                      <h2 className="text-base md:text-lg font-semibold text-text-primary">Students ({totalStudents})</h2>
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="relative w-full sm:w-64">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+                          <input
+                            type="text"
+                            placeholder="Search students..."
+                            value={detailSearchQuery}
+                            onChange={e => setDetailSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-3 py-1.5 md:py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                          />
+                        </div>
+                        <button
+                          onClick={handleOpenStudentAssign}
+                          className="flex items-center justify-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm bg-primary text-white rounded-lg hover:bg-primary-dark whitespace-nowrap"
+                        >
+                          <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          <span className="hidden sm:inline">Assign</span>
+                        </button>
+                      </div>
                     </div>
-                    {gradeDetail.students.length === 0 ? (
+                    {displayStudents.length === 0 ? (
                       <p className="text-text-secondary text-center py-8 text-sm">No students enrolled in this grade. Assign students from the Students tab or use the button above.</p>
                     ) : (
                       <div className="overflow-x-auto">
@@ -712,8 +811,8 @@ export default function ClassesPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {gradeDetail.students.map(student => (
-                              <tr key={student.id} className="border-b border-border dark:border-gray-600/50">
+                            {displayStudents.map((student, idx) => (
+                              <tr key={student.id} ref={idx === displayStudents.length - 1 ? handleDetailObserver : null} className="border-b border-border dark:border-gray-600/50">
                                 <td className="py-2 md:py-3 px-2 text-text-primary">{student.first_name} {student.last_name}</td>
                                 <td className="py-2 md:py-3 px-2 text-text-secondary hidden md:table-cell">{student.admission_number}</td>
                                 <td className="py-2 md:py-3 px-2 text-text-secondary hidden sm:table-cell">{student.email}</td>
@@ -738,17 +837,29 @@ export default function ClassesPage() {
                 {/* Teachers Tab */}
                 {activeDetailTab === 'teachers' && (
                   <div className="bg-card dark:bg-gray-800 rounded-card border border-border p-4 md:p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-base md:text-lg font-semibold text-text-primary">Teachers</h2>
-                      <button
-                        onClick={() => setShowAssignModal(true)}
-                        className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 text-xs md:text-sm bg-primary text-white rounded-lg hover:bg-primary-dark"
-                      >
-                        <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                        Assign Teacher
-                      </button>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                      <h2 className="text-base md:text-lg font-semibold text-text-primary">Teachers ({totalTeachers})</h2>
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="relative w-full sm:w-64">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+                          <input
+                            type="text"
+                            placeholder="Search teachers..."
+                            value={detailSearchQuery}
+                            onChange={e => setDetailSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-3 py-1.5 md:py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                          />
+                        </div>
+                        <button
+                          onClick={() => setShowAssignModal(true)}
+                          className="flex items-center justify-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm bg-primary text-white rounded-lg hover:bg-primary-dark whitespace-nowrap"
+                        >
+                          <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          <span className="hidden sm:inline">Assign</span>
+                        </button>
+                      </div>
                     </div>
-                    {gradeDetail.teachers.length === 0 ? (
+                    {displayTeachers.length === 0 ? (
                       <p className="text-text-secondary text-center py-8 text-sm">No teachers assigned yet.</p>
                     ) : (
                       <div className="overflow-x-auto">
@@ -762,8 +873,8 @@ export default function ClassesPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {gradeDetail.teachers.map(teacher => (
-                              <tr key={teacher.teacher_id} className="border-b border-border dark:border-gray-600/50">
+                            {displayTeachers.map((teacher, idx) => (
+                              <tr key={teacher.teacher_id} ref={idx === displayTeachers.length - 1 ? handleDetailObserver : null} className="border-b border-border dark:border-gray-600/50">
                                 <td className="py-2 md:py-3 px-2 text-text-primary">{teacher.name}</td>
                                 <td className="py-2 md:py-3 px-2 text-text-secondary hidden md:table-cell">{teacher.email}</td>
                                 <td className="py-2 md:py-3 px-2">
