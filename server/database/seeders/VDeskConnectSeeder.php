@@ -776,6 +776,10 @@ class VDeskConnectSeeder extends Seeder
         $output->writeln("<fg=white;options=bold>│  </><fg=cyan;options=bold>SCHOOL ADMIN (Greenfield Academy)</>                            <fg=white;options=bold>│</>");
         $output->writeln("<fg=white;options=bold>│  </><fg=yellow>Email    :</> director@greenfield.edu                               <fg=white;options=bold>│</>");
         $output->writeln("<fg=white;options=bold>│  </><fg=yellow>Password :</> SchoolAdmin@2026!                                  <fg=white;options=bold>│</>");
+        $output->writeln("<fg=white;options=bold>│                                                                    │</>");
+        $output->writeln("<fg=white;options=bold>│  </><fg=cyan;options=bold>STUDENT ACCOUNT (Fatima Mohamed)</>                             <fg=white;options=bold>│</>");
+        $output->writeln("<fg=white;options=bold>│  </><fg=yellow>Email    :</> fatima@student.com                                   <fg=white;options=bold>│</>");
+        $output->writeln("<fg=white;options=bold>│  </><fg=yellow>Password :</> Password@2026!                                     <fg=white;options=bold>│</>");
         $output->writeln("<fg=white;options=bold>└────────────────────────────────────────────────────────────────────┘</>");
         $output->writeln("");
     }
