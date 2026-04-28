@@ -19,8 +19,8 @@ export default function TeachersPage() {
   const [teachers, setTeachers] = useState([]);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState(0);
-  const [lastPage, setLastPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [viewingTeacher, setViewingTeacher] = useState(null);
@@ -37,26 +37,61 @@ export default function TeachersPage() {
   const [showPassword, setShowPassword] = useState(false);
   const DEFAULT_PASSWORD = 'Secret123!';
 
-  const fetchTeachers = useCallback(async () => {
-    setLoading(true);
+  const fetchTeachers = useCallback(async (isFirstPage = false) => {
+    if (isFirstPage) {
+      setLoading(true);
+      setPage(1);
+      setHasMore(true);
+    }
+    
     try {
-      const res = await api.get(`/teachers?search=${encodeURIComponent(search)}&page=${page}&per_page=20`);
-      setTeachers(res.data || []);
+      const currentPage = isFirstPage ? 1 : page;
+      const res = await api.get(`/teachers?search=${encodeURIComponent(search)}&page=${currentPage}&per_page=20`);
+      
+      const newTeachers = res.data || [];
+      if (isFirstPage) {
+        setTeachers(newTeachers);
+      } else {
+        setTeachers(prev => [...prev, ...newTeachers]);
+      }
+      
       setTotal(res.total || 0);
-      setLastPage(res.last_page || 1);
+      setHasMore(newTeachers.length === 20);
     } catch (err) {
-      console.error('Failed to fetch teachers:', err);
-      toast.error('Failed to load teachers');
+      if (isFirstPage) {
+        setTeachers([]);
+        setTotal(0);
+      }
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
-  }, [search, page, toast]);
+  }, [search, page]);
+
+  useEffect(() => {
+    fetchTeachers(true);
+  }, [search]);
+
+  const observerRef = useCallback(node => {
+    if (loading || !hasMore) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        setPage(prev => prev + 1);
+      }
+    });
+    if (node) observer.observe(node);
+  }, [loading, hasMore]);
+
+  useEffect(() => {
+    if (page > 1) {
+      fetchTeachers(false);
+    }
+  }, [page]);
 
   useEffect(() => {
     const token = api.getToken();
     if (!token) { router.push('/login'); return; }
-    fetchTeachers();
-  }, [fetchTeachers, router]);
+  }, [router]);
 
   const resetForm = () => {
     setForm({ first_name: '', last_name: '', email: '', employee_number: '',
@@ -97,7 +132,7 @@ export default function TeachersPage() {
       toast.success(editingTeacher ? 'Teacher updated' : 'Teacher created');
       setShowModal(false);
       resetForm();
-      fetchTeachers();
+      fetchTeachers(true);
     } catch (err) {
       if (err.data?.errors) setFormErrors(err.data.errors);
       else toast.error(err.data?.message || 'Operation failed');
@@ -118,7 +153,7 @@ export default function TeachersPage() {
       }
       setActionModal(null);
       setActionReason('');
-      fetchTeachers();
+      fetchTeachers(true);
     } catch (err) {
       toast.error(err.data?.message || 'Operation failed');
     } finally { setActionLoading(false); }
@@ -126,7 +161,6 @@ export default function TeachersPage() {
 
   const fullName = (t) => `${t.first_name || ''} ${t.last_name || ''}`.trim() || t.email;
 
-  // Helper component for detail rows
   const DetailRow = ({ icon: Icon, label, value }) => (
     <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-bg-main/50">
       <Icon size={16} className="text-text-muted flex-shrink-0" />
@@ -146,7 +180,6 @@ export default function TeachersPage() {
   return (
     <DashboardLayout title="Teachers" subtitle="Manage your teachers" role="admin">
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-text-primary">{total} Teachers</h2>
@@ -157,7 +190,6 @@ export default function TeachersPage() {
           </button>
         </div>
 
-        {/* Search */}
         <div className="glass-input flex items-center gap-2 rounded-btn px-4 py-3">
           <Search size={18} className="text-text-muted flex-shrink-0" />
           <input
@@ -169,9 +201,8 @@ export default function TeachersPage() {
           />
         </div>
 
-        {/* Table */}
         <div className="glass-card overflow-hidden">
-          {loading ? (
+          {loading && teachers.length === 0 ? (
             <div className="p-12 flex justify-center">
               <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
             </div>
@@ -248,25 +279,18 @@ export default function TeachersPage() {
           )}
         </div>
 
-        {/* Pagination */}
-        {lastPage > 1 && (
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-text-secondary">Page {page} of {lastPage}</p>
-            <div className="flex items-center gap-2">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
-                className="glass-button px-3 py-2 disabled:opacity-40" title="Previous">
-                <ChevronLeft size={16} />
-              </button>
-              <button disabled={page >= lastPage} onClick={() => setPage(p => p + 1)}
-                className="glass-button px-3 py-2 disabled:opacity-40" title="Next">
-                <ChevronRight size={16} />
-              </button>
-            </div>
+        {hasMore && teachers.length > 0 && (
+          <div ref={observerRef} className="py-8 flex flex-col items-center justify-center gap-2">
+            <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            <p className="text-xs text-text-muted animate-pulse">Loading more teachers...</p>
           </div>
+        )}
+
+        {!hasMore && teachers.length > 0 && (
+          <p className="text-center py-8 text-xs text-text-muted">You've reached the end of the teachers list</p>
         )}
       </div>
 
-      {/* Add/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="glass-modal max-w-2xl w-full animate-scale-in flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>

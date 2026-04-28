@@ -19,8 +19,8 @@ export default function StudentsPage() {
   const [students, setStudents] = useState([]);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState(0);
-  const [lastPage, setLastPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [viewingStudent, setViewingStudent] = useState(null);
@@ -38,26 +38,61 @@ export default function StudentsPage() {
   const [showPassword, setShowPassword] = useState(false);
   const DEFAULT_PASSWORD = 'Secret123!';
 
-  const fetchStudents = useCallback(async () => {
-    setLoading(true);
+  const fetchStudents = useCallback(async (isFirstPage = false) => {
+    if (isFirstPage) {
+      setLoading(true);
+      setPage(1);
+      setHasMore(true);
+    }
+    
     try {
-      const res = await api.get(`/students?search=${encodeURIComponent(search)}&page=${page}&per_page=20`);
-      setStudents(res.data || []);
+      const currentPage = isFirstPage ? 1 : page;
+      const res = await api.get(`/students?search=${encodeURIComponent(search)}&page=${currentPage}&per_page=20`);
+      
+      const newStudents = res.data || [];
+      if (isFirstPage) {
+        setStudents(newStudents);
+      } else {
+        setStudents(prev => [...prev, ...newStudents]);
+      }
+      
       setTotal(res.total || 0);
-      setLastPage(res.last_page || 1);
+      setHasMore(newStudents.length === 20);
     } catch (err) {
-      console.error('Failed to fetch students:', err);
-      toast.error('Failed to load students');
+      if (isFirstPage) {
+        setStudents([]);
+        setTotal(0);
+      }
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
-  }, [search, page, toast]);
+  }, [search, page]);
+
+  useEffect(() => {
+    fetchStudents(true);
+  }, [search]);
+
+  const observerRef = useCallback(node => {
+    if (loading || !hasMore) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        setPage(prev => prev + 1);
+      }
+    });
+    if (node) observer.observe(node);
+  }, [loading, hasMore]);
+
+  useEffect(() => {
+    if (page > 1) {
+      fetchStudents(false);
+    }
+  }, [page]);
 
   useEffect(() => {
     const token = api.getToken();
     if (!token) { router.push('/login'); return; }
-    fetchStudents();
-  }, [fetchStudents, router]);
+  }, [router]);
 
   const resetForm = () => {
     setForm({
@@ -253,23 +288,16 @@ export default function StudentsPage() {
           )}
         </div>
 
-        {/* Pagination */}
-        {lastPage > 1 && (
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-text-secondary">
-              Page {page} of {lastPage}
-            </p>
-            <div className="flex items-center gap-2">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
-                className="glass-button px-3 py-2 disabled:opacity-40" title="Previous">
-                <ChevronLeft size={16} />
-              </button>
-              <button disabled={page >= lastPage} onClick={() => setPage(p => p + 1)}
-                className="glass-button px-3 py-2 disabled:opacity-40" title="Next">
-                <ChevronRight size={16} />
-              </button>
-            </div>
+        {/* Loading more indicator */}
+        {hasMore && students.length > 0 && (
+          <div ref={observerRef} className="py-8 flex flex-col items-center justify-center gap-2">
+            <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            <p className="text-xs text-text-muted animate-pulse">Loading more students...</p>
           </div>
+        )}
+
+        {!hasMore && students.length > 0 && (
+          <p className="text-center py-8 text-xs text-text-muted">You've reached the end of the students list</p>
         )}
       </div>
 
