@@ -54,6 +54,7 @@ export default function LecturesPage() {
   const [gradeLevels, setGradeLevels] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [listTab, setListTab] = useState('active'); // 'active' or 'completed' for students
   
   // --- Infinite Scroll States ---
   const [page, setPage] = useState(1);
@@ -125,7 +126,11 @@ export default function LecturesPage() {
     if (isLoadMore) setLoadingMore(true);
     else setLoading(true);
     try {
-      const res = await academicApi.lectures.getAll({ ...filters, page: pageNum });
+      const queryParams = { ...filters, page: pageNum };
+      if (!isStaff) {
+        queryParams.is_completed = listTab === 'completed' ? '1' : '0';
+      }
+      const res = await academicApi.lectures.getAll(queryParams);
       const newData = res.data || [];
       setLectures(prev => pageNum === 1 ? newData : [...prev, ...newData]);
       setHasMore(res.current_page < res.last_page);
@@ -166,7 +171,7 @@ export default function LecturesPage() {
     setPage(1);
     setHasMore(true);
     fetchLectures(1);
-  }, [filters]);
+  }, [filters, listTab, isStaff]);
 
   useEffect(() => {
     if (page > 1) {
@@ -375,6 +380,31 @@ export default function LecturesPage() {
                 className="flex items-center gap-2 px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark"
               >
                 <Plus className="w-4 h-4" /> Create Lecture
+              </button>
+            </div>
+          )}
+
+          {!isStaff && (
+            <div className="flex items-center bg-white/5 p-1 rounded-xl border border-white/10">
+              <button
+                onClick={() => setListTab('active')}
+                className={`px-4 py-1.5 text-sm rounded-lg transition-all ${
+                  listTab === 'active' 
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20' 
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                Active
+              </button>
+              <button
+                onClick={() => setListTab('completed')}
+                className={`px-4 py-1.5 text-sm rounded-lg transition-all ${
+                  listTab === 'completed' 
+                    ? 'bg-success text-white shadow-lg shadow-success/20' 
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                Completed
               </button>
             </div>
           )}

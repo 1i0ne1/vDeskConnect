@@ -83,6 +83,20 @@ class LectureController extends Controller
             $query->where('scheduled_at', '<=', $request->date_to);
         }
 
+        // Filter by completion status (for students)
+        if ($request->has('is_completed') && $user->role === 'student') {
+            $isCompleted = filter_var($request->is_completed, FILTER_VALIDATE_BOOLEAN);
+            if ($isCompleted) {
+                $query->whereHas('studentProgress', function($q) use ($user) {
+                    $q->where('student_id', $user->id)->where('is_completed', true);
+                });
+            } else {
+                $query->whereDoesntHave('studentProgress', function($q) use ($user) {
+                    $q->where('student_id', $user->id)->where('is_completed', true);
+                });
+            }
+        }
+
         $lectures = $query->paginate($perPage);
 
         return response()->json($lectures);

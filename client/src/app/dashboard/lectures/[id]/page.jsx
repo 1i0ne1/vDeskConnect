@@ -182,10 +182,11 @@ export default function LecturePlayerPage() {
   const fetchLecture = useCallback(async () => {
     setLoading(true);
     try {
-      const [userRes, lectureRes, resourcesRes] = await Promise.all([
+      const [userRes, lectureRes, resourcesRes, progressRes] = await Promise.all([
         api.get('/user').catch(() => ({ user: null })),
         academicApi.lectures.getOne(params.id),
         academicApi.lectureResources.getAll(params.id).catch(() => ({ resources: [] })),
+        academicApi.lectureProgress.get(params.id).catch(() => ({ progress: null })),
       ]);
       setUser(userRes.user);
       const isSchoolAdmin = userRes.user?.role === 'admin' || userRes.user?.role === 'director';
@@ -193,6 +194,10 @@ export default function LecturePlayerPage() {
       setLecture(lectureRes.lecture);
       setResources(resourcesRes.resources || []);
       setSectionContents(parseContentSections(lectureRes.lecture?.content));
+      
+      if (progressRes.progress) {
+        setCompletedSections(progressRes.progress.progress_data?.completed_sections || []);
+      }
     } catch (err) {
       toast.error('Failed to load lecture');
       router.push('/dashboard/lectures');
@@ -250,9 +255,25 @@ export default function LecturePlayerPage() {
   };
 
   // Mark current section complete and move to next
-  const markCompleteAndNext = () => {
+  const markCompleteAndNext = async () => {
     if (!completedSections.includes(currentSectionIndex)) {
-      setCompletedSections([...completedSections, currentSectionIndex]);
+      const newCompleted = [...completedSections, currentSectionIndex];
+      setCompletedSections(newCompleted);
+      
+      // If it's the last section, mark the whole lecture as completed for the student
+      const isLastSection = currentSectionIndex === sectionContents.length - 1;
+      
+      try {
+        await academicApi.lectureProgress.update(lecture.id, {
+          is_completed: isLastSection,
+          progress_data: { completed_sections: newCompleted }
+        });
+        if (isLastSection) {
+          toast.success('Congratulations! You have completed this lecture.');
+        }
+      } catch (err) {
+        console.error('Failed to save progress:', err);
+      }
     }
   };
 
@@ -614,9 +635,16 @@ export default function LecturePlayerPage() {
                   {!completedSections.includes(currentSectionIndex) && !isDirector && (
                     <button
                       onClick={markCompleteAndNext}
-                      className="flex items-center gap-2 px-4 py-2 bg-success/10 text-success rounded-lg hover:bg-success/20"
+                      disabled={lecture.type === 'sync' && lecture.status !== 'completed'}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                        lecture.type === 'sync' && lecture.status !== 'completed'
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-success/10 text-success hover:bg-success/20'
+                      }`}
+                      title={lecture.type === 'sync' && lecture.status !== 'completed' ? 'Wait for teacher to complete live session' : ''}
                     >
-                      <CheckCircle className="w-4 h-4" /> Mark Complete & Next
+                      <CheckCircle className="w-4 h-4" /> 
+                      {lecture.type === 'sync' ? 'Mark Live Session Complete' : 'Mark Complete & Next'}
                     </button>
                   )}
                   {completedSections.includes(currentSectionIndex) && (
