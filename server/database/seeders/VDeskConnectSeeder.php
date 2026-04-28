@@ -247,7 +247,7 @@ class VDeskConnectSeeder extends Seeder
         //  5. STUDENTS
         // ─────────────────────────────────────────────
         $studentNames = [
-            ['Emmanuel', 'Adebayo'], ['Fatima', 'Mohammed'], ['David', 'Okafor'], 
+            ['Fatima', 'Mohamed'], ['Emmanuel', 'Adebayo'], ['David', 'Okafor'], 
             ['Chidinma', 'Eze'], ['Blessing', 'Adeyemi'], ['Samuel', 'Uche'],
             ['Grace', 'Ogbonna'], ['Michael', 'Okonkwo'], ['Sarah', 'Idris'], ['Peter', 'Chukwu']
         ];
@@ -256,7 +256,7 @@ class VDeskConnectSeeder extends Seeder
         foreach ($studentNames as $i => $name) {
             $sid = DB::table('users')->insertGetId([
                 'school_id' => $demoSchoolId,
-                'email' => strtolower($name[0]) . '.' . ($i+1) . '@student.com',
+                'email' => $i === 0 ? 'fatima@student.com' : strtolower($name[0]) . '.' . ($i+1) . '@student.com',
                 'password' => Hash::make('Password@2026!'),
                 'role' => 'student',
                 'verified' => true,
