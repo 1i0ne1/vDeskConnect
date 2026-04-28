@@ -778,55 +778,76 @@ class AcademicController extends Controller
     // ==================== GRADE LEVELS ====================
 
     /**
-     * List all grade levels for the school.
+     * List all grade levels for the school (with search, filter, and pagination).
      */
     public function gradeLevelsIndex(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        $gradeLevels = GradeLevel::where('school_id', $user->school_id)
-            ->orderBy('order')
-            ->with(['sections'])
-            ->get()
-            ->map(function ($gl) use ($user) {
-                // Count students in this grade level
-                $studentCount = \DB::table('profiles')
-                    ->join('users', 'profiles.user_id', '=', 'users.id')
-                    ->where('users.school_id', $user->school_id)
-                    ->where('users.role', 'student')
-                    ->where('users.deleted_at', null)
-                    ->where('profiles.data->grade_level_id', $gl->id)
-                    ->count();
+        $query = GradeLevel::where('school_id', $user->school_id)
+            ->with(['sections']);
 
-                // Count teachers assigned to this grade (only not banned, not deleted)
-                $teacherCount = \DB::table('teacher_subjects')
-                    ->join('users', 'teacher_subjects.teacher_id', '=', 'users.id')
-                    ->where('teacher_subjects.school_id', $user->school_id)
-                    ->where('teacher_subjects.grade_level_id', $gl->id)
-                    ->where('users.deleted_at', null)
-                    ->where('users.banned', false)
-                    ->distinct('teacher_subjects.teacher_id')
-                    ->count('teacher_subjects.teacher_id');
-
-                // Count subjects assigned to this grade
-                $subjectCount = GradeLevelSubject::where('school_id', $user->school_id)
-                    ->where('grade_level_id', $gl->id)
-                    ->count();
-
-                return [
-                    'id' => $gl->id,
-                    'name' => $gl->name,
-                    'short_name' => $gl->short_name,
-                    'order' => $gl->order,
-                    'cycle' => $gl->cycle,
-                    'students_count' => $studentCount,
-                    'sections_count' => $gl->sections->count(),
-                    'subjects_count' => $subjectCount,
-                    'teachers_count' => $teacherCount,
-                ];
+        // Apply Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'ILIKE', "%{$search}%")
+                  ->orWhere('short_name', 'ILIKE', "%{$search}%");
             });
+        }
 
-        return response()->json(['grade_levels' => $gradeLevels]);
+        // Apply Cycle Filter
+        if ($request->filled('cycle')) {
+            $query->where('cycle', $request->cycle);
+        }
+
+        $perPage = $request->input('per_page', 20);
+        $paginated = $query->orderBy('order')->paginate($perPage);
+
+        $gradeLevels = collect($paginated->items())->map(function ($gl) use ($user) {
+            // Count students in this grade level
+            $studentCount = \DB::table('profiles')
+                ->join('users', 'profiles.user_id', '=', 'users.id')
+                ->where('users.school_id', $user->school_id)
+                ->where('users.role', 'student')
+                ->where('users.deleted_at', null)
+                ->where('profiles.data->grade_level_id', $gl->id)
+                ->count();
+
+            // Count teachers assigned to this grade (only not banned, not deleted)
+            $teacherCount = \DB::table('teacher_subjects')
+                ->join('users', 'teacher_subjects.teacher_id', '=', 'users.id')
+                ->where('teacher_subjects.school_id', $user->school_id)
+                ->where('teacher_subjects.grade_level_id', $gl->id)
+                ->where('users.deleted_at', null)
+                ->where('users.banned', false)
+                ->distinct('teacher_subjects.teacher_id')
+                ->count('teacher_subjects.teacher_id');
+
+            // Count subjects assigned to this grade
+            $subjectCount = GradeLevelSubject::where('school_id', $user->school_id)
+                ->where('grade_level_id', $gl->id)
+                ->count();
+
+            return [
+                'id' => $gl->id,
+                'name' => $gl->name,
+                'short_name' => $gl->short_name,
+                'order' => $gl->order,
+                'cycle' => $gl->cycle,
+                'students_count' => $studentCount,
+                'sections_count' => $gl->sections->count(),
+                'subjects_count' => $subjectCount,
+                'teachers_count' => $teacherCount,
+            ];
+        });
+
+        return response()->json([
+            'grade_levels' => $gradeLevels,
+            'current_page' => $paginated->currentPage(),
+            'last_page' => $paginated->lastPage(),
+            'total' => $paginated->total(),
+        ]);
     }
 
     /**

@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   School, Users, BookOpen, UserRound, Plus, Trash2, X, Edit2,
-  GraduationCap, Layers, Tag, ChevronLeft, CheckCircle, Sparkles, Eye
+  GraduationCap, Layers, Tag, ChevronLeft, CheckCircle, Sparkles, Eye,
+  Search, Filter
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -19,6 +21,15 @@ export default function ClassesPage() {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [gradeLevels, setGradeLevels] = useState([]);
+  const [filters, setFilters] = useState({ search: '', cycle: '' });
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // --- Infinite Scroll States ---
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const observer = useRef();
+
   const [selectedGrade, setSelectedGrade] = useState(null);
   const [gradeDetail, setGradeDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -52,17 +63,48 @@ export default function ClassesPage() {
   const [schemeAIForm, setSchemeAIForm] = useState({ week_number: '', subject_id: '', term_id: '', topic: '' });
   const [schemeAILoading, setSchemeAILoading] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const lastElementRef = useCallback(node => {
+    if (loading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, loadingMore, hasMore]);
+
+  const fetchData = useCallback(async (pageNum = 1, isLoadMore = false) => {
+    if (isLoadMore) setLoadingMore(true);
+    else setLoading(true);
     try {
-      const res = await academicApi.gradeLevels.getAll();
-      setGradeLevels(res.grade_levels || []);
+      const res = await academicApi.gradeLevels.getAll({ ...filters, page: pageNum });
+      const newData = res.grade_levels || [];
+      setGradeLevels(prev => pageNum === 1 ? newData : [...prev, ...newData]);
+      setHasMore(res.current_page < res.last_page);
     } catch (err) {
       toast.error('Failed to load grade levels');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [toast]);
+  }, [filters, toast]);
+
+  useEffect(() => {
+    const token = api.getToken();
+    if (!token) return;
+    setPage(1);
+    setHasMore(true);
+    fetchData(1);
+  }, [filters]);
+
+  useEffect(() => {
+    if (page > 1) {
+      const token = api.getToken();
+      if (!token) return;
+      fetchData(page, true);
+    }
+  }, [page, fetchData]);
 
   const fetchGradeDetail = useCallback(async (id) => {
     setDetailLoading(true);
@@ -410,6 +452,70 @@ export default function ClassesPage() {
             <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
             Back to Classes
           </button>
+        )}
+
+        {/* Classes List View - Search and Filter (Standardized) */}
+        {!selectedGrade && (
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-card dark:bg-gray-800 p-4 rounded-card border border-border shadow-soft">
+              <div className="flex items-center space-x-2 w-full md:w-auto">
+                <div className="relative w-full md:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
+                  <input
+                    type="text"
+                    placeholder="Search classes..."
+                    value={filters.search}
+                    onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                    className="w-full pl-10 pr-4 py-2 bg-white/5 border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                  />
+                </div>
+                
+                <button 
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`p-2 rounded-lg transition-all ${showFilters ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border border-border text-text-secondary hover:text-text-primary hover:bg-white/10'}`}
+                >
+                  <Filter size={20} />
+                </button>
+              </div>
+
+              <div className="flex items-center space-x-4 w-full md:w-auto">
+                <button
+                  onClick={() => router.push('/dashboard/academic?tab=grades')}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark w-full md:w-auto justify-center"
+                >
+                  <Plus className="w-4 h-4" /> Add Grade Level
+                </button>
+              </div>
+            </div>
+
+            {/* Filters Panel */}
+            <AnimatePresence onExitComplete={() => {
+              setFilters({ search: '', cycle: '' });
+            }}>
+              {showFilters && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="bg-card dark:bg-gray-800 p-4 rounded-card border border-border shadow-soft grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <select
+                      value={filters.cycle}
+                      onChange={e => setFilters(prev => ({ ...prev, cycle: e.target.value }))}
+                      className="px-3 py-2 bg-white/5 border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                    >
+                      <option value="">All Cycles</option>
+                      <option value="Junior">Junior</option>
+                      <option value="Senior">Senior</option>
+                      <option value="Primary">Primary</option>
+                      <option value="Nursery">Nursery</option>
+                    </select>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         )}
 
         {loading ? (
@@ -785,12 +891,13 @@ export default function ClassesPage() {
             <div className="bg-card dark:bg-gray-800 rounded-card border border-border p-4 md:p-6">
               <h2 className="text-base md:text-lg font-semibold text-text-primary mb-4">All Classes</h2>
               {gradeLevels.length === 0 ? (
-                <p className="text-text-secondary text-center py-8 text-sm md:text-base">No grade levels created yet. Go to Academic → Grades to create them.</p>
+                <p className="text-text-secondary text-center py-8 text-sm md:text-base">No grade levels found matching your criteria.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                  {gradeLevels.map(gl => (
+                  {gradeLevels.map((gl, idx) => (
                     <button
                       key={gl.id}
+                      ref={idx === gradeLevels.length - 1 ? lastElementRef : null}
                       onClick={() => fetchGradeDetail(gl.id)}
                       className="text-left p-4 md:p-6 border border-border dark:border-gray-600 rounded-lg hover:border-primary dark:hover:border-primary transition-colors bg-bg-main dark:bg-gray-750"
                     >
@@ -823,6 +930,13 @@ export default function ClassesPage() {
                       </div>
                     </button>
                   ))}
+                </div>
+              )}
+
+              {loadingMore && (
+                <div className="py-4 flex items-center justify-center space-x-2 text-primary">
+                  <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                  <span className="text-sm font-medium">Loading more classes...</span>
                 </div>
               )}
             </div>

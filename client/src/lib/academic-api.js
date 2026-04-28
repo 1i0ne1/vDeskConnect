@@ -50,7 +50,13 @@ export const academicApi = {
 
   // Grade Levels
   gradeLevels: {
-    getAll: () => api.get('/academic/grade-levels'),
+    getAll: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.page) params.append('page', filters.page);
+      if (filters.search) params.append('search', filters.search);
+      if (filters.cycle) params.append('cycle', filters.cycle);
+      return api.get(`/academic/grade-levels?${params.toString()}`);
+    },
     create: (data) => api.post('/academic/grade-levels', data),
     update: (id, data) => api.put(`/academic/grade-levels/${id}`, data),
     delete: (id) => api.delete(`/academic/grade-levels/${id}`),
