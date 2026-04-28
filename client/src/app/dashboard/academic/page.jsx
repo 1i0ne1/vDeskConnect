@@ -25,15 +25,9 @@ const TABS = {
 export default function AcademicPage() {
   const router = useRouter();
   const toast = useToast();
+  const [editingId, setEditingId] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.SESSIONS);
   const [loading, setLoading] = useState(true);
-
-  // Helper: safely parse number input, returns fallback on empty/NaN
-  const safeInt = (value, fallback = 1) => {
-    if (value === '' || value == null) return fallback;
-    const num = parseInt(value, 10);
-    return isNaN(num) ? fallback : num;
-  };
 
   // Sessions state
   const [sessions, setSessions] = useState([]);
@@ -76,7 +70,7 @@ export default function AcademicPage() {
   const [scaleLoading, setScaleLoading] = useState(false);
   const [editingScaleId, setEditingScaleId] = useState(null);
 
-  // Phase 2 state (gradeLevels and subjects already declared above for CA weeks)
+  // Phase 2 state
   const [sections, setSections] = useState([]);
   const [selectedGradeForSections, setSelectedGradeForSections] = useState(null);
   const [departments, setDepartments] = useState([]);
@@ -103,7 +97,84 @@ export default function AcademicPage() {
   const [subjectLoading, setSubjectLoading] = useState(false);
   const [departmentLoading, setDepartmentLoading] = useState(false);
   const [mappingLoading, setMappingLoading] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+
+  // Search filter icon component
+  const Search = ({ className, size }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+  );
+
+  // Helper: safely parse number input
+  const safeInt = (value, fallback = 1) => {
+    if (value === '' || value == null) return fallback;
+    const num = parseInt(value, 10);
+    return isNaN(num) ? fallback : num;
+  };
+
+  // Client-side search and infinite scroll state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [displayCount, setDisplayCount] = useState(20);
+
+  // Reset search and count when tab changes
+  useEffect(() => {
+    setSearchQuery('');
+    setDisplayCount(20);
+  }, [activeTab]);
+
+  // Observer for infinite scroll
+  const observerRef = useCallback(node => {
+    if (loading) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        setDisplayCount(prev => prev + 20);
+      }
+    });
+    if (node) observer.observe(node);
+  }, [loading]);
+
+  // Helper for filtering and slicing
+  const getFilteredAndPaginated = (items, filterFn) => {
+    if (!items) return { items: [], total: 0, hasMore: false };
+    const filtered = searchQuery
+      ? items.filter(filterFn)
+      : items;
+    return {
+      items: filtered.slice(0, displayCount),
+      total: filtered.length,
+      hasMore: filtered.length > displayCount
+    };
+  };
+
+  // --- Derived Data ---
+  const { items: displaySessions, total: totalSessions, hasMore: hasMoreSessions } = getFilteredAndPaginated(sessions, s => 
+    s.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const { items: displayTerms, total: totalTerms, hasMore: hasMoreTerms } = getFilteredAndPaginated(terms, t => 
+    t.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const { items: displayGradeLevels, total: totalGradeLevels, hasMore: hasMoreGradeLevels } = getFilteredAndPaginated(gradeLevels, gl => 
+    gl.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    gl.short_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const { items: displaySubjects, total: totalSubjects, hasMore: hasMoreSubjects } = getFilteredAndPaginated(subjects, sub => 
+    sub.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    sub.code.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const { items: displaySections, total: totalSections, hasMore: hasMoreSectionsData } = getFilteredAndPaginated(sections, sec => 
+    sec.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (sec.room_number || '').toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const { items: displayMappings, total: totalMappings, hasMore: hasMoreMappings } = getFilteredAndPaginated(mappings, m => 
+    m.subject_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    m.subject_code.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // Fetch all data
   const fetchData = useCallback(async () => {
@@ -726,14 +797,27 @@ export default function AcademicPage() {
 
                 {/* Existing Sessions */}
                 <div className="bg-card dark:bg-gray-800 rounded-card border border-border p-4 md:p-6 shadow-sm">
-                  <h2 className="text-base md:text-lg font-semibold text-text-primary mb-4">Academic Sessions</h2>
-                  {sessions.length === 0 ? (
-                    <p className="text-text-secondary text-center py-8 text-sm md:text-base">No sessions created yet.</p>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <h2 className="text-base md:text-lg font-semibold text-text-primary">Academic Sessions ({totalSessions})</h2>
+                    <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+                      <input
+                        type="text"
+                        placeholder="Search sessions..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-3 py-1.5 md:py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                      />
+                    </div>
+                  </div>
+                  {displaySessions.length === 0 ? (
+                    <p className="text-text-secondary text-center py-8 text-sm md:text-base">No sessions found.</p>
                   ) : (
                     <div className="space-y-3">
-                      {sessions.map(session => (
+                      {displaySessions.map((session, idx) => (
                         <div
                           key={session.id}
+                          ref={idx === displaySessions.length - 1 ? observerRef : null}
                           className={`p-3 md:p-4 rounded-lg border-2 ${
                             session.active ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-border dark:border-gray-600'
                           }`}
@@ -823,23 +907,35 @@ export default function AcademicPage() {
 
                     {/* Existing Terms */}
                     <div className="bg-card dark:bg-gray-800 rounded-card border border-border p-4 md:p-6 shadow-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                        <h2 className="text-base md:text-lg font-semibold text-text-primary">Terms</h2>
-                        <button
-                          onClick={() => setShowTermModal(true)}
-                          className="flex items-center gap-2 px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark self-start"
-                        >
-                          <Plus className="w-4 h-4" />
-                          Add Term
-                        </button>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <h2 className="text-base md:text-lg font-semibold text-text-primary">Terms ({totalTerms})</h2>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="relative w-full sm:w-64">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+                            <input
+                              type="text"
+                              placeholder="Search terms..."
+                              value={searchQuery}
+                              onChange={e => setSearchQuery(e.target.value)}
+                              className="w-full pl-9 pr-3 py-1.5 md:py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                            />
+                          </div>
+                          <button
+                            onClick={() => setShowTermModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark whitespace-nowrap"
+                          >
+                            <Plus className="w-4 h-4" />
+                            Add Term
+                          </button>
+                        </div>
                       </div>
 
-                      {terms.length === 0 ? (
-                        <p className="text-text-secondary text-center py-8 text-sm md:text-base">No terms created yet.</p>
+                      {displayTerms.length === 0 ? (
+                        <p className="text-text-secondary text-center py-8 text-sm md:text-base">No terms found.</p>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {terms.map(term => (
-                            <div key={term.id} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg bg-bg-main dark:bg-gray-750">
+                          {displayTerms.map((term, idx) => (
+                            <div key={term.id} ref={idx === displayTerms.length - 1 ? observerRef : null} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg bg-bg-main dark:bg-gray-750">
                               <div className="flex items-center justify-between mb-2">
                                 <h3 className="font-semibold text-text-primary text-sm md:text-base truncate flex-1">{term.name}</h3>
                                 <div className="flex gap-2 flex-shrink-0">
@@ -1165,12 +1261,22 @@ export default function AcademicPage() {
             {activeTab === TABS.GRADE_LEVELS && (
               <div className="space-y-4 md:space-y-6">
                 <div className="bg-card dark:bg-gray-800 rounded-card border border-border p-4 md:p-6 shadow-sm">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                    <h2 className="text-base md:text-lg font-semibold text-text-primary">Grade Levels</h2>
-                    <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <h2 className="text-base md:text-lg font-semibold text-text-primary">Grade Levels ({totalGradeLevels})</h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+                        <input
+                          type="text"
+                          placeholder="Search grades..."
+                          value={searchQuery}
+                          onChange={e => setSearchQuery(e.target.value)}
+                          className="w-full pl-9 pr-3 py-1.5 md:py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                        />
+                      </div>
                       <button
                         onClick={() => setShowBulkGradeModal(true)}
-                        className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 text-xs md:text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20"
+                        className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 text-xs md:text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 whitespace-nowrap"
                       >
                         <Copy className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         Bulk Create
@@ -1181,7 +1287,7 @@ export default function AcademicPage() {
                           setEditingId(null);
                           setShowGradeLevelModal(true);
                         }}
-                        className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 text-xs md:text-sm bg-primary text-white rounded-lg hover:bg-primary-dark"
+                        className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 text-xs md:text-sm bg-primary text-white rounded-lg hover:bg-primary-dark whitespace-nowrap"
                       >
                         <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         Add Grade
@@ -1189,12 +1295,12 @@ export default function AcademicPage() {
                     </div>
                   </div>
 
-                  {gradeLevels.length === 0 ? (
-                    <p className="text-text-secondary text-center py-8 text-sm md:text-base">No grade levels created yet.</p>
+                  {displayGradeLevels.length === 0 ? (
+                    <p className="text-text-secondary text-center py-8 text-sm md:text-base">No grade levels found.</p>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                      {gradeLevels.map(gl => (
-                        <div key={gl.id} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg bg-bg-main dark:bg-gray-750">
+                      {displayGradeLevels.map((gl, idx) => (
+                        <div key={gl.id} ref={idx === displayGradeLevels.length - 1 ? observerRef : null} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg bg-bg-main dark:bg-gray-750">
                           <div className="flex items-center justify-between mb-2">
                             <div>
                               <h3 className="font-semibold text-text-primary text-sm md:text-base">{gl.name}</h3>
@@ -1217,26 +1323,38 @@ export default function AcademicPage() {
             {activeTab === TABS.SUBJECTS && (
               <div className="space-y-4 md:space-y-6">
                 <div className="bg-card dark:bg-gray-800 rounded-card border border-border p-4 md:p-6 shadow-sm">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                    <h2 className="text-base md:text-lg font-semibold text-text-primary">Subjects</h2>
-                    <button
-                      onClick={() => {
-                        setSubjectForm({ name: '', code: '', type: 'core', department_id: '' });
-                        setShowSubjectModal(true);
-                      }}
-                      className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 text-xs md:text-sm bg-primary text-white rounded-lg hover:bg-primary-dark"
-                    >
-                      <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      Add Subject
-                    </button>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <h2 className="text-base md:text-lg font-semibold text-text-primary">Subjects ({totalSubjects})</h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+                        <input
+                          type="text"
+                          placeholder="Search subjects..."
+                          value={searchQuery}
+                          onChange={e => setSearchQuery(e.target.value)}
+                          className="w-full pl-9 pr-3 py-1.5 md:py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSubjectForm({ name: '', code: '', type: 'core', department_id: '' });
+                          setShowSubjectModal(true);
+                        }}
+                        className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 text-xs md:text-sm bg-primary text-white rounded-lg hover:bg-primary-dark whitespace-nowrap"
+                      >
+                        <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        Add Subject
+                      </button>
+                    </div>
                   </div>
 
-                  {subjects.length === 0 ? (
-                    <p className="text-text-secondary text-center py-8 text-sm md:text-base">No subjects created yet.</p>
+                  {displaySubjects.length === 0 ? (
+                    <p className="text-text-secondary text-center py-8 text-sm md:text-base">No subjects found.</p>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                      {subjects.map(sub => (
-                        <div key={sub.id} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg bg-bg-main dark:bg-gray-750">
+                      {displaySubjects.map((sub, idx) => (
+                        <div key={sub.id} ref={idx === displaySubjects.length - 1 ? observerRef : null} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg bg-bg-main dark:bg-gray-750">
                           <div className="flex items-center justify-between mb-2">
                             <div>
                               <h3 className="font-semibold text-text-primary text-sm md:text-base">{sub.name}</h3>
@@ -1279,25 +1397,38 @@ export default function AcademicPage() {
 
                   {selectedGradeForSections && (
                     <>
-                      <div className="flex justify-end mb-3">
-                        <button
-                          onClick={() => {
-                            setSectionForm({ grade_level_id: selectedGradeForSections, name: '', room_number: '', capacity: '' });
-                            setShowSectionModal(true);
-                          }}
-                          className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 text-xs md:text-sm bg-primary text-white rounded-lg hover:bg-primary-dark"
-                        >
-                          <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                          Add Section
-                        </button>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <h2 className="text-sm md:text-base font-semibold text-text-primary">Sections ({totalSections})</h2>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="relative w-full sm:w-64">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+                            <input
+                              type="text"
+                              placeholder="Search sections..."
+                              value={searchQuery}
+                              onChange={e => setSearchQuery(e.target.value)}
+                              className="w-full pl-9 pr-3 py-1.5 md:py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                            />
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSectionForm({ grade_level_id: selectedGradeForSections, name: '', room_number: '', capacity: '' });
+                              setShowSectionModal(true);
+                            }}
+                            className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 text-xs md:text-sm bg-primary text-white rounded-lg hover:bg-primary-dark whitespace-nowrap"
+                          >
+                            <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            Add Section
+                          </button>
+                        </div>
                       </div>
 
-                      {sections.length === 0 ? (
-                        <p className="text-text-secondary text-center py-6 text-sm">No sections for this grade level.</p>
+                      {displaySections.length === 0 ? (
+                        <p className="text-text-secondary text-center py-6 text-sm">No sections found.</p>
                       ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                          {sections.map(sec => (
-                            <div key={sec.id} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg bg-bg-main dark:bg-gray-750">
+                          {displaySections.map((sec, idx) => (
+                            <div key={sec.id} ref={idx === displaySections.length - 1 ? observerRef : null} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg bg-bg-main dark:bg-gray-750">
                               <div className="flex items-center justify-between mb-1">
                                 <h3 className="font-semibold text-text-primary text-sm md:text-base">{sec.name}</h3>
                                 <button onClick={() => handleDeleteSection(sec.id)} className="text-error hover:text-error/80 flex-shrink-0">
@@ -1347,12 +1478,26 @@ export default function AcademicPage() {
 
                   {selectedGradeForMappings && (
                     <>
-                      {mappings.length === 0 ? (
-                        <p className="text-text-secondary text-center py-6 text-sm">No subjects assigned to this grade level.</p>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <h2 className="text-sm md:text-base font-semibold text-text-primary">Mapped Subjects ({totalMappings})</h2>
+                        <div className="relative w-full sm:w-64">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={14} />
+                          <input
+                            type="text"
+                            placeholder="Search mappings..."
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-3 py-1.5 md:py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      {displayMappings.length === 0 ? (
+                        <p className="text-text-secondary text-center py-6 text-sm">No subjects found.</p>
                       ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                          {mappings.map(m => (
-                            <div key={m.id} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg bg-bg-main dark:bg-gray-750">
+                          {displayMappings.map((m, idx) => (
+                            <div key={m.id} ref={idx === displayMappings.length - 1 ? observerRef : null} className="p-3 md:p-4 border border-border dark:border-gray-600 rounded-lg bg-bg-main dark:bg-gray-750">
                               <div className="flex items-center justify-between mb-1">
                                 <h3 className="font-semibold text-text-primary text-sm md:text-base">{m.subject_name}</h3>
                                 <button onClick={() => handleRemoveMapping(m.id)} className="text-error hover:text-error/80 flex-shrink-0">
