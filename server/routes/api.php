@@ -244,5 +244,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/orders', [MarketplaceController::class, 'orders']);
         Route::post('/orders', [MarketplaceController::class, 'placeOrder']);
         Route::put('/orders/{id}/status', [MarketplaceController::class, 'updateOrderStatus']);
+        Route::get('/stats', [MarketplaceController::class, 'getStats']);
     });
 });

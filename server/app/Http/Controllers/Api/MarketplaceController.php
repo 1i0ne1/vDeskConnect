@@ -250,4 +250,65 @@ class MarketplaceController extends Controller
             'order' => $order->load(['student.profile', 'textbook'])
         ]);
     }
+
+    /**
+     * Get marketplace statistics.
+     */
+    public function getStats(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if ($user->isStudent()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $schoolId = $user->school_id;
+
+        $totalBooks = Textbook::where('school_id', $schoolId)->count();
+        $physicalStock = Textbook::where('school_id', $schoolId)->where('is_electronic', false)->sum('stock_count');
+        
+        $ordersToday = MarketplaceOrder::where('school_id', $schoolId)
+            ->whereDate('order_date', now())
+            ->count();
+
+        $revenueMTD = MarketplaceOrder::where('school_id', $schoolId)
+            ->whereIn('status', ['paid', 'delivered'])
+            ->whereMonth('order_date', now()->month)
+            ->whereYear('order_date', now()->year)
+            ->sum('amount');
+
+        // Sales for the last 6 months
+        $salesHistory = MarketplaceOrder::where('school_id', $schoolId)
+            ->whereIn('status', ['paid', 'delivered'])
+            ->where('order_date', '>=', now()->subMonths(6))
+            ->select(
+                DB::raw("to_char(order_date, 'Mon') as month"),
+                DB::raw("SUM(amount) as revenue"),
+                DB::raw("COUNT(*) as count")
+            )
+            ->groupBy('month')
+            ->orderBy(DB::raw("MIN(order_date)"))
+            ->get();
+
+        $topBooks = MarketplaceOrder::where('marketplace_orders.school_id', $schoolId)
+            ->join('textbooks', 'marketplace_orders.textbook_id', '=', 'textbooks.id')
+            ->select('textbooks.title', DB::raw('COUNT(*) as sales_count'), DB::raw('SUM(marketplace_orders.amount) as total_revenue'))
+            ->groupBy('textbooks.id', 'textbooks.title')
+            ->orderBy('sales_count', 'desc')
+            ->limit(5)
+            ->get();
+
+        $pendingOrders = MarketplaceOrder::where('school_id', $schoolId)
+            ->where('status', 'pending')
+            ->count();
+
+        return response()->json([
+            'total_books' => $totalBooks,
+            'physical_stock' => $physicalStock,
+            'orders_today' => $ordersToday,
+            'revenue_mtd' => $revenueMTD,
+            'sales_history' => $salesHistory,
+            'top_books' => $topBooks,
+            'pending_orders' => $pendingOrders
+        ]);
+    }
 }

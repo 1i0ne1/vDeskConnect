@@ -11,6 +11,7 @@ const marketplaceApi = {
   getOrders: (params = {}) => api.get('/marketplace/orders', { params }),
   placeOrder: (data) => api.post('/marketplace/orders', data),
   updateOrderStatus: (id, status) => api.put(`/marketplace/orders/${id}/status`, { status }),
+  getStats: () => api.get('/marketplace/stats'),
 };
 
 export default marketplaceApi;
