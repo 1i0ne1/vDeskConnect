@@ -192,7 +192,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <DashboardLayout title="Reports & Grades" subtitle="Manage student performance and results" role="admin">
+    <DashboardLayout title="Reports & Grades" subtitle="Manage student performance and results" >
       <div className="space-y-6">
 
         {/* Statistics Overview */}

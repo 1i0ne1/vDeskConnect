@@ -87,7 +87,7 @@ export default function StudentResultsPage() {
 
   if (loading) {
     return (
-      <DashboardLayout title="My Results" subtitle="Loading..." role="student">
+      <DashboardLayout title="My Results" subtitle="Loading..." >
         <div className="flex items-center justify-center h-64">
           <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
@@ -96,7 +96,7 @@ export default function StudentResultsPage() {
   }
 
   return (
-    <DashboardLayout title="My Results" subtitle="View your academic performance and download report cards" role="student">
+    <DashboardLayout title="My Results" subtitle="View your academic performance and download report cards" >
       <div className="space-y-6">
         
         {/* Term Selection & PIN Entry Card */}

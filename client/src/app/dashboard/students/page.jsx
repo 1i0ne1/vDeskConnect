@@ -261,7 +261,7 @@ export default function StudentsPage() {
   };
 
   return (
-    <DashboardLayout title="Students" subtitle="Manage student records and academic enrollments" role="admin">
+    <DashboardLayout title="Students" subtitle="Manage student records and academic enrollments" >
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

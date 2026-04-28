@@ -195,7 +195,7 @@ export default function StaffPage() {
   };
 
   return (
-    <DashboardLayout title="Staff" subtitle="Manage school administration staff" role="admin">
+    <DashboardLayout title="Staff" subtitle="Manage school administration staff" >
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

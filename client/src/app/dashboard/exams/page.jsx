@@ -146,7 +146,7 @@ export default function ExamsPage() {
   };
 
   return (
-    <DashboardLayout title="Exams & Assessments" subtitle="Create and manage school examinations" role="admin">
+    <DashboardLayout title="Exams & Assessments" subtitle="Create and manage school examinations" >
       <div className="space-y-6">
         {/* Header Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

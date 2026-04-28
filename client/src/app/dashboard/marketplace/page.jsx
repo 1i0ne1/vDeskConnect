@@ -165,7 +165,7 @@ export default function MarketplacePage() {
   };
 
   return (
-    <DashboardLayout title="Textbook Marketplace" subtitle="Manage school books and student orders" role="admin">
+    <DashboardLayout title="Textbook Marketplace" subtitle="Manage school books and student orders" >
       <div className="space-y-6">
         {/* Header Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

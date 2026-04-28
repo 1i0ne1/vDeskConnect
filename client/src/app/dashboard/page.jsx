@@ -93,7 +93,7 @@ export default function SchoolAdminDashboard() {
   const userName = profileData?.first_name || user?.email?.split('@')[0] || 'Admin';
 
   return (
-    <DashboardLayout title="Dashboard" subtitle={`${greeting}, ${userName}!`} role="admin">
+    <DashboardLayout title="Dashboard" subtitle={`${greeting}, ${userName}!`} >
       <div className="space-y-6">
         {/* Welcome Banner */}
         <div className="bg-gradient-to-br from-primary to-primary-dark rounded-hero p-6 text-white relative overflow-hidden">

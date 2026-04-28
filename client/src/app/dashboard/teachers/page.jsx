@@ -178,7 +178,7 @@ export default function TeachersPage() {
   };
 
   return (
-    <DashboardLayout title="Teachers" subtitle="Manage your teachers" role="admin">
+    <DashboardLayout title="Teachers" subtitle="Manage your teachers" >
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
