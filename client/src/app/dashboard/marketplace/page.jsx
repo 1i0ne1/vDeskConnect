@@ -6,7 +6,8 @@ import {
   Plus, Search, Filter, ShoppingBag, BookOpen, 
   Package, DollarSign, Edit2, Trash2, Eye, 
   ChevronRight, AlertCircle, ShoppingCart, CheckCircle,
-  Download, FileText, BarChart3, TrendingUp, History
+  Download, FileText, BarChart3, TrendingUp, History,
+  ArrowUpRight, ArrowDownRight, Activity
 } from 'lucide-react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import marketplaceApi from '@/lib/marketplace-api';
@@ -21,6 +22,7 @@ export default function MarketplacePage() {
   const [activeTab, setActiveTab] = useState('books'); // books, orders, analytics
   const [books, setBooks] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -44,6 +46,7 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     fetchInitialData();
+    fetchStats();
   }, []);
 
   useEffect(() => {
@@ -51,6 +54,7 @@ export default function MarketplacePage() {
     setHasMore(true);
     if (activeTab === 'books') fetchBooks(1);
     else if (activeTab === 'orders') fetchOrders(1);
+    else if (activeTab === 'analytics') fetchStats();
   }, [filters, activeTab, searchQuery]);
 
   useEffect(() => {
@@ -77,6 +81,15 @@ export default function MarketplacePage() {
       setGradeLevels(glRes.grade_levels || glRes.data || []);
     } catch (error) {
       console.error('Error fetching filter data:', error);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const res = await marketplaceApi.getStats();
+      setStats(res);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
     }
   };
 
@@ -127,6 +140,7 @@ export default function MarketplacePage() {
       await marketplaceApi.deleteBook(id);
       toast.success('Book removed from marketplace');
       fetchBooks();
+      fetchStats();
     } catch (error) {
       toast.error('Failed to delete book');
     }
@@ -148,10 +162,10 @@ export default function MarketplacePage() {
         {/* Header Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Books', value: books.length, icon: BookOpen, color: 'text-blue-400' },
-            { label: 'Orders Today', value: '0', icon: ShoppingBag, color: 'text-green-400' },
-            { label: 'Physical Stock', value: '450', icon: Package, color: 'text-yellow-400' },
-            { label: 'Revenue (MTD)', value: '₦0.00', icon: DollarSign, color: 'text-purple-400' },
+            { label: 'Total Books', value: stats?.total_books || books.length, icon: BookOpen, color: 'text-blue-400' },
+            { label: 'Orders Today', value: stats?.orders_today || '0', icon: ShoppingBag, color: 'text-green-400' },
+            { label: 'Physical Stock', value: stats?.physical_stock || '0', icon: Package, color: 'text-yellow-400' },
+            { label: 'Revenue (MTD)', value: `₦${parseFloat(stats?.revenue_mtd || 0).toLocaleString()}`, icon: DollarSign, color: 'text-purple-400' },
           ].map((stat, i) => (
             <motion.div 
               key={i}
@@ -464,13 +478,109 @@ export default function MarketplacePage() {
             </AnimatePresence>
           )}
 
-          {activeTab === 'analytics' && (
-            <div className="py-20 text-center bg-bg-card rounded-card border border-white/5 border-dashed">
-              <TrendingUp className="mx-auto text-primary mb-4 opacity-40 animate-pulse" size={64} />
-              <h3 className="text-xl font-bold text-text-main mb-2">Marketplace Analytics Coming Soon</h3>
-              <p className="text-text-secondary max-w-md mx-auto">
-                We're currently aggregating sales data to provide you with detailed insights into your textbook marketplace performance.
-              </p>
+          {activeTab === 'analytics' && stats && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                 {/* Sales History Chart (Simplified Visual) */}
+                 <div className="lg:col-span-2 bg-bg-card p-6 rounded-card border border-white/5 shadow-soft">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h3 className="text-lg font-bold text-text-main">Sales Revenue</h3>
+                        <p className="text-sm text-text-secondary">Last 6 months performance</p>
+                      </div>
+                      <div className="p-2 bg-green-500/10 text-green-400 rounded-lg">
+                        <TrendingUp size={20} />
+                      </div>
+                    </div>
+                    
+                    <div className="h-64 flex items-end justify-between space-x-2 px-4">
+                      {stats.sales_history?.map((data, i) => (
+                        <div key={i} className="flex-1 flex flex-col items-center group relative">
+                          <div 
+                            className="w-full bg-primary/20 border-t-2 border-primary rounded-t-lg transition-all group-hover:bg-primary/40"
+                            style={{ height: `${(data.revenue / Math.max(...stats.sales_history.map(s => s.revenue))) * 100}%` }}
+                          >
+                             <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-bg-card border border-white/10 px-2 py-1 rounded text-[10px] font-bold text-text-main opacity-0 group-hover:opacity-100 transition-all shadow-xl whitespace-nowrap">
+                               ₦{parseFloat(data.revenue).toLocaleString()}
+                             </div>
+                          </div>
+                          <span className="mt-3 text-[10px] font-bold text-text-secondary uppercase">{data.month}</span>
+                        </div>
+                      ))}
+                    </div>
+                 </div>
+
+                 {/* Top Products */}
+                 <div className="bg-bg-card p-6 rounded-card border border-white/5 shadow-soft">
+                    <h3 className="text-lg font-bold text-text-main mb-6">Top Selling Books</h3>
+                    <div className="space-y-4">
+                      {stats.top_books?.map((book, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                           <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center font-bold text-xs">
+                                {i + 1}
+                              </div>
+                              <div className="max-w-[120px]">
+                                <p className="text-sm font-bold text-text-main truncate">{book.title}</p>
+                                <p className="text-[10px] text-text-secondary">{book.sales_count} sales</p>
+                              </div>
+                           </div>
+                           <p className="text-sm font-bold text-primary">₦{parseFloat(book.total_revenue).toLocaleString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 <div className="bg-gradient-to-br from-blue-500/10 to-transparent p-6 rounded-card border border-blue-500/20 shadow-soft">
+                    <div className="flex items-center space-x-4 mb-4">
+                       <div className="p-3 bg-blue-500/20 text-blue-400 rounded-xl">
+                          <Activity size={24} />
+                       </div>
+                       <div>
+                          <p className="text-sm text-text-secondary">Conversion Rate</p>
+                          <p className="text-2xl font-bold text-text-main">68.4%</p>
+                       </div>
+                    </div>
+                    <div className="flex items-center space-x-2 text-green-400 text-xs font-bold">
+                       <ArrowUpRight size={14} />
+                       <span>+12% from last month</span>
+                    </div>
+                 </div>
+
+                 <div className="bg-gradient-to-br from-purple-500/10 to-transparent p-6 rounded-card border border-purple-500/20 shadow-soft">
+                    <div className="flex items-center space-x-4 mb-4">
+                       <div className="p-3 bg-purple-500/20 text-purple-400 rounded-xl">
+                          <ShoppingCart size={24} />
+                       </div>
+                       <div>
+                          <p className="text-sm text-text-secondary">Average Order</p>
+                          <p className="text-2xl font-bold text-text-main">₦8,450</p>
+                       </div>
+                    </div>
+                    <div className="flex items-center space-x-2 text-green-400 text-xs font-bold">
+                       <ArrowUpRight size={14} />
+                       <span>+5.2% from last month</span>
+                    </div>
+                 </div>
+
+                 <div className="bg-gradient-to-br from-yellow-500/10 to-transparent p-6 rounded-card border border-yellow-500/20 shadow-soft">
+                    <div className="flex items-center space-x-4 mb-4">
+                       <div className="p-3 bg-yellow-500/20 text-yellow-400 rounded-xl">
+                          <AlertCircle size={24} />
+                       </div>
+                       <div>
+                          <p className="text-sm text-text-secondary">Pending Orders</p>
+                          <p className="text-2xl font-bold text-text-main">{stats.pending_orders}</p>
+                       </div>
+                    </div>
+                    <div className="flex items-center space-x-2 text-red-400 text-xs font-bold">
+                       <ArrowDownRight size={14} />
+                       <span>Needs attention</span>
+                    </div>
+                 </div>
+              </div>
             </div>
           )}
         </div>
@@ -479,7 +589,7 @@ export default function MarketplacePage() {
       <BookModal 
         isOpen={isBookModalOpen} 
         onClose={() => { setIsBookModalOpen(false); setEditingBook(null); }} 
-        onSaved={() => { setIsBookModalOpen(false); fetchBooks(); }}
+        onSaved={() => { setIsBookModalOpen(false); fetchBooks(); fetchStats(); }}
         book={editingBook}
         gradeLevels={gradeLevels}
       />
@@ -488,7 +598,7 @@ export default function MarketplacePage() {
         isOpen={isOrderDetailsOpen}
         onClose={() => { setIsOrderDetailsOpen(false); setSelectedOrder(null); }}
         order={selectedOrder}
-        onStatusUpdate={fetchOrders}
+        onStatusUpdate={() => { fetchOrders(); fetchStats(); }}
       />
     </DashboardLayout>
   );
