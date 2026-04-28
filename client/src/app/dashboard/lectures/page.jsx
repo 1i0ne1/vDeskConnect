@@ -368,7 +368,14 @@ export default function LecturesPage() {
             </div>
             
             <button 
-              onClick={() => setShowFilters(!showFilters)}
+              onClick={() => {
+                if (showFilters) {
+                  // If closing, clear filters immediately
+                  setFilters({ search: '', status: '', type: '', grade_level_id: '', subject_id: '', term_id: '' });
+                  setDebouncedSearch('');
+                }
+                setShowFilters(!showFilters);
+              }}
               className={`p-2 rounded-lg transition-all ${showFilters ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10'}`}
             >
               <Filter size={20} />
@@ -430,6 +437,7 @@ export default function LecturesPage() {
         {/* Filters Panel */}
         <AnimatePresence onExitComplete={() => {
           setFilters({ search: '', status: '', type: '', grade_level_id: '', subject_id: '', term_id: '' });
+          setDebouncedSearch('');
         }}>
           {showFilters && (
             <motion.div
