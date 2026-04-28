@@ -32,12 +32,13 @@ class StudentController extends Controller
             ->orderBy('created_at', 'desc');
 
         if ($search) {
+            $search = strtolower(trim($search));
             $query->where(function ($q) use ($search) {
-                $q->where('email', 'like', "%{$search}%");
+                $q->where(DB::raw('LOWER(email)'), 'like', "%{$search}%");
                 $q->orWhereHas('profile', function ($pq) use ($search) {
-                    $pq->where('data->first_name', 'like', "%{$search}%");
-                    $pq->orWhere('data->last_name', 'like', "%{$search}%");
-                    $pq->orWhere('data->admission_number', 'like', "%{$search}%");
+                    $pq->where(DB::raw('LOWER(data->>\'first_name\')'), 'like', "%{$search}%");
+                    $pq->orWhere(DB::raw('LOWER(data->>\'last_name\')'), 'like', "%{$search}%");
+                    $pq->orWhere(DB::raw('LOWER(data->>\'admission_number\')'), 'like', "%{$search}%");
                 });
             });
         }
