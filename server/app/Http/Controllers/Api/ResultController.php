@@ -49,6 +49,16 @@ class ResultController extends Controller
             $query->where('term_id', $request->term_id);
         }
 
+        // Apply Search (Standardized)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('student.profile', function($q) use ($search) {
+                $q->where('data->first_name', 'ILIKE', "%{$search}%")
+                  ->orWhere('data->last_name', 'ILIKE', "%{$search}%")
+                  ->orWhere('data->admission_number', 'ILIKE', "%{$search}%");
+            });
+        }
+
         $grades = $query->paginate($request->get('per_page', 20));
 
         return response()->json([
@@ -550,6 +560,16 @@ class ResultController extends Controller
 
         if ($request->filled('term_id')) {
             $query->where('term_id', $request->term_id);
+        }
+
+        // Apply Search (Standardized)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('student.profile', function($q) use ($search) {
+                $q->where('data->first_name', 'ILIKE', "%{$search}%")
+                  ->orWhere('data->last_name', 'ILIKE', "%{$search}%")
+                  ->orWhere('data->admission_number', 'ILIKE', "%{$search}%");
+            });
         }
 
         $reportCards = $query->paginate($request->get('per_page', 20));
