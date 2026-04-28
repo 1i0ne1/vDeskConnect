@@ -29,8 +29,17 @@ class LectureController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%");
-                $q->orWhere('description', 'like', "%{$search}%");
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereHas('subject', function($sq) use ($search) {
+                      $sq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('gradeLevel', function($gq) use ($search) {
+                      $gq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('teacher.profile', function($pq) use ($search) {
+                      $pq->where('data', 'like', "%{$search}%");
+                  });
             });
         }
 
