@@ -20,6 +20,7 @@ const TABS = {
   SECTIONS: 'sections',
   SUBJECTS: 'subjects',
   MAPPINGS: 'mappings',
+  SETTINGS: 'settings',
 };
 
 export default function AcademicPage() {
@@ -97,6 +98,11 @@ export default function AcademicPage() {
   const [subjectLoading, setSubjectLoading] = useState(false);
   const [departmentLoading, setDepartmentLoading] = useState(false);
   const [mappingLoading, setMappingLoading] = useState(false);
+
+  // School Settings state
+  const [schoolConfig, setSchoolConfig] = useState({ ca_weight: 40, exam_weight: 60 });
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [saveSettingsLoading, setSaveSettingsLoading] = useState(false);
 
   // Search filter icon component
   const Search = ({ className, size }) => (
@@ -186,6 +192,14 @@ export default function AcademicPage() {
       ]);
       setSessions(sessionsRes.sessions || []);
       setGradeScales(gradeScalesRes.grade_scales || []);
+
+      // Fetch School Config
+      try {
+        const configRes = await academicApi.school.getConfig();
+        setSchoolConfig(configRes.config);
+      } catch (err) {
+        console.error('Failed to fetch school config:', err);
+      }
 
       // Fetch Phase 2 data
       const [gradesRes, subjectsRes, departmentsRes] = await Promise.all([
@@ -677,6 +691,24 @@ export default function AcademicPage() {
     }));
   };
 
+  // School Settings handlers
+  const handleUpdateSchoolConfig = async (e) => {
+    e.preventDefault();
+    if (schoolConfig.ca_weight + schoolConfig.exam_weight !== 100) {
+      toast.error('The sum of CA and Exam weights must be exactly 100%');
+      return;
+    }
+    setSaveSettingsLoading(true);
+    try {
+      const res = await academicApi.school.updateConfig(schoolConfig);
+      toast.success(res.message);
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to update settings');
+    } finally {
+      setSaveSettingsLoading(false);
+    }
+  };
+
   // ==================== RENDER ====================
   return (
     <DashboardLayout title="Academic" subtitle="Configure sessions, terms, continuous assessment, and grading scales">
@@ -697,6 +729,7 @@ export default function AcademicPage() {
               { id: TABS.SUBJECTS, label: 'Subjects', shortLabel: 'Subjects', icon: Tag },
               { id: TABS.SECTIONS, label: 'Sections', shortLabel: 'Sections', icon: Layers },
               { id: TABS.MAPPINGS, label: 'Mappings', shortLabel: 'Mappings', icon: BookOpen },
+              { id: TABS.SETTINGS, label: 'Settings', shortLabel: 'Settings', icon: Settings },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -1514,6 +1547,102 @@ export default function AcademicPage() {
                       )}
                     </>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* ==================== SETTINGS TAB ==================== */}
+            {activeTab === TABS.SETTINGS && (
+              <div className="space-y-4 md:space-y-6">
+                <div className="bg-card dark:bg-gray-800 rounded-card border border-border p-4 md:p-6 shadow-sm">
+                  <div className="flex items-center gap-2 mb-6">
+                    <Settings className="w-5 h-5 text-primary" />
+                    <h2 className="text-base md:text-lg font-semibold text-text-primary">Academic Configuration</h2>
+                  </div>
+
+                  <form onSubmit={handleUpdateSchoolConfig} className="max-w-2xl space-y-8">
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-sm font-medium text-text-primary mb-1">Grade Weighting</h3>
+                        <p className="text-xs text-text-secondary mb-4">
+                          Define how scores are distributed between Continuous Assessment (CA) and Exams. 
+                          The total must equal 100%.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="block text-xs md:text-sm font-medium text-text-secondary">CA Weight (%)</label>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={schoolConfig.ca_weight}
+                              onChange={e => setSchoolConfig({ ...schoolConfig, ca_weight: safeInt(e.target.value, 40) })}
+                              className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm md:text-base text-text-primary dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            />
+                            <span className="text-text-muted">%</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-xs md:text-sm font-medium text-text-secondary">Exam Weight (%)</label>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={schoolConfig.exam_weight}
+                              onChange={e => setSchoolConfig({ ...schoolConfig, exam_weight: safeInt(e.target.value, 60) })}
+                              className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-border dark:border-gray-600 rounded-lg text-sm md:text-base text-text-primary dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            />
+                            <span className="text-text-muted">%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 p-3 bg-bg-main dark:bg-gray-900 rounded-lg border border-border">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-xs font-medium text-text-secondary">Total Weight</span>
+                          <span className={`text-sm font-bold ${schoolConfig.ca_weight + schoolConfig.exam_weight === 100 ? 'text-success' : 'text-error'}`}>
+                            {schoolConfig.ca_weight + schoolConfig.exam_weight}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-border dark:bg-gray-700 h-2 rounded-full overflow-hidden flex">
+                          <div 
+                            className="bg-primary h-full transition-all duration-300" 
+                            style={{ width: `${schoolConfig.ca_weight}%` }} 
+                          />
+                          <div 
+                            className="bg-secondary h-full transition-all duration-300" 
+                            style={{ width: `${schoolConfig.exam_weight}%` }} 
+                          />
+                        </div>
+                        <div className="flex gap-4 mt-2">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-primary" />
+                            <span className="text-[10px] text-text-secondary uppercase tracking-wider">CA ({schoolConfig.ca_weight}%)</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-secondary" />
+                            <span className="text-[10px] text-text-secondary uppercase tracking-wider">Exam ({schoolConfig.exam_weight}%)</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-start">
+                      <button
+                        type="submit"
+                        disabled={saveSettingsLoading || (schoolConfig.ca_weight + schoolConfig.exam_weight !== 100)}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-all disabled:opacity-50 shadow-sm shadow-primary/20"
+                      >
+                        <Save className="w-4 h-4" />
+                        {saveSettingsLoading ? 'Saving...' : 'Save Configuration'}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             )}
