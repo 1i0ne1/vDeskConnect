@@ -17,9 +17,14 @@ class DashboardController extends Controller
 {
     public function getStats(Request $request)
     {
-        $schoolId = $request->user()->school_id;
+        $user = $request->user();
+        $schoolId = $user->school_id;
 
-        // Basic Stats
+        if ($user->role === 'student') {
+            return $this->getStudentStats($user);
+        }
+
+        // Basic Stats (Admin/Staff)
         $stats = [
             [
                 'label' => 'Total Classes',
@@ -90,6 +95,76 @@ class DashboardController extends Controller
         return response()->json([
             'stats' => $stats,
             'topStudents' => $topStudents,
+            'schedule' => $schedule
+        ]);
+    }
+
+    private function getStudentStats(User $user)
+    {
+        $schoolId = $user->school_id;
+        $profile = $user->profile;
+        $profileData = is_string($profile->data) ? json_decode($profile->data, true) : $profile->data;
+        $gradeLevelId = $profileData['grade_level_id'] ?? null;
+
+        // Student Specific Stats
+        $stats = [
+            [
+                'label' => 'Upcoming Lectures',
+                'value' => Lecture::where('grade_level_id', $gradeLevelId)->where('scheduled_at', '>=', now())->count(),
+                'change' => 'Next 7 days',
+                'trend' => 'up',
+                'icon' => 'Video',
+                'color' => 'bg-primary/10 text-primary'
+            ],
+            [
+                'label' => 'Total Subjects',
+                'value' => DB::table('grade_level_subjects')->where('grade_level_id', $gradeLevelId)->count(),
+                'change' => 'Active',
+                'trend' => 'up',
+                'icon' => 'BookOpen',
+                'color' => 'bg-success/10 text-success'
+            ],
+            [
+                'label' => 'Upcoming Exams',
+                'value' => Exam::where('school_id', $schoolId)
+                    ->where('published', true)
+                    ->where(function($q) use ($gradeLevelId) {
+                        $q->where('grade_level_id', $gradeLevelId)->orWhereNull('grade_level_id');
+                    })
+                    ->where('start_at', '>=', now())
+                    ->count(),
+                'change' => 'This term',
+                'trend' => 'up',
+                'icon' => 'FileText',
+                'color' => 'bg-warning/10 text-warning'
+            ],
+            [
+                'label' => 'Recent Results',
+                'value' => StudentGrade::where('student_id', $user->id)->count(),
+                'change' => 'Available',
+                'trend' => 'up',
+                'icon' => 'Award',
+                'color' => 'bg-info/10 text-info'
+            ],
+        ];
+
+        // My Schedule
+        $schedule = Lecture::where('grade_level_id', $gradeLevelId)
+            ->whereDate('scheduled_at', Carbon::today())
+            ->orderBy('scheduled_at', 'asc')
+            ->get()
+            ->map(function($lecture) {
+                return [
+                    'time' => Carbon::parse($lecture->scheduled_at)->format('g:i a'),
+                    'title' => $lecture->title,
+                    'description' => Str::limit($lecture->description, 50),
+                    'end' => Carbon::parse($lecture->scheduled_at)->addMinutes($lecture->duration_minutes)->format('g:i a')
+                ];
+            });
+
+        return response()->json([
+            'stats' => $stats,
+            'topStudents' => [], // Maybe show class rankers?
             'schedule' => $schedule
         ]);
     }

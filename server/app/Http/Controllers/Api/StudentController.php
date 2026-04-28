@@ -39,6 +39,8 @@ class StudentController extends Controller
                     $pq->where(DB::raw('LOWER(data->>\'first_name\')'), 'like', "%{$search}%");
                     $pq->orWhere(DB::raw('LOWER(data->>\'last_name\')'), 'like', "%{$search}%");
                     $pq->orWhere(DB::raw('LOWER(data->>\'admission_number\')'), 'like', "%{$search}%");
+                    // Add full name search support
+                    $pq->orWhere(DB::raw("LOWER(CONCAT(data->>'first_name', ' ', data->>'last_name'))"), 'like', "%{$search}%");
                 });
             });
         }

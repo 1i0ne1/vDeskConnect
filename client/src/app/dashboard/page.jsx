@@ -87,10 +87,10 @@ export default function SchoolAdminDashboard() {
   }
 
   const greeting = new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening';
-  const profileData = typeof user?.profile?.data === 'string' 
+  const profileData = (typeof user?.profile?.data === 'string' && user.profile.data.startsWith('{')) 
     ? JSON.parse(user.profile.data) 
     : user?.profile?.data;
-  const userName = profileData?.first_name || user?.email?.split('@')[0] || 'Admin';
+  const userName = (user?.role === 'student' ? (profileData?.first_name || user?.profile?.data?.first_name) : profileData?.first_name) || user?.email?.split('@')[0] || 'Admin';
 
   return (
     <DashboardLayout title="Dashboard" subtitle={`${greeting}, ${userName}!`} >
