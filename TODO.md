@@ -23,6 +23,7 @@ This document outlines the complete implementation roadmap for building the **Ac
 7. [x] **Staff Tab** (✅ *Completed — Internal search bar + infinite scroll*)
 8. [x] **Teachers Tab** (✅ *Completed — Internal search bar + infinite scroll*)
 9. [x] **Students Tab** (✅ *Completed — Internal search bar + infinite scroll*)
+10. [x] **Marketplace Tab** (✅ *Completed — Internal search bar + animated filter panel + infinite scroll*)
 
 ---
 
@@ -47,6 +48,8 @@ This document outlines the complete implementation roadmap for building the **Ac
 6. [x] **Staff Tab** (✅ *Completed — search sent to API*)
 7. [x] **Teachers Tab** (✅ *Completed — search sent to API*)
 8. [x] **Students Tab** (✅ *Completed — search sent to API*)
+9. [x] **Marketplace Tab** (✅ *Completed — search/filter sent to API*)
+9. [x] **Marketplace Tab** (✅ *Completed — search/filter sent to API*)
 
 ---
 
