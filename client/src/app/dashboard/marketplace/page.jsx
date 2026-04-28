@@ -7,7 +7,7 @@ import {
   Package, DollarSign, Edit2, Trash2, Eye, 
   ChevronRight, AlertCircle, ShoppingCart, CheckCircle,
   Download, FileText, BarChart3, TrendingUp, History,
-  ArrowUpRight, ArrowDownRight, Activity
+  ArrowUpRight, ArrowDownRight, Activity, X
 } from 'lucide-react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import marketplaceApi from '@/lib/marketplace-api';
@@ -49,6 +49,7 @@ export default function MarketplacePage() {
     fetchStats();
   }, []);
 
+  // Reset page and data when filters/tab/search changes
   useEffect(() => {
     setPage(1);
     setHasMore(true);
@@ -57,6 +58,7 @@ export default function MarketplacePage() {
     else if (activeTab === 'analytics') fetchStats();
   }, [filters, activeTab, searchQuery]);
 
+  // Handle loading more pages
   useEffect(() => {
     if (page > 1) {
       if (activeTab === 'books') fetchBooks(page, true);
@@ -121,6 +123,7 @@ export default function MarketplacePage() {
       const params = { 
         status: filters.status,
         page: pageNum,
+        search: searchQuery
       };
       const res = await marketplaceApi.getOrders(params);
       const newData = res.data || [];
@@ -156,15 +159,20 @@ export default function MarketplacePage() {
     }
   };
 
+  const resetFilters = () => {
+    setFilters({ grade_level_id: '', status: '' });
+    setSearchQuery('');
+  };
+
   return (
     <DashboardLayout title="Textbook Marketplace" subtitle="Manage school books and student orders" role="admin">
       <div className="space-y-6">
         {/* Header Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Books', value: stats?.total_books || books.length, icon: BookOpen, color: 'text-blue-400' },
-            { label: 'Orders Today', value: stats?.orders_today || '0', icon: ShoppingBag, color: 'text-green-400' },
-            { label: 'Physical Stock', value: stats?.physical_stock || '0', icon: Package, color: 'text-yellow-400' },
+            { label: 'Total Books', value: stats?.total_books || 0, icon: BookOpen, color: 'text-blue-400' },
+            { label: 'Orders Today', value: stats?.orders_today || 0, icon: ShoppingBag, color: 'text-green-400' },
+            { label: 'Physical Stock', value: stats?.physical_stock || 0, icon: Package, color: 'text-yellow-400' },
             { label: 'Revenue (MTD)', value: `₦${parseFloat(stats?.revenue_mtd || 0).toLocaleString()}`, icon: DollarSign, color: 'text-purple-400' },
           ].map((stat, i) => (
             <motion.div 
@@ -195,7 +203,10 @@ export default function MarketplacePage() {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setShowFilters(false); // Close filters when switching tabs
+                }}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === tab.id 
                     ? 'bg-primary text-white shadow-lg shadow-primary/20' 
@@ -215,7 +226,7 @@ export default function MarketplacePage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
                   <input
                     type="text"
-                    placeholder={`Search ${activeTab}...`}
+                    placeholder={`Search ${activeTab === 'books' ? 'books' : 'students'}...`}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
@@ -244,10 +255,7 @@ export default function MarketplacePage() {
         </div>
 
         {/* Filters Panel */}
-        <AnimatePresence onExitComplete={() => {
-          setFilters({ grade_level_id: '', status: '' });
-          setSearchQuery('');
-        }}>
+        <AnimatePresence>
           {showFilters && activeTab !== 'analytics' && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
@@ -255,37 +263,56 @@ export default function MarketplacePage() {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="bg-bg-card p-4 rounded-card border border-white/5 shadow-soft grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-text-secondary mb-1">Grade Level</label>
-                  <select
-                    value={filters.grade_level_id}
-                    onChange={(e) => setFilters(prev => ({ ...prev, grade_level_id: e.target.value }))}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
-                  >
-                    <option value="">All Grades</option>
-                    {gradeLevels.map(g => (
-                      <option key={g.id} value={g.id}>{g.name}</option>
-                    ))}
-                  </select>
+              <div className="bg-bg-card p-4 rounded-card border border-white/5 shadow-soft">
+                <div className="flex items-center justify-between mb-4">
+                   <h4 className="text-sm font-bold text-text-main flex items-center space-x-2">
+                     <Filter size={16} className="text-primary" />
+                     <span>Advanced Filters</span>
+                   </h4>
+                   <button 
+                    onClick={resetFilters}
+                    className="text-xs text-primary hover:underline flex items-center space-x-1"
+                   >
+                     <X size={12} />
+                     <span>Reset All</span>
+                   </button>
                 </div>
-                {activeTab === 'orders' && (
-                  <div>
-                    <label className="block text-xs font-medium text-text-secondary mb-1">Order Status</label>
-                    <select
-                      value={filters.status}
-                      onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
-                    >
-                      <option value="">All Statuses</option>
-                      <option value="pending">Pending</option>
-                      <option value="paid">Paid</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="cancelled">Cancelled</option>
-                      <option value="refunded">Refunded</option>
-                    </select>
-                  </div>
-                )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {activeTab === 'books' && (
+                    <div>
+                      <label className="block text-xs font-medium text-text-secondary mb-1">Grade Level</label>
+                      <select
+                        value={filters.grade_level_id}
+                        onChange={(e) => setFilters(prev => ({ ...prev, grade_level_id: e.target.value }))}
+                        className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
+                      >
+                        <option value="">All Grades</option>
+                        {gradeLevels.map(g => (
+                          <option key={g.id} value={g.id}>{g.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {activeTab === 'orders' && (
+                    <div>
+                      <label className="block text-xs font-medium text-text-secondary mb-1">Order Status</label>
+                      <select
+                        value={filters.status}
+                        onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                        className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
+                      >
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="refunded">Refunded</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
             </motion.div>
           )}
@@ -309,7 +336,7 @@ export default function MarketplacePage() {
                         ref={i === books.length - 1 ? lastElementRef : null}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.05 }}
+                        transition={{ delay: (i % 20) * 0.05 }}
                         className="group bg-bg-card overflow-hidden rounded-card border border-white/5 shadow-soft hover:border-primary/30 transition-all flex flex-col"
                       >
                         <div className="p-5 flex-1">
@@ -371,9 +398,9 @@ export default function MarketplacePage() {
                     ))}
                   </div>
                   {loadingMore && (
-                    <div className="py-4 flex items-center justify-center space-x-2 text-primary">
-                      <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                      <span className="text-sm font-medium">Loading more books...</span>
+                    <div className="py-10 flex flex-col items-center justify-center space-y-4">
+                      <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                      <p className="text-text-secondary text-sm">Loading more books...</p>
                     </div>
                   )}
                 </>
@@ -382,13 +409,16 @@ export default function MarketplacePage() {
                   <BookOpen className="mx-auto text-text-secondary mb-4 opacity-20" size={64} />
                   <h3 className="text-xl font-bold text-text-main mb-2">No books found</h3>
                   <p className="text-text-secondary max-w-md mx-auto mb-6">
-                    Start by adding textbooks to your marketplace catalog.
+                    {searchQuery || filters.grade_level_id ? "No books match your current filters." : "Start by adding textbooks to your marketplace catalog."}
                   </p>
                   <button 
-                    onClick={() => { setEditingBook(null); setIsBookModalOpen(true); }}
+                    onClick={() => { 
+                      if (searchQuery || filters.grade_level_id) resetFilters();
+                      else { setEditingBook(null); setIsBookModalOpen(true); }
+                    }}
                     className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all"
                   >
-                    Add Your First Book
+                    {searchQuery || filters.grade_level_id ? "Clear Filters" : "Add Your First Book"}
                   </button>
                 </div>
               )}
@@ -404,75 +434,85 @@ export default function MarketplacePage() {
                 </div>
               ) : orders.length > 0 ? (
                 <div className="bg-bg-card rounded-card border border-white/5 overflow-hidden">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="bg-white/5 border-b border-white/5">
-                        <th className="px-6 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Order ID</th>
-                        <th className="px-6 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Student</th>
-                        <th className="px-6 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Book</th>
-                        <th className="px-6 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Amount</th>
-                        <th className="px-6 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Date</th>
-                        <th className="px-6 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {orders.map((order, i) => (
-                        <motion.tr 
-                          key={order.id}
-                          ref={i === orders.length - 1 ? lastElementRef : null}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.03 }}
-                          className="hover:bg-white/[0.02] transition-all group"
-                        >
-                          <td className="px-6 py-4">
-                            <span className="text-text-main font-mono text-xs">#ORD-{order.id.toString().padStart(5, '0')}</span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col">
-                              <span className="text-text-main font-medium">{order.student?.profile?.data?.first_name} {order.student?.profile?.data?.last_name}</span>
-                              <span className="text-text-secondary text-[10px]">{order.student?.email}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-text-main line-clamp-1 max-w-[200px]">{order.textbook?.title}</span>
-                          </td>
-                          <td className="px-6 py-4 text-text-main font-bold">₦{parseFloat(order.amount).toLocaleString()}</td>
-                          <td className="px-6 py-4 text-text-secondary text-xs">
-                            {format(new Date(order.order_date), 'MMM d, yyyy')}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusColor(order.status)}`}>
-                              {order.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <button 
-                              onClick={() => { setSelectedOrder(order); setIsOrderDetailsOpen(true); }}
-                              className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
-                            >
-                              <Eye size={18} />
-                            </button>
-                          </td>
-                        </motion.tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="bg-white/5 border-b border-white/5">
+                          <th className="px-6 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Order ID</th>
+                          <th className="px-6 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Student</th>
+                          <th className="px-6 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Book</th>
+                          <th className="px-6 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Amount</th>
+                          <th className="px-6 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Date</th>
+                          <th className="px-6 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-4 text-xs font-bold text-text-secondary uppercase tracking-wider"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {orders.map((order, i) => (
+                          <motion.tr 
+                            key={order.id}
+                            ref={i === orders.length - 1 ? lastElementRef : null}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: (i % 20) * 0.03 }}
+                            className="hover:bg-white/[0.02] transition-all group"
+                          >
+                            <td className="px-6 py-4">
+                              <span className="text-text-main font-mono text-xs">#ORD-{order.id.toString().padStart(5, '0')}</span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-col">
+                                <span className="text-text-main font-medium">{order.student?.profile?.data?.first_name} {order.student?.profile?.data?.last_name}</span>
+                                <span className="text-text-secondary text-[10px]">{order.student?.email}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-text-main line-clamp-1 max-w-[200px]">{order.textbook?.title}</span>
+                            </td>
+                            <td className="px-6 py-4 text-text-main font-bold">₦{parseFloat(order.amount).toLocaleString()}</td>
+                            <td className="px-6 py-4 text-text-secondary text-xs">
+                              {format(new Date(order.order_date), 'MMM d, yyyy')}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusColor(order.status)}`}>
+                                {order.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button 
+                                onClick={() => { setSelectedOrder(order); setIsOrderDetailsOpen(true); }}
+                                className="p-2 text-text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                              >
+                                <Eye size={18} />
+                              </button>
+                            </td>
+                          </motion.tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                   {loadingMore && (
-                    <div className="py-4 flex items-center justify-center space-x-2 text-primary border-t border-white/5">
-                      <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                      <span className="text-sm font-medium">Loading more orders...</span>
+                    <div className="py-10 flex flex-col items-center justify-center space-y-4 border-t border-white/5">
+                      <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                      <p className="text-text-secondary text-sm">Loading more orders...</p>
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="py-20 text-center bg-bg-card rounded-card border border-white/5 border-dashed">
                   <ShoppingBag className="mx-auto text-text-secondary mb-4 opacity-20" size={64} />
-                  <h3 className="text-xl font-bold text-text-main mb-2">No orders yet</h3>
-                  <p className="text-text-secondary max-w-md mx-auto">
-                    Orders from students will appear here once they start purchasing textbooks.
+                  <h3 className="text-xl font-bold text-text-main mb-2">No orders found</h3>
+                  <p className="text-text-secondary max-w-md mx-auto mb-6">
+                    {searchQuery || filters.status ? "No orders match your current filters." : "Orders from students will appear here once they start purchasing textbooks."}
                   </p>
+                  { (searchQuery || filters.status) && (
+                    <button 
+                      onClick={resetFilters}
+                      className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
                 </div>
               )}
             </AnimatePresence>

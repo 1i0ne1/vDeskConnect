@@ -218,6 +218,15 @@ class MarketplaceController extends Controller
             $query->where('status', $status);
         }
 
+        $search = $request->get('search');
+        if ($search) {
+            $search = strtolower(trim($search));
+            $query->whereHas('student.profile', function($q) use ($search) {
+                $q->where(DB::raw('LOWER(data->>\'first_name\')'), 'like', "%{$search}%")
+                  ->orWhere(DB::raw('LOWER(data->>\'last_name\')'), 'like', "%{$search}%");
+            });
+        }
+
         $orders = $query->paginate($perPage);
 
         return response()->json($orders);
