@@ -46,6 +46,7 @@ const TYPE_LABELS = {
 export default function LecturesPage() {
   const router = useRouter();
   const toast = useToast();
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lectures, setLectures] = useState([]);
   const [filters, setFilters] = useState({ search: '', status: '', type: '', grade_level_id: '', subject_id: '', term_id: '' });
@@ -138,11 +139,13 @@ export default function LecturesPage() {
 
   const fetchMeta = useCallback(async () => {
     try {
-      const [gradesRes, subjectsRes, teachersRes] = await Promise.all([
+      const [userRes, gradesRes, subjectsRes, teachersRes] = await Promise.all([
+        api.get('/user').catch(() => ({ user: null })),
         academicApi.gradeLevels.getAll().catch(() => ({ grade_levels: [] })),
         api.get('/academic/subjects').catch(() => ({ subjects: [] })),
         api.get('/teachers').catch(() => ({ data: [] })),
       ]);
+      setUser(userRes.user);
       setGradeLevels(gradesRes.grade_levels || []);
       setSubjects(subjectsRes.subjects || []);
       setTeachers(teachersRes.data || []);
@@ -323,7 +326,7 @@ export default function LecturesPage() {
   const filteredGradeLevels = gradeLevels.filter(g => g.id == lectureForm.grade_level_id);
   const filteredSubjects = subjects.filter(s => s.id == lectureForm.subject_id);
 
-  const totalPages = hasMore ? Math.ceil((lectures.length + 1) / 20) : 1;
+  const isStaff = user?.role === 'admin' || user?.role === 'director' || user?.role === 'teacher';
 
   return (
     <DashboardLayout title="Lectures" subtitle="Manage your academic lectures and sessions">
@@ -350,29 +353,31 @@ export default function LecturesPage() {
             </button>
           </div>
 
-          <div className="flex items-center space-x-4 w-full md:w-auto">
-            <button
-              onClick={() => { setAiForm({ title: "", description: "", grade_level_id: "", subject_id: "", sections: 5 }); setShowAIModal(true); }}
-              className="flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600"
-            >
-              <Sparkles className="w-4 h-4" /> AI Builder
-            </button>
-            <button
-              onClick={() => {
-                setBuilderForm({
-                  title: '', description: '', content: '', teacher_id: '', grade_level_id: '',
-                  subject_id: '', scheduled_at: '', duration_minutes: 40, type: 'async',
-                  is_online: false, meeting_link: '', is_published: false,
-                  sections: [{ title: '', content: '' }],
-                  resources: [],
-                });
-                setShowBuilderModal(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark"
-            >
-              <Plus className="w-4 h-4" /> Create Lecture
-            </button>
-          </div>
+          {isStaff && (
+            <div className="flex items-center space-x-4 w-full md:w-auto">
+              <button
+                onClick={() => { setAiForm({ title: "", description: "", grade_level_id: "", subject_id: "", sections: 5 }); setShowAIModal(true); }}
+                className="flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600"
+              >
+                <Sparkles className="w-4 h-4" /> AI Builder
+              </button>
+              <button
+                onClick={() => {
+                  setBuilderForm({
+                    title: '', description: '', content: '', teacher_id: '', grade_level_id: '',
+                    subject_id: '', scheduled_at: '', duration_minutes: 40, type: 'async',
+                    is_online: false, meeting_link: '', is_published: false,
+                    sections: [{ title: '', content: '' }],
+                    resources: [],
+                  });
+                  setShowBuilderModal(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark"
+              >
+                <Plus className="w-4 h-4" /> Create Lecture
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Filters Panel */}
@@ -516,7 +521,7 @@ export default function LecturesPage() {
                       <div className="flex items-center justify-between pt-0.5 border-t border-white/5 mt-auto">
                         <div className="flex items-center gap-1">
 
-                          {lecture.status === 'in_progress' && (
+                          {isStaff && lecture.status === 'in_progress' && (
                             <button
                               onClick={() => handleStatusChange(lecture.id, 'completed')}
                               className="p-1.5 text-success hover:bg-success/10 rounded-lg transition-all"
@@ -544,26 +549,30 @@ export default function LecturesPage() {
                               <PlayCircle className="w-4 h-4" />
                             </button>
                           )}
-                          <button
-                            onClick={() => {
-                              if (lecture.type === 'async' || lecture.type === 'hybrid') {
-                                router.push(`/dashboard/lectures/${lecture.id}?edit=true`);
-                              } else {
-                                openEditModal(lecture);
-                              }
-                            }}
-                            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-white/5 rounded-lg transition-all"
-                            title="Edit"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(lecture.id)}
-                            className="p-1.5 text-text-secondary hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {isStaff && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  if (lecture.type === 'async' || lecture.type === 'hybrid') {
+                                    router.push(`/dashboard/lectures/${lecture.id}?edit=true`);
+                                  } else {
+                                    openEditModal(lecture);
+                                  }
+                                }}
+                                className="p-1.5 text-text-muted hover:text-text-primary hover:bg-white/5 rounded-lg transition-all"
+                                title="Edit"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(lecture.id)}
+                                className="p-1.5 text-text-secondary hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
