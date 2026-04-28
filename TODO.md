@@ -545,14 +545,18 @@ This document outlines the complete implementation roadmap for building the **Ac
 - [x] **Frontend**: Marketplace UI is responsive and accessible to all roles
 
 ### 10.4 Dashboard Role-Based Access Control (RBAC) & Student View
-- [ ] **Frontend**: Fix hardcoded `role="admin"` props in `DashboardLayout` across all pages.
-- [ ] **Frontend**: Implement dynamic Sidebar role detection from authenticated user state.
-- [ ] **Frontend**: Create a dedicated **Student Dashboard** view in `dashboard/page.jsx` showing:
+- [x] **Frontend**: Fix hardcoded `role="admin"` props in `DashboardLayout` across all pages.
+- [x] **Frontend**: Implement dynamic Sidebar role detection from authenticated user state.
+- [x] **Frontend**: Create a dedicated **Student Dashboard** view in `dashboard/page.jsx` showing:
   - Personal stats (Attendance, next lecture, upcoming exams).
   - Quick access to "My Results" and "Marketplace".
   - Calendar of upcoming assignments/events.
 
-### 10.5 Database Data & Seeding (Testing Readiness)
+### 10.5 Search Bug Fixes & UI Polish
+- [x] **Backend/Frontend**: Normalize search queries (lowercase + trim whitespace) to fix "fatima mo..." search failures.
+- [x] **Frontend**: Implement the "Quick View" (Eye Icon) modal content to display simplified student profiles.
+
+### 10.6 Database Data & Seeding (Testing Readiness)
 - [x] **Backend**: Update `VDeskConnectSeeder` with specific test account (**Fatima Mohamed**; `fatima@student.com`).
 - [x] **Backend**: Automate `student_enrollments` records for all seeded students.
 - [x] **Backend**: Pre-populate Marketplace with bulk books and orders for analytics testing.
