@@ -149,7 +149,7 @@ export default function LecturesPage() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [filters, toast]);
+  }, [filters, debouncedSearch, listTab, isStaff, toast]);
 
   const fetchMeta = useCallback(async () => {
     try {
@@ -180,7 +180,7 @@ export default function LecturesPage() {
     setPage(1);
     setHasMore(true);
     fetchLectures(1);
-  }, [debouncedSearch, filters.status, filters.type, filters.grade_level_id, filters.subject_id, filters.term_id, listTab, isStaff]);
+  }, [debouncedSearch, filters.status, filters.type, filters.grade_level_id, filters.subject_id, filters.term_id, listTab, isStaff, fetchLectures]);
 
   useEffect(() => {
     if (page > 1) {
@@ -428,7 +428,9 @@ export default function LecturesPage() {
         </div>
 
         {/* Filters Panel */}
-        <AnimatePresence>
+        <AnimatePresence onExitComplete={() => {
+          setFilters({ search: '', status: '', type: '', grade_level_id: '', subject_id: '', term_id: '' });
+        }}>
           {showFilters && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}

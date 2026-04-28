@@ -40,18 +40,27 @@ class LectureController extends Controller
         }
 
         if ($search) {
+            $search = strtolower(trim($search));
             $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereHas('subject', function($sq) use ($search) {
-                      $sq->where('name', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('gradeLevel', function($gq) use ($search) {
-                      $gq->where('name', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('teacher.profile', function($pq) use ($search) {
-                      $pq->where('data', 'like', "%{$search}%");
-                  });
+                $q->where(DB::raw('LOWER(title)'), 'like', "%{$search}%")
+                  ->orWhere(DB::raw('LOWER(description)'), 'like', "%{$search}%");
+                
+                if (DB::getDriverName() !== 'sqlite') {
+                    $q->orWhereHas('subject', function($sq) use ($search) {
+                        $sq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('gradeLevel', function($gq) use ($search) {
+                        $gq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%");
+                    });
+                } else {
+                    // SQLite simple like (usually case-insensitive by default or needs different syntax)
+                    $q->orWhereHas('subject', function($sq) use ($search) {
+                        $sq->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('gradeLevel', function($gq) use ($search) {
+                        $gq->where('name', 'like', "%{$search}%");
+                    });
+                }
             });
         }
 
