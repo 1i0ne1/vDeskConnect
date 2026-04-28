@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\LectureController;
 use App\Http\Controllers\Api\ExamController;
 use App\Http\Controllers\Api\ResultController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\MarketplaceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -232,5 +233,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pins', [ResultController::class, 'listPins']);
         Route::post('/pins/generate', [ResultController::class, 'generatePins']);
         Route::post('/check', [ResultController::class, 'checkResult']);
+    });
+
+    // Marketplace (Phase 10)
+    Route::prefix('marketplace')->group(function () {
+        Route::get('/books', [MarketplaceController::class, 'index']);
+        Route::post('/books', [MarketplaceController::class, 'store']);
+        Route::put('/books/{id}', [MarketplaceController::class, 'update']);
+        Route::delete('/books/{id}', [MarketplaceController::class, 'destroy']);
+        Route::get('/orders', [MarketplaceController::class, 'orders']);
+        Route::post('/orders', [MarketplaceController::class, 'placeOrder']);
+        Route::put('/orders/{id}/status', [MarketplaceController::class, 'updateOrderStatus']);
     });
 });
