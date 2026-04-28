@@ -135,7 +135,8 @@ export default function LecturesPage() {
     if (isLoadMore) setLoadingMore(true);
     else setLoading(true);
     try {
-      const queryParams = { ...filters, search: debouncedSearch, page: pageNum };
+      const { search, ...otherFilters } = filters;
+      const queryParams = { ...otherFilters, search: debouncedSearch, page: pageNum };
       if (!isStaff) {
         queryParams.is_completed = listTab === 'completed' ? '1' : '0';
       }
@@ -369,9 +370,11 @@ export default function LecturesPage() {
             
             <button 
               onClick={() => {
-                if (showFilters) {
-                  // If closing, clear filters immediately
-                  setFilters({ search: '', status: '', type: '', grade_level_id: '', subject_id: '', term_id: '' });
+                const isClosing = showFilters;
+                if (isClosing) {
+                  // Explicitly wipe filters AND search
+                  const emptyFilters = { search: '', status: '', type: '', grade_level_id: '', subject_id: '', term_id: '' };
+                  setFilters(emptyFilters);
                   setDebouncedSearch('');
                 }
                 setShowFilters(!showFilters);
