@@ -49,7 +49,8 @@ export default function LecturesPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lectures, setLectures] = useState([]);
-  const [filters, setFilters] = useState({ search: '', status: '', type: '', grade_level_id: '', subject_id: '', term_id: '' });
+  const [filters, setFilters] = useState({ status: '', type: '', grade_level_id: '', subject_id: '', term_id: '' });
+  const [searchText, setSearchText] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [gradeLevels, setGradeLevels] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -59,11 +60,11 @@ export default function LecturesPage() {
   const isStaff = user?.role === 'admin' || user?.role === 'director' || user?.role === 'teacher';
 
   // --- Debounced Search ---
-  const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(filters.search), 500);
+    const timer = setTimeout(() => setDebouncedSearch(searchText), 500);
     return () => clearTimeout(timer);
-  }, [filters.search]);
+  }, [searchText]);
   
   // --- Infinite Scroll States ---
   const [page, setPage] = useState(1);
@@ -135,8 +136,7 @@ export default function LecturesPage() {
     if (isLoadMore) setLoadingMore(true);
     else setLoading(true);
     try {
-      const { search, ...otherFilters } = filters;
-      const queryParams = { ...otherFilters, search: debouncedSearch, page: pageNum };
+      const queryParams = { ...filters, search: debouncedSearch, page: pageNum };
       if (!isStaff) {
         queryParams.is_completed = listTab === 'completed' ? '1' : '0';
       }
@@ -362,20 +362,27 @@ export default function LecturesPage() {
               <input
                 type="text"
                 placeholder="Search lectures..."
-                value={filters.search}
-                onChange={e => handleFilterChange('search', e.target.value)}
+                value={searchText}
+                onChange={e => setSearchText(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
               />
             </div>
             
             <button 
               onClick={() => {
-                const isClosing = showFilters;
-                if (isClosing) {
-                  // Explicitly wipe filters AND search
-                  const emptyFilters = { search: '', status: '', type: '', grade_level_id: '', subject_id: '', term_id: '' };
-                  setFilters(emptyFilters);
+                if (showFilters) {
+                  // Explicit Hard Reset for ALL filter variables
+                  setFilters({ 
+                    status: '', 
+                    type: '', 
+                    grade_level_id: '', 
+                    subject_id: '', 
+                    term_id: '' 
+                  });
+                  setSearchText('');
                   setDebouncedSearch('');
+                  setPage(1);
+                  setHasMore(true);
                 }
                 setShowFilters(!showFilters);
               }}
@@ -438,10 +445,7 @@ export default function LecturesPage() {
         </div>
 
         {/* Filters Panel */}
-        <AnimatePresence onExitComplete={() => {
-          setFilters({ search: '', status: '', type: '', grade_level_id: '', subject_id: '', term_id: '' });
-          setDebouncedSearch('');
-        }}>
+        <AnimatePresence>
           {showFilters && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
