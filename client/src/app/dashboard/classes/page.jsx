@@ -831,6 +831,9 @@ export default function ClassesPage() {
                         </table>
                       </div>
                     )}
+                    {hasMoreDetailStudents && (
+                      <div className="py-4 text-center text-xs text-text-secondary">Scroll for more...</div>
+                    )}
                   </div>
                 )}
 
@@ -860,7 +863,7 @@ export default function ClassesPage() {
                       </div>
                     </div>
                     {displayTeachers.length === 0 ? (
-                      <p className="text-text-secondary text-center py-8 text-sm">No teachers assigned yet.</p>
+                      <p className="text-text-secondary text-center py-8 text-sm">No teachers found.</p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm md:text-base">
@@ -898,6 +901,9 @@ export default function ClassesPage() {
                           </tbody>
                         </table>
                       </div>
+                    )}
+                    {hasMoreDetailTeachers && (
+                      <div className="py-4 text-center text-xs text-text-secondary">Scroll for more...</div>
                     )}
                   </div>
                 )}
