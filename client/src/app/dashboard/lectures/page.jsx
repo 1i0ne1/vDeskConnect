@@ -55,6 +55,8 @@ export default function LecturesPage() {
   const [subjects, setSubjects] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [listTab, setListTab] = useState('active'); // 'active' or 'completed' for students
+
+  const isStaff = user?.role === 'admin' || user?.role === 'director' || user?.role === 'teacher';
   
   // --- Infinite Scroll States ---
   const [page, setPage] = useState(1);
@@ -330,8 +332,6 @@ export default function LecturesPage() {
 
   const filteredGradeLevels = gradeLevels.filter(g => g.id == lectureForm.grade_level_id);
   const filteredSubjects = subjects.filter(s => s.id == lectureForm.subject_id);
-
-  const isStaff = user?.role === 'admin' || user?.role === 'director' || user?.role === 'teacher';
 
   return (
     <DashboardLayout title="Lectures" subtitle="Manage your academic lectures and sessions">
