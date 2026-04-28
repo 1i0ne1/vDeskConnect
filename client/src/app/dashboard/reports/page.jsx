@@ -27,6 +27,7 @@ export default function ReportsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
+    search: '',
     grade_level_id: '',
     subject_id: '',
     term_id: '',
@@ -37,31 +38,10 @@ export default function ReportsPage() {
   const [hasMore, setHasMore] = useState(true);
   const observer = useRef();
 
-  // --- Filtered lists (client-side search) ---
-  const filteredGrades = grades.filter(g => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      g.student?.profile?.data?.first_name?.toLowerCase().includes(q) ||
-      g.student?.profile?.data?.last_name?.toLowerCase().includes(q) ||
-      g.student?.profile?.data?.admission_number?.toLowerCase().includes(q) ||
-      g.subject?.name?.toLowerCase().includes(q)
-    );
-  });
-
-  const filteredReportCards = reportCards.filter(rc => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      rc.student?.profile?.data?.first_name?.toLowerCase().includes(q) ||
-      rc.student?.profile?.data?.last_name?.toLowerCase().includes(q) ||
-      rc.student?.profile?.data?.admission_number?.toLowerCase().includes(q)
-    );
-  });
-
+  // --- Filtered lists (client-side search for PINs only, others are server-side) ---
   const filteredPins = pins.filter(p => {
-    if (!searchQuery) return true;
-    return p.pin.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!filters.search) return true;
+    return p.pin.toLowerCase().includes(filters.search.toLowerCase());
   });
 
   // --- Data Fetching ---
@@ -273,8 +253,8 @@ export default function ReportsPage() {
               <input
                 type="text"
                 placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={filters.search}
+                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                 className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-text-main focus:outline-none focus:border-primary transition-all"
               />
             </div>
@@ -307,8 +287,7 @@ export default function ReportsPage() {
 
         {/* Animated Filter Panel */}
         <AnimatePresence onExitComplete={() => {
-          setFilters({ grade_level_id: '', subject_id: '', term_id: '' });
-          setSearchQuery('');
+          setFilters({ search: '', grade_level_id: '', subject_id: '', term_id: '' });
         }}>
           {showFilters && (
             <motion.div
@@ -384,8 +363,8 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {filteredGrades.length > 0 ? filteredGrades.map((grade, index) => (
-                      <tr key={grade.id} ref={index === filteredGrades.length - 1 ? lastElementRef : null} className="hover:bg-white/2 transition-colors">
+                    {grades.length > 0 ? grades.map((grade, index) => (
+                      <tr key={grade.id} ref={index === grades.length - 1 ? lastElementRef : null} className="hover:bg-white/2 transition-colors">
                         <td className="px-4 py-4">
                           <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
@@ -424,7 +403,7 @@ export default function ReportsPage() {
                     )) : (
                       <tr>
                         <td colSpan="7" className="px-4 py-20 text-center text-text-secondary">
-                          {searchQuery ? 'No grades match your search.' : 'No grades found. Try adjusting your filters or click "Compute".'}
+                          {filters.search ? 'No grades match your search.' : 'No grades found. Try adjusting your filters or click "Compute".'}
                         </td>
                       </tr>
                     )}
@@ -467,7 +446,7 @@ export default function ReportsPage() {
                 ))}
                 {filteredPins.length === 0 && (
                   <div className="col-span-full py-20 text-center text-text-secondary">
-                    {searchQuery ? 'No PINs match your search.' : 'No PINs generated yet.'}
+                    {filters.search ? 'No PINs match your search.' : 'No PINs generated yet.'}
                   </div>
                 )}
               </div>
@@ -508,8 +487,8 @@ export default function ReportsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                    {filteredReportCards.length > 0 ? filteredReportCards.map((rc, index) => (
-                        <tr key={rc.id} ref={index === filteredReportCards.length - 1 ? lastElementRef : null} className="hover:bg-white/2 transition-colors">
+                    {reportCards.length > 0 ? reportCards.map((rc, index) => (
+                        <tr key={rc.id} ref={index === reportCards.length - 1 ? lastElementRef : null} className="hover:bg-white/2 transition-colors">
                           <td className="px-4 py-4">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center text-xs font-bold">
@@ -548,7 +527,7 @@ export default function ReportsPage() {
                       )) : (
                         <tr>
                           <td colSpan="5" className="px-4 py-20 text-center text-text-secondary">
-                            {searchQuery ? 'No report cards match your search.' : 'No report cards found for the selected filters. Click "Generate & Download ZIP" to create them.'}
+                            {filters.search ? 'No report cards match your search.' : 'No report cards found for the selected filters. Click "Generate & Download ZIP" to create them.'}
                           </td>
                         </tr>
                       )}
