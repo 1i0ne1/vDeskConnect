@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\ExamController;
 use App\Http\Controllers\Api\ResultController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\MarketplaceController;
+use App\Http\Controllers\Api\EnrollmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -245,5 +246,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/orders', [MarketplaceController::class, 'placeOrder']);
         Route::put('/orders/{id}/status', [MarketplaceController::class, 'updateOrderStatus']);
         Route::get('/stats', [MarketplaceController::class, 'getStats']);
+    });
+
+    // Enrollment (Phase 11)
+    Route::prefix('students')->group(function () {
+        Route::get('/{studentId}/enrollments', [EnrollmentController::class, 'index']);
+        Route::post('/enroll', [EnrollmentController::class, 'enroll']);
+        Route::put('/enrollments/{id}', [EnrollmentController::class, 'update']);
+        Route::delete('/enrollments/{id}', [EnrollmentController::class, 'destroy']);
     });
 });
