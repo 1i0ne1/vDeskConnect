@@ -279,6 +279,16 @@ export default function LecturesPage() {
     }
   };
 
+  const handleStudentComplete = async (lectureId) => {
+    try {
+      await academicApi.lectureProgress.update(lectureId, { is_completed: true });
+      toast.success('Lecture marked as completed!');
+      fetchLectures();
+    } catch (err) {
+      toast.error('Failed to mark lecture as completed');
+    }
+  };
+
   const handleAISubmit = async (e) => {
     e.preventDefault();
     setAiLoading(true);
@@ -548,6 +558,21 @@ export default function LecturesPage() {
                             <LinkIcon className="w-3 h-3" /> Join Meeting
                           </a>
                         )}
+
+                        {isStaff && (
+                          <div className="mt-2">
+                            <div className="flex justify-between items-center text-[10px] text-text-secondary mb-1">
+                              <span>Class Progress</span>
+                              <span>{lecture.completed_count || 0} students completed</span>
+                            </div>
+                            <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-success transition-all duration-500"
+                                style={{ width: `${Math.min(((lecture.completed_count || 0) / 1) * 100, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="flex items-center justify-between pt-0.5 border-t border-white/5 mt-auto">
@@ -557,7 +582,21 @@ export default function LecturesPage() {
                             <button
                               onClick={() => handleStatusChange(lecture.id, 'completed')}
                               className="p-1.5 text-success hover:bg-success/10 rounded-lg transition-all"
-                              title="Complete"
+                              title="Teacher: Complete Global Session"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                          )}
+                          {!isStaff && listTab === 'active' && (
+                            <button
+                              onClick={() => handleStudentComplete(lecture.id)}
+                              disabled={lecture.type === 'sync' && lecture.status !== 'completed'}
+                              className={`p-1.5 rounded-lg transition-all ${
+                                lecture.type === 'sync' && lecture.status !== 'completed'
+                                  ? 'text-text-muted cursor-not-allowed opacity-50'
+                                  : 'text-success hover:bg-success/10'
+                              }`}
+                              title={lecture.type === 'sync' && lecture.status !== 'completed' ? 'Wait for live session to end' : 'Mark as Completed'}
                             >
                               <CheckCircle className="w-4 h-4" />
                             </button>

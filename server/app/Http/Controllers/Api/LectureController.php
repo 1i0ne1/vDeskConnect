@@ -83,6 +83,18 @@ class LectureController extends Controller
             $query->where('scheduled_at', '<=', $request->date_to);
         }
 
+        // Add counts for staff users
+        if ($user->role !== 'student') {
+            $query->withCount([
+                'studentProgress as completed_count' => function($q) {
+                    $q->where('is_completed', true);
+                }
+            ]);
+            
+            // To get total_students, we need a custom logic or a more complex query.
+            // For now, let's just use withCount for progress.
+        }
+
         // Filter by completion status (for students)
         if ($request->has('is_completed') && $user->role === 'student') {
             $isCompleted = filter_var($request->is_completed, FILTER_VALIDATE_BOOLEAN);
