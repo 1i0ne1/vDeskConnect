@@ -466,7 +466,7 @@ export default function LecturesPage() {
                     ref={i === lectures.length - 1 ? lastElementRef : null} 
                     className="bg-bg-card p-4 rounded-card border border-white/5 flex flex-col h-[280px]"
                   >
-                    <div className="flex flex-col h-full justify-between gap-3">
+                    <div className="flex flex-col h-full justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-2">
                           <h3 className="font-semibold text-text-primary truncate" title={lecture.title}>{lecture.title}</h3>
@@ -513,17 +513,9 @@ export default function LecturesPage() {
                         )}
                       </div>
                       
-                      <div className="flex items-center justify-between pt-1 border-t border-white/5 mt-auto">
+                      <div className="flex items-center justify-between pt-0.5 border-t border-white/5 mt-auto">
                         <div className="flex items-center gap-1">
-                          {lecture.status === 'scheduled' && (
-                            <button
-                              onClick={() => handleStatusChange(lecture.id, 'in_progress')}
-                              className="p-1.5 text-warning hover:bg-warning/10 rounded-lg transition-all"
-                              title="Start"
-                            >
-                              <Play className="w-4 h-4" />
-                            </button>
-                          )}
+
                           {lecture.status === 'in_progress' && (
                             <button
                               onClick={() => handleStatusChange(lecture.id, 'completed')}
@@ -535,10 +527,10 @@ export default function LecturesPage() {
                           )}
                           <button
                             onClick={() => openViewModal(lecture)}
-                            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-white/5 rounded-lg transition-all"
+                            className="p-1 text-text-muted hover:text-text-primary hover:bg-white/5 rounded-lg transition-all"
                             title="View Details"
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className="w-3.5 h-3.5" />
                           </button>
                         </div>
 
