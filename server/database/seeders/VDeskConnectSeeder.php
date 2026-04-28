@@ -170,6 +170,80 @@ class VDeskConnectSeeder extends Seeder
         ]);
 
         // ─────────────────────────────────────────────
+        //  4b. BULK TEACHERS (for infinite scroll testing)
+        // ─────────────────────────────────────────────
+        $output->writeln("<fg=yellow>Seeding 50 additional teachers...</>");
+        $firstNames = ['James', 'Mary', 'Robert', 'Patricia', 'John', 'Jennifer', 'Michael', 'Linda', 'William', 'Elizabeth', 'David', 'Barbara', 'Richard', 'Susan', 'Joseph', 'Jessica', 'Thomas', 'Sarah', 'Charles', 'Karen'];
+        $lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin'];
+        
+        for ($i = 1; $i <= 50; $i++) {
+            $fName = $firstNames[array_rand($firstNames)];
+            $lName = $lastNames[array_rand($lastNames)];
+            $email = strtolower($fName . '.' . $lName . '.' . $i . '@greenfield.edu');
+            
+            $tid = DB::table('users')->insertGetId([
+                'school_id' => $demoSchoolId,
+                'email' => $email,
+                'password' => Hash::make('Password@2026!'),
+                'role' => 'teacher',
+                'verified' => true,
+                'created_at' => $now,
+            ]);
+            
+            DB::table('profiles')->insert([
+                'user_id' => $tid,
+                'type' => 'teacher',
+                'data' => json_encode([
+                    'first_name' => $fName, 
+                    'last_name' => $lName,
+                    'employee_number' => 'TCH-2026-' . str_pad($i + 100, 3, '0', STR_PAD_LEFT),
+                    'gender' => $i % 2 == 0 ? 'male' : 'female',
+                    'phone' => '+23480' . rand(10000000, 99999999),
+                    'address' => rand(1, 100) . " Greenfield Close, Lagos",
+                    'qualification' => ['B.Ed', 'M.Sc', 'PhD', 'B.Sc'][array_rand(['B.Ed', 'M.Sc', 'PhD', 'B.Sc'])],
+                    'date_joined' => '2026-01-' . str_pad(rand(1, 28), 2, '0', STR_PAD_LEFT)
+                ]),
+            ]);
+            $teacherIds[] = $tid;
+        }
+
+        // ─────────────────────────────────────────────
+        //  4c. BULK STAFF (for infinite scroll testing)
+        // ─────────────────────────────────────────────
+        $output->writeln("<fg=yellow>Seeding 40 administrative staff...</>");
+        $staffRoles = ['admin_staff', 'receptionist', 'principal'];
+        for ($i = 1; $i <= 40; $i++) {
+            $fName = $firstNames[array_rand($firstNames)];
+            $lName = $lastNames[array_rand($lastNames)];
+            $role = $staffRoles[array_rand($staffRoles)];
+            $email = strtolower($fName . '.' . $lName . '.staff' . $i . '@greenfield.edu');
+            
+            $sid = DB::table('users')->insertGetId([
+                'school_id' => $demoSchoolId,
+                'email' => $email,
+                'password' => Hash::make('Password@2026!'),
+                'role' => 'admin', // Staff use admin role but profile distinguishes
+                'verified' => true,
+                'created_at' => $now,
+            ]);
+            
+            DB::table('profiles')->insert([
+                'user_id' => $sid,
+                'type' => 'admin',
+                'data' => json_encode([
+                    'first_name' => $fName, 
+                    'last_name' => $lName,
+                    'role' => $role,
+                    'employee_number' => 'STF-2026-' . str_pad($i + 50, 3, '0', STR_PAD_LEFT),
+                    'gender' => $i % 3 == 0 ? 'male' : 'female',
+                    'phone' => '+23470' . rand(10000000, 99999999),
+                    'address' => rand(1, 100) . " Admin Street, Victoria Island",
+                    'designation' => $role === 'principal' ? 'School Head' : ($role === 'receptionist' ? 'Front Desk' : 'Admin Officer')
+                ]),
+            ]);
+        }
+
+        // ─────────────────────────────────────────────
         //  5. STUDENTS
         // ─────────────────────────────────────────────
         $studentNames = [
@@ -196,6 +270,44 @@ class VDeskConnectSeeder extends Seeder
                     'last_name' => $name[1],
                     'admission_number' => 'GFA/' . date('Y') . '/' . str_pad($i+1, 3, '0', STR_PAD_LEFT),
                     'grade_level_id' => $gradeIds[0]
+                ]),
+            ]);
+            $studentIds[] = $sid;
+        }
+
+        // ─────────────────────────────────────────────
+        //  5b. BULK STUDENTS (for infinite scroll testing)
+        // ─────────────────────────────────────────────
+        $output->writeln("<fg=yellow>Seeding 120 additional students...</>");
+        for ($i = 1; $i <= 120; $i++) {
+            $fName = $firstNames[array_rand($firstNames)];
+            $lName = $lastNames[array_rand($lastNames)];
+            $email = strtolower($fName . '.' . $lName . '.stu' . $i . '@student.com');
+            
+            $sid = DB::table('users')->insertGetId([
+                'school_id' => $demoSchoolId,
+                'email' => $email,
+                'password' => Hash::make('Password@2026!'),
+                'role' => 'student',
+                'verified' => true,
+                'created_at' => $now,
+            ]);
+            
+            DB::table('profiles')->insert([
+                'user_id' => $sid,
+                'type' => 'student',
+                'data' => json_encode([
+                    'first_name' => $fName, 
+                    'last_name' => $lName,
+                    'admission_number' => 'GFA/2026/' . str_pad($i + 50, 4, '0', STR_PAD_LEFT),
+                    'grade_level_id' => $gradeIds[array_rand($gradeIds)],
+                    'gender' => $i % 2 == 0 ? 'male' : 'female',
+                    'date_of_birth' => rand(2005, 2015) . '-' . str_pad(rand(1, 12), 2, '0', STR_PAD_LEFT) . '-' . str_pad(rand(1, 28), 2, '0', STR_PAD_LEFT),
+                    'phone' => '+23490' . rand(10000000, 99999999),
+                    'address' => rand(1, 200) . " Student Avenue, Ikeja",
+                    'guardian_name' => $lastNames[array_rand($lastNames)] . " Parent",
+                    'guardian_phone' => '+23480' . rand(10000000, 99999999),
+                    'guardian_email' => 'parent.' . $i . '@gmail.com'
                 ]),
             ]);
             $studentIds[] = $sid;
