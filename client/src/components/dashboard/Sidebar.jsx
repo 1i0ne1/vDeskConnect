@@ -26,6 +26,7 @@ import {
   ClipboardList,
   Video,
   Award,
+  ShoppingCart,
 } from 'lucide-react';
 
 // Super Admin navigation items
@@ -51,6 +52,7 @@ const SCHOOL_ADMIN_NAV = [
   { label: 'Exams', icon: FileText, href: '/dashboard/exams' },
   { label: 'Events', icon: Calendar, href: '/dashboard/events' },
   { label: 'Reports', icon: BarChart3, href: '/dashboard/reports' },
+  { label: 'Marketplace', icon: ShoppingCart, href: '/dashboard/marketplace' },
   { label: 'Fees', icon: CreditCard, href: '/dashboard/fees' },
   { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
 ];
@@ -84,6 +86,7 @@ const STAFF_NAV = [
   { label: 'Students', icon: GraduationCap, href: '/dashboard/students' },
   { label: 'Fees', icon: CreditCard, href: '/dashboard/fees' },
   { label: 'Events', icon: Calendar, href: '/dashboard/events' },
+  { label: 'Marketplace', icon: ShoppingCart, href: '/dashboard/marketplace' },
   { label: 'Staff Chat', icon: Users, href: '/dashboard/chat' },
   { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
 ];
