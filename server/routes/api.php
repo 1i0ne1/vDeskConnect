@@ -201,6 +201,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/resources/{id}', [LectureController::class, 'deleteResource']);
         Route::get('/{id}/attendance', [LectureController::class, 'attendance']);
         Route::post('/{id}/attendance', [LectureController::class, 'markAttendance']);
+        
+        // Progress tracking
+        Route::get('/{id}/progress', [LectureController::class, 'getProgress']);
+        Route::post('/{id}/progress', [LectureController::class, 'updateProgress']);
+        Route::get('/{id}/progress-report', [LectureController::class, 'getLectureProgressReport']);
     });
 
     // AI Lecture Generator

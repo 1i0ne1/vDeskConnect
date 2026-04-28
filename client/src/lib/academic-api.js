@@ -262,6 +262,13 @@ export const academicApi = {
     mark: (lectureId, data) => api.post(`/lectures/${lectureId}/attendance`, data),
   },
 
+  // Lecture Progress
+  lectureProgress: {
+    get: (lectureId) => api.get(`/lectures/${lectureId}/progress`),
+    update: (lectureId, data) => api.post(`/lectures/${lectureId}/progress`, data),
+    getReport: (lectureId) => api.get(`/lectures/${lectureId}/progress-report`),
+  },
+
   // School Settings
   school: {
     getConfig: () => api.get('/academic/config'),

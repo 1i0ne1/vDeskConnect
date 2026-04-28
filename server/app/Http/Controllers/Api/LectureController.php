@@ -7,10 +7,12 @@ use App\Models\Lecture;
 use App\Models\LectureResource;
 use App\Models\Attendance;
 use App\Models\User;
+use App\Models\StudentLectureProgress;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class LectureController extends Controller
 {
@@ -588,6 +590,82 @@ class LectureController extends Controller
         }
 
         return response()->json(['message' => 'Attendance marked']);
+    }
+
+    // ==================== PROGRESS ====================
+
+    /**
+     * Get progress for a student on a lecture.
+     */
+    public function getProgress(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $progress = StudentLectureProgress::where('student_id', $user->id)
+            ->where('lecture_id', $id)
+            ->first();
+
+        return response()->json(['progress' => $progress]);
+    }
+
+    /**
+     * Update progress/Mark as complete.
+     */
+    public function updateProgress(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user->isStudent()) {
+            return response()->json(['message' => 'Only students can track progress'], 403);
+        }
+
+        $lecture = Lecture::where('school_id', $user->school_id)->findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'is_completed' => 'sometimes|boolean',
+            'progress_data' => 'nullable|array',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+        }
+
+        $progress = StudentLectureProgress::updateOrCreate(
+            ['student_id' => $user->id, 'lecture_id' => $id],
+            [
+                'is_completed' => $request->is_completed ?? false,
+                'completed_at' => $request->is_completed ? now() : null,
+                'progress_data' => $request->progress_data,
+            ]
+        );
+
+        return response()->json(['message' => 'Progress updated', 'progress' => $progress]);
+    }
+
+    /**
+     * Get overall progress report for a lecture (Admin/Teacher view).
+     */
+    public function getLectureProgressReport(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $lecture = Lecture::where('school_id', $user->school_id)->findOrFail($id);
+
+        if (!$user->isSchoolAdmin() && $user->id !== $lecture->teacher_id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $progressRecords = StudentLectureProgress::where('lecture_id', $id)
+            ->with('student:id,email')
+            ->get();
+
+        return response()->json([
+            'lecture_id' => $id,
+            'total_students' => User::where('school_id', $user->school_id)
+                ->where('role', 'student')
+                ->whereHas('profile', function($q) use ($lecture) {
+                    $q->where(DB::raw('data->>\'grade_level_id\''), $lecture->grade_level_id);
+                })->count(),
+            'completed_count' => $progressRecords->where('is_completed', true)->count(),
+            'records' => $progressRecords
+        ]);
     }
 
     private function formatLecture(Lecture $lecture): array
