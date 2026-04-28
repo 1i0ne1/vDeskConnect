@@ -447,21 +447,23 @@ export default function LecturesPage() {
               <div className="text-center py-8 bg-bg-card rounded-card border border-white/5 border-dashed">
                 <Video className="w-12 h-12 mx-auto text-text-secondary mb-4 opacity-20" />
                 <p className="text-text-secondary">No lectures found</p>
-                <button
-                  onClick={() => {
-                    setBuilderForm({
-                      title: '', description: '', content: '', teacher_id: '', grade_level_id: '',
-                      subject_id: '', scheduled_at: '', duration_minutes: 40, type: 'async',
-                      is_online: false, meeting_link: '', is_published: false,
-                      sections: [{ title: '', content: '' }],
-                      resources: [],
-                    });
-                    setShowBuilderModal(true);
-                  }}
-                  className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark"
-                >
-                  Create First Lecture
-                </button>
+                {isStaff && (
+                  <button
+                    onClick={() => {
+                      setBuilderForm({
+                        title: '', description: '', content: '', teacher_id: '', grade_level_id: '',
+                        subject_id: '', scheduled_at: '', duration_minutes: 40, type: 'async',
+                        is_online: false, meeting_link: '', is_published: false,
+                        sections: [{ title: '', content: '' }],
+                        resources: [],
+                      });
+                      setShowBuilderModal(true);
+                    }}
+                    className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark"
+                  >
+                    Create First Lecture
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
