@@ -27,6 +27,16 @@ class LectureController extends Controller
             ->with(['teacher:id,email', 'gradeLevel', 'subject', 'section'])
             ->orderBy('scheduled_at', 'desc');
 
+        // Automatically filter by grade level for students
+        if ($user->role === 'student') {
+            $profileData = is_string($user->profile->data) ? json_decode($user->profile->data, true) : $user->profile->data;
+            if (isset($profileData['grade_level_id'])) {
+                $query->where('grade_level_id', $profileData['grade_level_id']);
+            }
+            // Students only see published lectures
+            $query->where('is_published', true);
+        }
+
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
