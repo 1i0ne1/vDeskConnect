@@ -24,8 +24,8 @@ export default function StaffPage() {
   const [staff, setStaff] = useState([]);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState(0);
-  const [lastPage, setLastPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
   const [viewingStaff, setViewingStaff] = useState(null);
@@ -43,28 +43,58 @@ export default function StaffPage() {
   const [showPassword, setShowPassword] = useState(false);
   const DEFAULT_PASSWORD = 'Secret123!';
 
-  const fetchStaff = useCallback(async () => {
-    setLoading(true);
+  const fetchStaff = useCallback(async (isFirstPage = false) => {
+    if (isFirstPage) {
+      setLoading(true);
+      setPage(1);
+      setHasMore(true);
+    }
+    
     try {
-      const res = await api.get(`/staff?search=${encodeURIComponent(search)}&page=${page}&per_page=20`);
-      setStaff(res.data || []);
+      const currentPage = isFirstPage ? 1 : page;
+      const res = await api.get(`/staff?search=${encodeURIComponent(search)}&page=${currentPage}&per_page=20`);
+      
+      const newStaff = res.data || [];
+      if (isFirstPage) {
+        setStaff(newStaff);
+      } else {
+        setStaff(prev => [...prev, ...newStaff]);
+      }
+      
       setTotal(res.total || 0);
-      setLastPage(res.last_page || 1);
+      setHasMore(newStaff.length === 20); // If we got a full page, there might be more
     } catch (err) {
-      // Backend not ready yet - show empty state gracefully
-      setStaff([]);
-      setTotal(0);
-      setLastPage(1);
+      if (isFirstPage) {
+        setStaff([]);
+        setTotal(0);
+      }
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
   }, [search, page]);
 
   useEffect(() => {
-    const token = api.getToken();
-    if (!token) { router.push('/login'); return; }
-    fetchStaff();
-  }, [fetchStaff, router]);
+    fetchStaff(true);
+  }, [search]); // Re-fetch on search change
+
+  // Intersection Observer for infinite scroll
+  const observerRef = useCallback(node => {
+    if (loading || !hasMore) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        setPage(prev => prev + 1);
+      }
+    });
+    if (node) observer.observe(node);
+  }, [loading, hasMore]);
+
+  // Handle page change for loading more
+  useEffect(() => {
+    if (page > 1) {
+      fetchStaff(false);
+    }
+  }, [page]);
 
   const resetForm = () => {
     setForm({
@@ -267,23 +297,16 @@ export default function StaffPage() {
           )}
         </div>
 
-        {/* Pagination */}
-        {lastPage > 1 && (
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-text-secondary">
-              Page {page} of {lastPage}
-            </p>
-            <div className="flex items-center gap-2">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
-                className="glass-button px-3 py-2 disabled:opacity-40" title="Previous">
-                <ChevronLeft size={16} />
-              </button>
-              <button disabled={page >= lastPage} onClick={() => setPage(p => p + 1)}
-                className="glass-button px-3 py-2 disabled:opacity-40" title="Next">
-                <ChevronRight size={16} />
-              </button>
-            </div>
+        {/* Loading more indicator */}
+        {hasMore && staff.length > 0 && (
+          <div ref={observerRef} className="py-8 flex flex-col items-center justify-center gap-2">
+            <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            <p className="text-xs text-text-muted animate-pulse">Loading more staff...</p>
           </div>
+        )}
+
+        {!hasMore && staff.length > 0 && (
+          <p className="text-center py-8 text-xs text-text-muted">You've reached the end of the staff list</p>
         )}
       </div>
 
