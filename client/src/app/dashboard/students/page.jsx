@@ -5,12 +5,15 @@ import { useRouter } from 'next/navigation';
 import {
   Users, Plus, Search, Edit2, Ban, Trash2, X, RefreshCw,
   ChevronLeft, ChevronRight, Mail, Phone, MapPin, Calendar,
-  GraduationCap, Hash, AlertTriangle, Check, AlertCircle, Eye, EyeOff
+  GraduationCap, Hash, AlertTriangle, Check, AlertCircle, Eye, EyeOff,
+  History, UserPlus
 } from 'lucide-react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { api } from '@/lib/api';
+import { academicApi } from '@/lib/academic-api';
 import { useToast } from '@/contexts/ToastProvider';
 import PasswordStrengthMeter from '@/components/ui/PasswordStrengthMeter';
+import { format } from 'date-fns';
 
 export default function StudentsPage() {
   const router = useRouter();
@@ -27,10 +30,19 @@ export default function StudentsPage() {
   const [actionModal, setActionModal] = useState(null); // { type: 'ban'|'delete', student }
   const [actionLoading, setActionLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Grade/Section States
+  const [gradeLevels, setGradeLevels] = useState([]);
+  const [sections, setSections] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [enrollmentHistory, setEnrollmentHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '', admission_number: '',
     gender: '', date_of_birth: '', phone: '', address: '',
     guardian_name: '', guardian_phone: '', guardian_email: '',
+    grade_level_id: '', section_id: '',
     password: ''
   });
   const [formErrors, setFormErrors] = useState({});
@@ -69,9 +81,57 @@ export default function StudentsPage() {
     }
   }, [search, page]);
 
+  const fetchInitialData = async () => {
+    try {
+      const [gradesRes, sessionsRes] = await Promise.all([
+        academicApi.gradeLevels.getAll(),
+        academicApi.sessions.getAll()
+      ]);
+      setGradeLevels(gradesRes.grade_levels || gradesRes.data || []);
+      setSessions(sessionsRes.sessions || sessionsRes.data || []);
+    } catch (err) {
+      console.error('Error fetching initial data:', err);
+    }
+  };
+
   useEffect(() => {
     fetchStudents(true);
+    fetchInitialData();
   }, [search]);
+
+  useEffect(() => {
+    if (form.grade_level_id) {
+      const fetchSections = async () => {
+        try {
+          const res = await academicApi.sections.getAll(form.grade_level_id);
+          setSections(res.sections || res.data || []);
+        } catch (err) {
+          console.error('Error fetching sections:', err);
+        }
+      };
+      fetchSections();
+    } else {
+      setSections([]);
+    }
+  }, [form.grade_level_id]);
+
+  const fetchEnrollmentHistory = async (studentId) => {
+    setLoadingHistory(true);
+    try {
+      const res = await api.get(`/students/${studentId}/enrollments`);
+      setEnrollmentHistory(res || []);
+    } catch (err) {
+      toast.error('Failed to load enrollment history');
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    if (viewingStudent) {
+      fetchEnrollmentHistory(viewingStudent.id);
+    }
+  }, [viewingStudent]);
 
   const observerRef = useCallback(node => {
     if (loading || !hasMore) return;
@@ -99,6 +159,7 @@ export default function StudentsPage() {
       first_name: '', last_name: '', email: '', admission_number: '',
       gender: '', date_of_birth: '', phone: '', address: '',
       guardian_name: '', guardian_phone: '', guardian_email: '',
+      grade_level_id: '', section_id: '',
       password: DEFAULT_PASSWORD
     });
     setFormErrors({});
@@ -115,7 +176,9 @@ export default function StudentsPage() {
       phone: s.phone || '', address: s.address || '',
       guardian_name: s.guardian_name || '', guardian_phone: s.guardian_phone || '',
       guardian_email: s.guardian_email || '',
-      password: '' // Leave empty when editing - only fill if they want to change
+      grade_level_id: s.grade_level_id || '',
+      section_id: s.section_id || '',
+      password: ''
     });
     setFormErrors({});
     setShowModal(true);
@@ -128,17 +191,31 @@ export default function StudentsPage() {
       const url = editingStudent ? `/students/${editingStudent.id}` : '/students';
       const method = editingStudent ? 'put' : 'post';
       const payload = { ...form };
+      
       if (editingStudent) {
         Object.keys(payload).forEach(key => {
           if (payload[key] === '' || payload[key] === null) delete payload[key];
         });
         if (payload.password === '') delete payload.password;
       }
-      await api[method](url, payload);
-      toast.success(editingStudent ? 'Student updated' : 'Student created');
+      
+      const res = await api[method](url, payload);
+      
+      // If creating a new student, also create an initial enrollment
+      if (!editingStudent && res.student) {
+        await api.post('/students/enroll', {
+          student_id: res.student.id,
+          grade_level_id: form.grade_level_id,
+          section_id: form.section_id,
+          enrollment_date: new Date().toISOString().split('T')[0],
+          status: 'active'
+        });
+      }
+
+      toast.success(editingStudent ? 'Student updated' : 'Student created and enrolled');
       setShowModal(false);
       resetForm();
-      fetchStudents();
+      fetchStudents(true);
     } catch (err) {
       if (err.data?.errors) setFormErrors(err.data.errors);
       else toast.error(err.data?.message || 'Operation failed');
@@ -167,8 +244,8 @@ export default function StudentsPage() {
 
   const fullName = (s) => `${s.first_name || ''} ${s.last_name || ''}`.trim() || s.email;
 
-  const DetailRow = ({ icon: Icon, label, value }) => (
-    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-bg-main/50">
+  const DetailRow = ({ icon: Icon, label, value, className = "" }) => (
+    <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg bg-bg-main/50 ${className}`}>
       <Icon size={16} className="text-text-muted flex-shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="text-xs text-text-muted">{label}</p>
@@ -184,13 +261,13 @@ export default function StudentsPage() {
   };
 
   return (
-    <DashboardLayout title="Students" subtitle="Manage your students" role="admin">
+    <DashboardLayout title="Students" subtitle="Manage student records and academic enrollments" role="admin">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-text-primary">{total} Students</h2>
-            <p className="text-sm text-text-secondary">Manage student records and enrollments</p>
+            <p className="text-sm text-text-secondary">Track academic history and grade placements</p>
           </div>
           <button onClick={openAddModal} className="glass-button inline-flex items-center gap-2 px-4 py-2.5 text-sm">
             <Plus size={16} /> Add Student
@@ -225,51 +302,54 @@ export default function StudentsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">Student</th>
-                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider hidden md:table-cell">Admission #</th>
-                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider hidden lg:table-cell">Guardian</th>
-                    <th className="text-center px-5 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">Status</th>
-                    <th className="text-right px-5 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">Actions</th>
+                  <tr className="border-b border-white/5 bg-white/[0.02]">
+                    <th className="px-5 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">Student</th>
+                    <th className="px-5 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider hidden md:table-cell">Admission #</th>
+                    <th className="px-5 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider hidden lg:table-cell">Placement</th>
+                    <th className="px-5 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider text-center">Status</th>
+                    <th className="px-5 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-white/5">
                   {students.map((s) => (
-                    <tr key={s.id} className="glass-row">
+                    <tr key={s.id} className="hover:bg-white/[0.02] transition-colors group">
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
                             {(s.first_name?.[0] || s.email?.[0] || 'S').toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-text-primary truncate">{fullName(s)}</p>
+                            <p className="text-sm font-medium text-text-primary truncate group-hover:text-primary transition-colors">{fullName(s)}</p>
                             <p className="text-xs text-text-muted truncate">{s.email}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-5 py-4 hidden md:table-cell">
-                        <span className="text-xs font-mono bg-bg-main px-2 py-1 rounded text-text-secondary">
+                        <span className="text-xs font-mono bg-bg-main px-2 py-1 rounded text-text-secondary border border-white/5">
                           {s.admission_number || '—'}
                         </span>
                       </td>
                       <td className="px-5 py-4 hidden lg:table-cell">
-                        <p className="text-sm text-text-secondary truncate max-w-[150px]">{s.guardian_name || '—'}</p>
+                        <div className="flex flex-col">
+                          <span className="text-sm text-text-primary font-medium">{s.grade_level_name || 'Unassigned'}</span>
+                          <span className="text-[10px] text-text-muted uppercase font-bold tracking-tight">Section: {s.section_name || 'None'}</span>
+                        </div>
                       </td>
                       <td className="px-5 py-4 text-center">
-                        {s.banned ? (
-                          <span className="inline-flex items-center gap-1 text-error text-xs"><Ban size={12} /> Banned</span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-success text-xs"><Check size={12} /> Active</span>
-                        )}
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                          s.banned ? 'text-error bg-error/10 border-error/20' : 'text-success bg-success/10 border-success/20'
+                        }`}>
+                          {s.banned ? <Ban size={10} /> : <Check size={10} />} {s.banned ? 'Banned' : 'Active'}
+                        </span>
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => setViewingStudent(s)} className="p-2 rounded-lg hover:bg-info/10 text-text-muted hover:text-info transition-all" title="View">
-                            <Eye size={16} />
+                          <button onClick={() => setViewingStudent(s)} className="p-2 rounded-lg hover:bg-primary/10 text-text-muted hover:text-primary transition-all" title="View History">
+                            <History size={16} />
                           </button>
-                          <button onClick={() => openEditModal(s)} className="p-2 rounded-lg hover:bg-primary/10 text-text-muted hover:text-primary transition-all" title="Edit">
+                          <button onClick={() => openEditModal(s)} className="p-2 rounded-lg hover:bg-primary/10 text-text-muted hover:text-primary transition-all" title="Edit Profile">
                             <Edit2 size={16} />
                           </button>
                           <button onClick={() => setActionModal({ type: 'ban', student: s })} className="p-2 rounded-lg hover:bg-warning/10 text-text-muted hover:text-warning transition-all" title="Ban">
@@ -295,106 +375,141 @@ export default function StudentsPage() {
             <p className="text-xs text-text-muted animate-pulse">Loading more students...</p>
           </div>
         )}
-
-        {!hasMore && students.length > 0 && (
-          <p className="text-center py-8 text-xs text-text-muted">You've reached the end of the students list</p>
-        )}
       </div>
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="glass-modal max-w-2xl w-full animate-scale-in flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-border flex-shrink-0">
-              <h3 className="text-lg font-bold text-text-primary">
-                {editingStudent ? 'Edit Student' : 'Add Student'}
-              </h3>
+            <div className="flex items-center justify-between p-5 border-b border-white/10 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/20 text-primary rounded-lg">
+                  <UserPlus size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-text-primary">
+                    {editingStudent ? 'Update Student Record' : 'Enroll New Student'}
+                  </h3>
+                  <p className="text-xs text-text-muted">Fill in basic and academic information</p>
+                </div>
+              </div>
               <button onClick={() => { setShowModal(false); resetForm(); }} className="text-text-muted hover:text-text-primary">
                 <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto flex-1">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label">First Name *</label>
-                  <input type="text" value={form.first_name} onChange={e => setForm({ ...form, first_name: e.target.value })}
-                    className={`form-input ${formErrors.first_name ? 'border-error' : ''}`} placeholder="John" required />
-                  {formErrors.first_name && <p className="text-error text-xs mt-1">{formErrors.first_name[0]}</p>}
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+              {/* Profile Section */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Users size={14} /> Basic Profile
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">First Name *</label>
+                    <input type="text" value={form.first_name} onChange={e => setForm({ ...form, first_name: e.target.value })}
+                      className={`form-input ${formErrors.first_name ? 'border-error' : ''}`} placeholder="John" required />
+                    {formErrors.first_name && <p className="text-error text-[10px] mt-1">{formErrors.first_name[0]}</p>}
+                  </div>
+                  <div>
+                    <label className="form-label">Last Name *</label>
+                    <input type="text" value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })}
+                      className={`form-input ${formErrors.last_name ? 'border-error' : ''}`} placeholder="Doe" required />
+                    {formErrors.last_name && <p className="text-error text-[10px] mt-1">{formErrors.last_name[0]}</p>}
+                  </div>
                 </div>
-                <div>
-                  <label className="form-label">Last Name *</label>
-                  <input type="text" value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })}
-                    className={`form-input ${formErrors.last_name ? 'border-error' : ''}`} placeholder="Doe" required />
-                  {formErrors.last_name && <p className="text-error text-xs mt-1">{formErrors.last_name[0]}</p>}
-                </div>
-              </div>
-              <div>
-                <label className="form-label">Email *</label>
-                <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
-                  className={`form-input ${formErrors.email ? 'border-error' : ''}`} placeholder="john@school.edu" required />
-                {formErrors.email && <p className="text-error text-xs mt-1">{formErrors.email[0]}</p>}
-              </div>
-              <div>
-                <label className="form-label">Admission Number *</label>
-                <div className="flex gap-2">
-                  <input type="text" value={form.admission_number} onChange={e => setForm({ ...form, admission_number: e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '') })}
-                    className={`form-input flex-1 ${formErrors.admission_number ? 'border-error' : ''}`} placeholder="STU-2026-001" required />
-                  <button type="button" onClick={() => setForm({ ...form, admission_number: generateAdmissionNumber() })}
-                    className="px-3 py-2.5 rounded-btn bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-medium whitespace-nowrap flex items-center gap-1.5 flex-shrink-0"
-                    title="Auto-generate admission number">
-                    <Hash size={14} /> Auto
-                  </button>
-                </div>
-                {formErrors.admission_number && <p className="text-error text-xs mt-1">{formErrors.admission_number[0]}</p>}
-              </div>
-              <div>
-                <label className="form-label">Password {!editingStudent && <span className="text-text-muted font-normal">(Default: {DEFAULT_PASSWORD})</span>}</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={form.password}
-                    onChange={e => setForm({ ...form, password: e.target.value })}
-                    className={`form-input pr-10 ${formErrors.password ? 'border-error' : ''}`}
-                    placeholder={editingStudent ? 'Leave blank to keep current' : DEFAULT_PASSWORD}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-                {formErrors.password && <p className="text-error text-xs mt-1">{formErrors.password[0]}</p>}
-                {!editingStudent && form.password && <PasswordStrengthMeter password={form.password} />}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label">Gender</label>
-                  <select value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })} className="form-input">
-                    <option value="">Select</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="form-label">Date of Birth</label>
-                  <input type="date" value={form.date_of_birth} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="form-input" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Email *</label>
+                    <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
+                      className={`form-input ${formErrors.email ? 'border-error' : ''}`} placeholder="john@school.edu" required />
+                    {formErrors.email && <p className="text-error text-[10px] mt-1">{formErrors.email[0]}</p>}
+                  </div>
+                  <div>
+                    <label className="form-label">Admission # *</label>
+                    <div className="flex gap-2">
+                      <input type="text" value={form.admission_number} onChange={e => setForm({ ...form, admission_number: e.target.value.toUpperCase() })}
+                        className={`form-input flex-1 ${formErrors.admission_number ? 'border-error' : ''}`} placeholder="STU-2026-001" required />
+                      <button type="button" onClick={() => setForm({ ...form, admission_number: generateAdmissionNumber() })}
+                        className="px-3 py-2.5 rounded-btn bg-white/5 border border-white/10 text-text-muted hover:text-primary hover:border-primary/50 transition-all">
+                        <Hash size={14} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label">Phone</label>
-                  <input type="text" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="form-input" placeholder="+234..." />
-                </div>
-                <div>
-                  <label className="form-label">Address</label>
-                  <input type="text" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="form-input" />
+
+              {/* Academic Placement */}
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <h4 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <GraduationCap size={14} /> Academic Placement
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Grade Level *</label>
+                    <select 
+                      value={form.grade_level_id} 
+                      onChange={e => setForm({ ...form, grade_level_id: e.target.value })} 
+                      className="form-input" 
+                      required
+                    >
+                      <option value="">Select Grade</option>
+                      {gradeLevels.map(g => (
+                        <option key={g.id} value={g.id}>{g.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Section (Optional)</label>
+                    <select 
+                      value={form.section_id} 
+                      onChange={e => setForm({ ...form, section_id: e.target.value })} 
+                      className="form-input"
+                      disabled={!form.grade_level_id}
+                    >
+                      <option value="">No Section</option>
+                      {sections.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
-              <div className="border-t border-border pt-4">
-                <p className="text-sm font-semibold text-text-primary mb-3">Guardian Information</p>
+
+              {/* Security */}
+              {!editingStudent && (
+                <div className="space-y-4 pt-4 border-t border-white/5">
+                  <h4 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <AlertCircle size={14} /> Security
+                  </h4>
+                  <div>
+                    <label className="form-label">Temporary Password</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={form.password}
+                        onChange={e => setForm({ ...form, password: e.target.value })}
+                        className="form-input pr-10"
+                        placeholder={DEFAULT_PASSWORD}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    {form.password && <PasswordStrengthMeter password={form.password} />}
+                  </div>
+                </div>
+              )}
+
+              {/* Additional Data */}
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <h4 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <MapPin size={14} /> Guardian & Contact
+                </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="form-label">Guardian Name</label>
@@ -405,77 +520,99 @@ export default function StudentsPage() {
                     <input type="text" value={form.guardian_phone} onChange={e => setForm({ ...form, guardian_phone: e.target.value })} className="form-input" />
                   </div>
                 </div>
-                <div className="mt-3">
-                  <label className="form-label">Guardian Email</label>
-                  <input type="email" value={form.guardian_email} onChange={e => setForm({ ...form, guardian_email: e.target.value })} className="form-input" />
-                </div>
               </div>
             </form>
-            <div className="flex gap-3 p-5 border-t border-border flex-shrink-0">
+
+            <div className="flex gap-3 p-5 border-t border-white/10 flex-shrink-0 bg-white/[0.02]">
               <button type="button" onClick={() => { setShowModal(false); resetForm(); }}
-                className="flex-1 px-4 py-2.5 rounded-btn border border-border text-sm font-medium text-text-secondary hover:bg-bg-main transition-colors">
+                className="flex-1 px-4 py-2.5 rounded-btn border border-white/10 text-sm font-medium text-text-secondary hover:bg-white/5 transition-all">
                 Cancel
               </button>
               <button type="submit" onClick={handleSubmit} disabled={submitting}
-                className="flex-1 px-4 py-2.5 rounded-btn glass-button disabled:opacity-50">
-                {submitting ? <span className="flex items-center justify-center gap-2"><RefreshCw size={14} className="animate-spin" /> Saving...</span> : editingStudent ? 'Update Student' : 'Create Student'}
+                className="flex-1 px-4 py-2.5 rounded-btn bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50">
+                {submitting ? <span className="flex items-center justify-center gap-2"><RefreshCw size={14} className="animate-spin" /> Saving...</span> : editingStudent ? 'Update Profile' : 'Enroll Student'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* View Student Modal */}
+      {/* View Student / Enrollment History Modal */}
       {viewingStudent && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setViewingStudent(null)}>
-          <div className="glass-modal max-w-md w-full max-h-[85vh] flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-border flex-shrink-0">
-              <h3 className="text-lg font-bold text-text-primary">Student Details</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setViewingStudent(null)}>
+          <div className="glass-modal max-w-2xl w-full max-h-[85vh] flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-white/10 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center text-lg font-bold text-primary">
+                  {(viewingStudent.first_name?.[0] || viewingStudent.email?.[0] || 'S').toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-text-primary">{fullName(viewingStudent)}</h3>
+                  <p className="text-xs text-text-muted">{viewingStudent.admission_number || 'No Admission #'}</p>
+                </div>
+              </div>
               <button onClick={() => setViewingStudent(null)} className="text-text-muted hover:text-text-primary">
                 <X size={20} />
               </button>
             </div>
-            <div className="overflow-y-auto flex-1 p-5">
-              <div className="flex items-center gap-4 mb-5">
-                <div className="w-14 h-14 bg-primary/20 rounded-full flex items-center justify-center text-lg font-bold text-primary flex-shrink-0">
-                  {(viewingStudent.first_name?.[0] || viewingStudent.email?.[0] || 'S').toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-base font-bold text-text-primary truncate">{fullName(viewingStudent)}</p>
-                  <p className="text-sm text-text-muted truncate">{viewingStudent.email}</p>
-                  <span className={`inline-flex items-center gap-1 text-xs mt-1 ${viewingStudent.banned ? 'text-error' : 'text-success'}`}>
-                    {viewingStudent.banned ? <Ban size={12} /> : <Check size={12} />} {viewingStudent.banned ? 'Banned' : 'Active'}
-                  </span>
-                </div>
+            
+            <div className="overflow-y-auto flex-1 p-6 custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                 <DetailRow icon={Mail} label="Email Address" value={viewingStudent.email} />
+                 <DetailRow icon={GraduationCap} label="Current Placement" value={viewingStudent.grade_level_name || 'Unassigned'} />
+                 <DetailRow icon={Users} label="Guardian" value={viewingStudent.guardian_name} />
+                 <DetailRow icon={Phone} label="Phone" value={viewingStudent.phone} />
               </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <DetailRow icon={Hash} label="Admission #" value={viewingStudent.admission_number || '—'} />
-                <DetailRow icon={Users} label="Gender" value={viewingStudent.gender ? viewingStudent.gender.charAt(0).toUpperCase() + viewingStudent.gender.slice(1) : '—'} />
-                <DetailRow icon={Calendar} label="DOB" value={viewingStudent.date_of_birth || '—'} />
-                <DetailRow icon={GraduationCap} label="Grade" value={viewingStudent.grade_level?.name || viewingStudent.grade_level_name || '—'} />
-                <DetailRow icon={Phone} label="Phone" value={viewingStudent.phone || '—'} />
-                <DetailRow icon={MapPin} label="Address" value={viewingStudent.address || '—'} />
-              </div>
-              <div className="border-t border-border pt-4 mt-4">
-                <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Guardian Information</p>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <DetailRow icon={Users} label="Name" value={viewingStudent.guardian_name || '—'} />
-                  <DetailRow icon={Phone} label="Phone" value={viewingStudent.guardian_phone || '—'} />
-                  <DetailRow icon={Mail} label="Email" value={viewingStudent.guardian_email || '—'} className="col-span-2" />
-                </div>
+
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <History size={14} /> Enrollment History
+                </h4>
+                
+                {loadingHistory ? (
+                   <div className="py-10 flex justify-center">
+                     <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                   </div>
+                ) : enrollmentHistory.length > 0 ? (
+                  <div className="space-y-3">
+                    {enrollmentHistory.map((h) => (
+                      <div key={h.id} className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between group hover:border-primary/30 transition-all">
+                        <div className="flex items-center gap-4">
+                          <div className={`p-2 rounded-lg ${h.status === 'active' ? 'bg-success/20 text-success' : 'bg-white/10 text-text-muted'}`}>
+                            <GraduationCap size={18} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-text-primary">{h.grade_level?.name}</p>
+                            <p className="text-[10px] text-text-muted uppercase tracking-tight">
+                              {h.session?.name} • Section: {h.section?.name || 'None'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-medium text-text-secondary">{format(new Date(h.enrollment_date), 'MMM d, yyyy')}</p>
+                          <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border ${
+                            h.status === 'active' ? 'border-success/30 text-success' : 'border-white/10 text-text-muted'
+                          }`}>
+                            {h.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-10 text-center bg-white/5 rounded-xl border border-dashed border-white/10">
+                    <p className="text-sm text-text-muted">No historical enrollment records found.</p>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="flex gap-2 p-5 border-t border-border flex-shrink-0">
-              <button onClick={() => { setViewingStudent(null); openEditModal(viewingStudent); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-btn bg-primary text-white text-sm hover:bg-primary-dark transition-colors">
-                <Edit2 size={14} /> Edit
+
+            <div className="flex gap-2 p-5 border-t border-white/10 flex-shrink-0 bg-white/[0.02]">
+              <button onClick={() => { setViewingStudent(null); openEditModal(viewingStudent); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-btn bg-primary text-white text-sm font-bold hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <Edit2 size={14} /> Update Placement
               </button>
-              {!viewingStudent.banned && (
-                <button onClick={() => { setViewingStudent(null); setActionModal({ type: 'ban', student: viewingStudent }); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-btn bg-warning/10 text-warning text-sm hover:bg-warning/20 transition-colors">
-                  <Ban size={14} /> Ban
-                </button>
-              )}
-              <button onClick={() => { setViewingStudent(null); setActionModal({ type: 'delete', student: viewingStudent }); }} className="flex items-center justify-center gap-2 px-3 py-2 rounded-btn bg-error/10 text-error text-sm hover:bg-error/20 transition-colors">
-                <Trash2 size={14} />
+              <button onClick={() => { setViewingStudent(null); setActionModal({ type: 'ban', student: viewingStudent }); }} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn bg-warning/10 text-warning text-sm font-bold hover:bg-warning/20 transition-colors">
+                <Ban size={14} />
               </button>
             </div>
           </div>
@@ -484,32 +621,38 @@ export default function StudentsPage() {
 
       {/* Ban/Delete Confirmation Modal */}
       {actionModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setActionModal(null)}>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[60] flex items-center justify-center p-4" onClick={() => setActionModal(null)}>
           <div className="glass-modal max-w-md w-full animate-scale-in p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${actionModal.type === 'delete' ? 'bg-error/20' : 'bg-warning/20'}`}>
-                {actionModal.type === 'delete' ? <AlertTriangle size={20} className="text-error" /> : <Ban size={20} className="text-warning" />}
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${actionModal.type === 'delete' ? 'bg-error/20 text-error' : 'bg-warning/20 text-warning'}`}>
+                {actionModal.type === 'delete' ? <AlertTriangle size={24} /> : <Ban size={24} />}
               </div>
-              <h3 className="text-lg font-bold text-text-primary">
-                {actionModal.type === 'delete' ? 'Delete' : 'Ban'} Student
-              </h3>
+              <div>
+                <h3 className="text-lg font-bold text-text-primary">
+                  Confirm {actionModal.type === 'delete' ? 'Deletion' : 'Suspension'}
+                </h3>
+                <p className="text-xs text-text-muted">Action for student: {fullName(actionModal.student)}</p>
+              </div>
             </div>
-            <p className="text-sm text-text-secondary mb-4">
-              Are you sure you want to <strong>{actionModal.type}</strong> <strong>{fullName(actionModal.student)}</strong>?
-              {actionModal.type === 'delete' && ' This action cannot be undone.'}
+            <p className="text-sm text-text-secondary mb-6 leading-relaxed">
+              Are you sure you want to <strong>{actionModal.type}</strong> this student? 
+              {actionModal.type === 'delete' ? ' This will permanently remove their records from the active database.' : ' They will no longer be able to log in to their dashboard.'}
             </p>
-            <label className="form-label">Reason *</label>
-            <textarea value={actionReason} onChange={e => setActionReason(e.target.value)} rows={3}
-              className="form-input mb-4" placeholder="Provide a reason..." required />
+            <div className="space-y-4 mb-6">
+              <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">Reason for Action</label>
+              <textarea value={actionReason} onChange={e => setActionReason(e.target.value)} rows={3}
+                className="form-input resize-none bg-black/20" placeholder="e.g. Disciplinary action, Withdrawal, etc." required />
+            </div>
             <div className="flex gap-3">
               <button onClick={() => setActionModal(null)} disabled={actionLoading}
-                className="flex-1 px-4 py-2.5 rounded-btn border border-border text-sm font-medium text-text-secondary hover:bg-bg-main transition-colors">
-                Cancel
+                className="flex-1 px-4 py-3 rounded-btn border border-white/10 text-sm font-medium text-text-secondary hover:bg-white/5 transition-all">
+                Keep Record
               </button>
               <button onClick={handleAction} disabled={actionLoading}
-                className={`flex-1 px-4 py-2.5 rounded-btn text-sm font-medium text-white transition-all ${actionModal.type === 'delete' ? 'bg-error hover:bg-error/80' : 'bg-warning hover:bg-warning/80'
-                  } disabled:opacity-50`}>
-                {actionLoading ? <span className="flex items-center justify-center gap-2"><RefreshCw size={14} className="animate-spin" /> Processing...</span> : `Confirm ${actionModal.type === 'delete' ? 'Delete' : 'Ban'}`}
+                className={`flex-1 px-4 py-3 rounded-btn text-sm font-bold text-white shadow-lg transition-all ${
+                  actionModal.type === 'delete' ? 'bg-error shadow-error/20' : 'bg-warning shadow-warning/20'
+                } disabled:opacity-50 hover:scale-105`}>
+                {actionLoading ? <RefreshCw size={16} className="animate-spin mx-auto" /> : `Confirm ${actionModal.type === 'delete' ? 'Delete' : 'Ban'}`}
               </button>
             </div>
           </div>
