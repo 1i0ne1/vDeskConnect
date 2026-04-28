@@ -326,7 +326,7 @@ export default function LecturesPage() {
   const totalPages = hasMore ? Math.ceil((lectures.length + 1) / 20) : 1;
 
   return (
-    <DashboardLayout title="Lectures">
+    <DashboardLayout title="Lectures" subtitle="Manage your academic lectures and sessions">
       <div className="p-4 md:p-6 space-y-4">
         {/* Header */}
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-bg-card p-4 rounded-card border border-white/5 shadow-soft">
@@ -459,130 +459,120 @@ export default function LecturesPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {lectures.map((lecture, i) => (
-                  <div key={lecture.id} ref={i === lectures.length - 1 ? lastElementRef : null} className="bg-bg-card p-4 rounded-card border border-white/5">
-                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
+                  <div 
+                    key={lecture.id} 
+                    ref={i === lectures.length - 1 ? lastElementRef : null} 
+                    className="bg-bg-card p-4 rounded-card border border-white/5 flex flex-col h-[280px]"
+                  >
+                    <div className="flex flex-col h-full justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-text-primary">{lecture.title}</h3>
-                          <span className={`px-2 py-0.5 rounded-full text-xs ${TYPE_COLORS[lecture.type] || TYPE_COLORS.async}`}>
-                            {TYPE_LABELS[lecture.type] || 'Recorded (Async)'}
-                          </span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs ${STATUS_COLORS[lecture.status] || STATUS_COLORS.scheduled}`}>
-                            {STATUS_LABELS[lecture.status] || 'Scheduled'}
-                          </span>
-                          {lecture.is_published && (
-                            <span className="px-2 py-0.5 rounded-full text-xs bg-success/10 text-success">Published</span>
-                          )}
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          <h3 className="font-semibold text-text-primary truncate" title={lecture.title}>{lecture.title}</h3>
+                          <div className="flex gap-2">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] whitespace-nowrap ${TYPE_COLORS[lecture.type] || TYPE_COLORS.async}`}>
+                              {TYPE_LABELS[lecture.type] || 'Recorded (Async)'}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] whitespace-nowrap ${STATUS_COLORS[lecture.status] || STATUS_COLORS.scheduled}`}>
+                              {STATUS_LABELS[lecture.status] || 'Scheduled'}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-text-secondary">
-                          <span className="flex items-center gap-1">
-                            <BookOpen className="w-4 h-4" />
+                        
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-2 text-xs text-text-secondary">
+                          <span className="flex items-center gap-1 truncate">
+                            <BookOpen className="w-3.5 h-3.5" />
                             {lecture.subject_name || lecture.subject?.name || 'N/A'}
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
+                          <span className="flex items-center gap-1 truncate">
+                            <Users className="w-3.5 h-3.5" />
                             {lecture.grade_level_name || lecture.grade_level?.name || 'N/A'}
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
+                          <span className="flex items-center gap-1 truncate">
+                            <Calendar className="w-3.5 h-3.5" />
                             {formatDate(lecture.scheduled_at)}
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
+                          <span className="flex items-center gap-1 truncate">
+                            <Clock className="w-3.5 h-3.5" />
                             {lecture.duration_minutes} min
                           </span>
                         </div>
-                        <p className="text-sm text-text-muted mt-2 line-clamp-2">{lecture.description}</p>
+                        
+                        <p className="text-xs text-text-muted mt-3 line-clamp-3 h-[48px]">{lecture.description || "No description provided."}</p>
+                        
                         {lecture.meeting_link && (
                           <a
                             href={lecture.meeting_link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-1"
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2"
                           >
                             <LinkIcon className="w-3 h-3" /> Join Meeting
                           </a>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        {lecture.status === 'scheduled' && (
+                      
+                      <div className="flex items-center justify-between pt-3 border-t border-white/5 mt-auto">
+                        <div className="flex items-center gap-1">
+                          {lecture.status === 'scheduled' && (
+                            <button
+                              onClick={() => handleStatusChange(lecture.id, 'in_progress')}
+                              className="p-1.5 text-warning hover:bg-warning/10 rounded-lg transition-all"
+                              title="Start"
+                            >
+                              <Play className="w-4 h-4" />
+                            </button>
+                          )}
+                          {lecture.status === 'in_progress' && (
+                            <button
+                              onClick={() => handleStatusChange(lecture.id, 'completed')}
+                              className="p-1.5 text-success hover:bg-success/10 rounded-lg transition-all"
+                              title="Complete"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleStatusChange(lecture.id, 'in_progress')}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-warning/10 text-warning rounded-lg hover:bg-warning/20"
+                            onClick={() => openViewModal(lecture)}
+                            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-white/5 rounded-lg transition-all"
+                            title="View Details"
                           >
-                            <Play className="w-3.5 h-3.5" /> Start
+                            <Eye className="w-4 h-4" />
                           </button>
-                        )}
-                        {lecture.status === 'in_progress' && (
-                          <button
-                            onClick={() => handleStatusChange(lecture.id, 'completed')}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-success/10 text-success rounded-lg hover:bg-success/20"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" /> Complete
-                          </button>
-                        )}
-                        {lecture.status !== 'completed' && lecture.status !== 'cancelled' && (
-                          <button
-                            onClick={() => handleStatusChange(lecture.id, 'cancelled')}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-error/10 text-error rounded-lg hover:bg-error/20"
-                          >
-                            Cancel
-                          </button>
-                        )}
-                        <button
-                          onClick={() => openViewModal(lecture)}
-                          className="p-2 text-text-muted hover:text-text-primary"
-                          title="View Details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        {(lecture.type === 'async' || lecture.type === 'hybrid') && lecture.is_published && (
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          {(lecture.type === 'async' || lecture.type === 'hybrid') && lecture.is_published && (
+                            <button
+                              onClick={() => router.push(`/dashboard/lectures/${lecture.id}`)}
+                              className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-all"
+                              title="Play Lecture"
+                            >
+                              <PlayCircle className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
                             onClick={() => {
-                              router.push(`/dashboard/lectures/${lecture.id}`);
-                            }}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark"
-                            title="Play Lecture"
-                          >
-                            <PlayCircle className="w-3.5 h-3.5" /> Play
-                          </button>
-                        )}
-                        {(lecture.type === 'async' || lecture.type === 'hybrid') && !lecture.is_published && (
-                          <button
-                            onClick={async () => {
-                              try {
-                                await academicApi.lectures.publish(lecture.id);
-                                toast.success('Lecture published');
-                                fetchLectures();
-                              } catch (err) {
-                                toast.error(err.data?.message || 'Failed to publish');
+                              if (lecture.type === 'async' || lecture.type === 'hybrid') {
+                                router.push(`/dashboard/lectures/${lecture.id}?edit=true`);
+                              } else {
+                                openEditModal(lecture);
                               }
                             }}
-                            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-success/10 text-success rounded-lg hover:bg-success/20"
+                            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-white/5 rounded-lg transition-all"
+                            title="Edit"
                           >
-                            Publish
+                            <Edit2 className="w-4 h-4" />
                           </button>
-                        )}
-                        <button
-                          onClick={() => {
-                            if (lecture.type === 'async' || lecture.type === 'hybrid') {
-                              router.push(`/dashboard/lectures/${lecture.id}?edit=true`);
-                            } else {
-                              openEditModal(lecture);
-                            }
-                          }}
-                          className="p-2 text-text-muted hover:text-text-primary"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(lecture.id)}
-                          className="p-2 text-text-secondary hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          <button
+                            onClick={() => handleDelete(lecture.id)}
+                            className="p-1.5 text-text-secondary hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
