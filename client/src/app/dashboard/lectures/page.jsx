@@ -57,6 +57,13 @@ export default function LecturesPage() {
   const [listTab, setListTab] = useState('active'); // 'active' or 'completed' for students
 
   const isStaff = user?.role === 'admin' || user?.role === 'director' || user?.role === 'teacher';
+
+  // --- Debounced Search ---
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(filters.search), 500);
+    return () => clearTimeout(timer);
+  }, [filters.search]);
   
   // --- Infinite Scroll States ---
   const [page, setPage] = useState(1);
@@ -128,7 +135,7 @@ export default function LecturesPage() {
     if (isLoadMore) setLoadingMore(true);
     else setLoading(true);
     try {
-      const queryParams = { ...filters, page: pageNum };
+      const queryParams = { ...filters, search: debouncedSearch, page: pageNum };
       if (!isStaff) {
         queryParams.is_completed = listTab === 'completed' ? '1' : '0';
       }
@@ -173,7 +180,7 @@ export default function LecturesPage() {
     setPage(1);
     setHasMore(true);
     fetchLectures(1);
-  }, [filters, listTab, isStaff]);
+  }, [debouncedSearch, filters.status, filters.type, filters.grade_level_id, filters.subject_id, filters.term_id, listTab, isStaff]);
 
   useEffect(() => {
     if (page > 1) {
