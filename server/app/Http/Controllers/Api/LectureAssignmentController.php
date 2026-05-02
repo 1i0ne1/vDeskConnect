@@ -500,7 +500,7 @@ class LectureAssignmentController extends Controller
             ]);
         }
 
-        $this->autoGrade($submission, $assignment);
+        $this->performAutoGrade($submission, $assignment);
 
         return response()->json([
             'status' => 'success',
@@ -634,7 +634,7 @@ class LectureAssignmentController extends Controller
 
     // ==================== HELPER ====================
 
-    private function autoGrade(LectureAssignmentSubmission $submission, LectureAssignment $assignment): float
+    private function performAutoGrade(LectureAssignmentSubmission $submission, LectureAssignment $assignment): float
     {
         $autoScore = 0;
         $totalAutoPoints = 0;
