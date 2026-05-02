@@ -256,6 +256,8 @@ class ResultController extends Controller
                     [
                         'grade_level_id' => $gradeLevelId,
                         'ca_score' => $scoreData['ca_score'],
+                        'ca_assignment_score' => $scoreData['ca_assignment_score'] ?? null,
+                        'ca_test_score' => $scoreData['ca_test_score'] ?? null,
                         'exam_score' => $scoreData['exam_score'],
                         'total_score' => $scoreData['total_score'],
                         'grade' => $scoreData['grade'],

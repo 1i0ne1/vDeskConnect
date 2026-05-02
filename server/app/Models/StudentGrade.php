@@ -13,6 +13,8 @@ class StudentGrade extends Model
         'subject_id',
         'term_id',
         'ca_score',
+        'ca_assignment_score',
+        'ca_test_score',
         'exam_score',
         'total_score',
         'grade',
