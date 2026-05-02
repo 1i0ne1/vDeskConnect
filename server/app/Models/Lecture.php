@@ -15,6 +15,7 @@ class Lecture extends Model
         'school_id',
         'teacher_id',
         'grade_level_id',
+        'term_id',
         'subject_id',
         'section_id',
         'title',
