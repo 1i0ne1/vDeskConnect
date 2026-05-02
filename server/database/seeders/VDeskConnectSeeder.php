@@ -763,6 +763,227 @@ class VDeskConnectSeeder extends Seeder
             }
         }
 
+        // ─────────────────────────────────────────────
+        //  14. LECTURE ASSIGNMENTS & SUBMISSIONS
+        // ─────────────────────────────────────────────
+        $output->writeln("<fg=yellow>Seeding lecture assignments & student submissions...</>");
+
+        // Get existing lectures (seeded in section 7)
+        $existingLectures = DB::table('lectures')->get();
+
+        // Assignment templates: each with title, type, max_score, is_mandatory, questions
+        $assignmentTemplates = [
+            [
+                'title' => 'Week 1 MCQ Quiz',
+                'type' => 'objective',
+                'max_score' => 20,
+                'is_mandatory' => true,
+                'allow_late_submission' => false,
+                'status' => 'published',
+                'questions' => [
+                    ['text' => 'What is the value of x if 2x + 4 = 10?', 'type' => 'mcq', 'options' => json_encode([['text' => '2', 'is_correct' => false], ['text' => '3', 'is_correct' => true], ['text' => '4', 'is_correct' => false], ['text' => '5', 'is_correct' => false]]), 'correct' => '3', 'points' => 5],
+                    ['text' => 'The sum of angles in a triangle is 180 degrees.', 'type' => 'true_false', 'options' => null, 'correct' => 'true', 'points' => 5],
+                    ['text' => 'Simplify: 3(2x - 1) + 4 = ?', 'type' => 'fill_blank', 'options' => null, 'correct' => '6x + 1', 'points' => 10],
+                ],
+            ],
+            [
+                'title' => 'Essay: Real-World Applications',
+                'type' => 'theory',
+                'max_score' => 50,
+                'is_mandatory' => true,
+                'allow_late_submission' => true,
+                'status' => 'published',
+                'questions' => [
+                    ['text' => 'Explain three real-world applications of this topic with examples.', 'type' => 'theory', 'options' => null, 'correct' => null, 'points' => 30],
+                    ['text' => 'What challenges do students typically face when learning this concept?', 'type' => 'theory', 'options' => null, 'correct' => null, 'points' => 20],
+                ],
+            ],
+            [
+                'title' => 'Quick True/False Check',
+                'type' => 'objective',
+                'max_score' => 10,
+                'is_mandatory' => false,
+                'allow_late_submission' => false,
+                'status' => 'published',
+                'questions' => [
+                    ['text' => 'Algebra is a branch of mathematics dealing with symbols and the rules for manipulating those symbols.', 'type' => 'true_false', 'options' => null, 'correct' => 'true', 'points' => 5],
+                    ['text' => 'A quadratic equation always has exactly two solutions.', 'type' => 'true_false', 'options' => null, 'correct' => 'false', 'points' => 5],
+                ],
+            ],
+            [
+                'title' => 'Practice Exercise Sheet',
+                'type' => 'objective',
+                'max_score' => 30,
+                'is_mandatory' => true,
+                'allow_late_submission' => false,
+                'status' => 'published',
+                'questions' => [
+                    ['text' => 'What is the square root of 144?', 'type' => 'mcq', 'options' => json_encode([['text' => '10', 'is_correct' => false], ['text' => '11', 'is_correct' => false], ['text' => '12', 'is_correct' => true], ['text' => '13', 'is_correct' => false]]), 'correct' => '12', 'points' => 10],
+                    ['text' => 'What is the derivative of x²?', 'type' => 'mcq', 'options' => json_encode([['text' => 'x', 'is_correct' => false], ['text' => '2x', 'is_correct' => true], ['text' => '2', 'is_correct' => false], ['text' => 'x²', 'is_correct' => false]]), 'correct' => '2x', 'points' => 10],
+                    ['text' => 'The Pythagorean theorem applies to right-angled triangles.', 'type' => 'true_false', 'options' => null, 'correct' => 'true', 'points' => 10],
+                ],
+            ],
+        ];
+
+        $assignmentIdMap = []; // track assignment IDs for seeding submissions
+        $assignmentsPerLecture = 0;
+
+        foreach ($existingLectures as $idx => $lecture) {
+            // Only add assignments to ~30% of lectures to keep it realistic
+            if ($idx % 3 !== 0) continue;
+
+            // Use 2-3 assignments per lecture
+            $templateStart = $idx % count($assignmentTemplates);
+            $numAssignments = rand(2, min(3, count($assignmentTemplates) - $templateStart)) ?: 2;
+
+            for ($a = 0; $a < $numAssignments; $a++) {
+                $template = $assignmentTemplates[($templateStart + $a) % count($assignmentTemplates)];
+
+                $aid = DB::table('lecture_assignments')->insertGetId([
+                    'school_id' => $demoSchoolId,
+                    'lecture_id' => $lecture->id,
+                    'title' => $template['title'],
+                    'description' => 'Complete this assignment to reinforce your understanding of the lecture material.',
+                    'type' => $template['type'],
+                    'max_score' => $template['max_score'],
+                    'due_at' => $now->copy()->addDays(rand(3, 14)),
+                    'is_mandatory' => $template['is_mandatory'],
+                    'allow_late_submission' => $template['allow_late_submission'],
+                    'status' => $template['status'],
+                    'created_by' => $lecture->teacher_id,
+                    'created_at' => $now,
+                ]);
+
+                // Add questions
+                $questionIds = [];
+                foreach ($template['questions'] as $q) {
+                    $qid = DB::table('lecture_assignment_questions')->insertGetId([
+                        'assignment_id' => $aid,
+                        'question_type' => $q['type'],
+                        'question_text' => $q['text'],
+                        'options' => $q['options'],
+                        'correct_answer' => $q['correct'],
+                        'max_points' => $q['points'],
+                        'order_index' => 0,
+                    ]);
+                    $questionIds[] = $qid;
+                }
+
+                $assignmentIdMap[] = [
+                    'assignment_id' => $aid,
+                    'lecture_id' => $lecture->id,
+                    'question_ids' => $questionIds,
+                    'questions' => $template['questions'],
+                    'max_score' => $template['max_score'],
+                    'is_mandatory' => $template['is_mandatory'],
+                ];
+            }
+        }
+
+        // Create submissions from student accounts (fatima + others)
+        $fatimaId = $studentIds[0]; // Fatima Mohamed
+
+        foreach ($assignmentIdMap as $assignData) {
+            $assignmentId = $assignData['assignment_id'];
+            $questions = $assignData['questions'];
+            $maxScore = $assignData['max_score'];
+
+            foreach ($studentIds as $sIdx => $sid) {
+                // Only submit for first 5 students to simulate partial submissions
+                if ($sIdx >= 5) break;
+
+                // Build answers based on question types
+                $answers = [];
+                foreach ($assignData['question_ids'] as $qIdx => $qid) {
+                    $q = $questions[$qIdx] ?? null;
+                    if (!$q) continue;
+
+                    $answer = ['question_id' => $qid];
+
+                    if ($q['type'] === 'mcq') {
+                        // Pick correct or random answer
+                        $opts = json_decode($q['options'], true);
+                        $correctOpts = array_filter($opts, fn($o) => $o['is_correct']);
+                        if ($correctOpts) {
+                            $answer['selected_option'] = array_values($correctOpts)[0]['text'];
+                        } else {
+                            $answer['selected_option'] = $opts[0]['text'];
+                        }
+                    } elseif ($q['type'] === 'true_false') {
+                        $answer['selected_option'] = $q['correct'] ?? 'true';
+                    } elseif ($q['type'] === 'fill_blank') {
+                        $answer['answer_text'] = $q['correct'] ?? 'student answer';
+                    } elseif ($q['type'] === 'theory') {
+                        $answer['answer_text'] = 'This is a detailed student response demonstrating understanding of the topic. The student provides relevant examples and shows critical thinking in their analysis.';
+                    }
+
+                    $answers[] = $answer;
+                }
+
+                if (empty($answers)) continue;
+
+                // Calculate auto-score for objective questions
+                $autoScore = 0;
+                foreach ($answers as $ans) {
+                    foreach ($questions as $q) {
+                        $qOpt = json_decode($q['options'] ?? 'null', true);
+                        if ($q['correct'] && isset($ans['selected_option']) && strtolower(trim($ans['selected_option'])) === strtolower(trim($q['correct']))) {
+                            $autoScore += $q['points'];
+                        } elseif ($q['correct'] && isset($ans['answer_text']) && strtolower(trim($ans['answer_text'])) === strtolower(trim($q['correct']))) {
+                            $autoScore += $q['points'];
+                        }
+                    }
+                }
+
+                // Normalize to max_score
+                $totalPoints = array_sum(array_map(fn($q) => $q['points'], $questions));
+                $score = $totalPoints > 0 ? ($autoScore / $totalPoints) * $maxScore : 0;
+                $score = round($score, 2);
+
+                DB::table('lecture_assignment_submissions')->insert([
+                    'assignment_id' => $assignmentId,
+                    'student_id' => $sid,
+                    'answers' => json_encode($answers),
+                    'submitted_at' => $now->copy()->subHours(rand(1, 48)),
+                    'status' => 'graded',
+                    'score' => $score,
+                    'max_score' => $maxScore,
+                    'feedback' => $sIdx === 0 ? 'Excellent work, Fatima! Keep it up.' : 'Good effort. Review the feedback carefully.',
+                    'graded_by' => $teacherIds[0],
+                    'graded_at' => $now->copy()->subHours(rand(1, 24)),
+                ]);
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        //  15. CA WEIGHT CONFIGURATION
+        // ─────────────────────────────────────────────
+        $output->writeln("<fg=yellow>Seeding CA weight configurations...</>");
+
+        DB::table('ca_weight_config')->insert([
+            'school_id' => $demoSchoolId,
+            'grade_level_id' => $gradeIds[0],
+            'subject_id' => $subjectIds[0],
+            'term_id' => $termId,
+            'total_ca_percentage' => 40,
+            'assignment_weight_percentage' => 60,
+            'test_weight_percentage' => 40,
+            'updated_by' => $directorId,
+            'created_at' => $now,
+        ]);
+
+        DB::table('ca_weight_config')->insert([
+            'school_id' => $demoSchoolId,
+            'grade_level_id' => $gradeIds[0],
+            'subject_id' => $subjectIds[1],
+            'term_id' => $termId,
+            'total_ca_percentage' => 40,
+            'assignment_weight_percentage' => 50,
+            'test_weight_percentage' => 50,
+            'updated_by' => $directorId,
+            'created_at' => $now,
+        ]);
+
         $output->writeln("");
         $output->writeln("<fg=white;bg=green;options=bold>  SUCCESS  </> <fg=green>Database seeded with COMPREHENSIVE bulk data!</>");
         $output->writeln("");
