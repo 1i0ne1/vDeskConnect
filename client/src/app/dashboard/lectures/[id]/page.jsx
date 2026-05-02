@@ -496,10 +496,14 @@ export default function LecturePlayerPage() {
   // Mark current section complete and move to next
   const markCompleteAndNext = async () => {
     if (!completedSections.includes(currentSectionIndex)) {
+      if (!canCompleteLecture) {
+        toast.error('You must submit all mandatory assignments before completing this lecture');
+        return;
+      }
+
       const newCompleted = [...completedSections, currentSectionIndex];
       setCompletedSections(newCompleted);
       
-      // If it's the last section, mark the whole lecture as completed for the student
       const isLastSection = currentSectionIndex === sectionContents.length - 1;
       
       try {
