@@ -73,6 +73,7 @@ export default function LecturePlayerPage() {
     correct_answer: '', max_points: 1,
   });
   const [showSubmissionForm, setShowSubmissionForm] = useState(null);
+  const [submissionQuestions, setSubmissionQuestions] = useState([]);
   const [submissionAnswers, setSubmissionAnswers] = useState([]);
   const [showGradingView, setShowGradingView] = useState(null);
   const [submissions, setSubmissions] = useState([]);
@@ -311,10 +312,12 @@ export default function LecturePlayerPage() {
     setShowSubmissionForm(assignment.id);
     try {
       const res = await lectureAssignmentsApi.getQuestions(assignment.id);
+      setSubmissionQuestions(res.data || []);
       setSubmissionAnswers((res.data || []).map(q => ({
         question_id: q.id, answer_text: '', selected_option: '', uploaded_file_url: '',
       })));
     } catch {
+      setSubmissionQuestions([]);
       setSubmissionAnswers([]);
     }
   };
