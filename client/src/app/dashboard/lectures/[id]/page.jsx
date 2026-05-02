@@ -193,6 +193,205 @@ export default function LecturePlayerPage() {
     }
   };
 
+  // ==================== ASSIGNMENT FUNCTIONS ====================
+
+  const handleSaveAssignment = async () => {
+    if (!assignmentForm.title) { toast.error('Title is required'); return; }
+    try {
+      if (editingAssignment) {
+        await lectureAssignmentsApi.updateAssignment(editingAssignment.id, assignmentForm);
+        toast.success('Assignment updated');
+      } else {
+        await lectureAssignmentsApi.createAssignment(lecture.id, assignmentForm);
+        toast.success('Assignment created');
+      }
+      setShowAssignmentForm(false);
+      setEditingAssignment(null);
+      setAssignmentForm({
+        title: '', description: '', type: 'objective', max_score: 100,
+        due_at: '', is_mandatory: true, allow_late_submission: false,
+      });
+      const res = await lectureAssignmentsApi.getAssignments(lecture.id);
+      setAssignments(res.data || []);
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to save assignment');
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId) => {
+    if (!confirm('Delete this assignment and all its submissions?')) return;
+    try {
+      await lectureAssignmentsApi.deleteAssignment(assignmentId);
+      toast.success('Assignment deleted');
+      const res = await lectureAssignmentsApi.getAssignments(lecture.id);
+      setAssignments(res.data || []);
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to delete assignment');
+    }
+  };
+
+  const handlePublishAssignment = async (assignmentId) => {
+    try {
+      await lectureAssignmentsApi.publishAssignment(assignmentId);
+      toast.success('Assignment published');
+      const res = await lectureAssignmentsApi.getAssignments(lecture.id);
+      setAssignments(res.data || []);
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to publish');
+    }
+  };
+
+  const handleCloseAssignment = async (assignmentId) => {
+    try {
+      await lectureAssignmentsApi.closeAssignment(assignmentId);
+      toast.success('Assignment closed');
+      const res = await lectureAssignmentsApi.getAssignments(lecture.id);
+      setAssignments(res.data || []);
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to close');
+    }
+  };
+
+  const openQuestionBuilder = async (assignment) => {
+    setShowQuestionBuilder(assignment.id);
+    try {
+      const res = await lectureAssignmentsApi.getQuestions(assignment.id);
+      setAssignmentQuestions(res.data || []);
+    } catch {
+      setAssignmentQuestions([]);
+    }
+  };
+
+  const handleSaveQuestion = async () => {
+    if (!questionForm.question_text) { toast.error('Question text required'); return; }
+    const assignmentId = showQuestionBuilder;
+    try {
+      if (editingQuestion) {
+        await lectureAssignmentsApi.updateQuestion(assignmentId, editingQuestion.id, questionForm);
+        toast.success('Question updated');
+      } else {
+        await lectureAssignmentsApi.addQuestion(assignmentId, questionForm);
+        toast.success('Question added');
+      }
+      setEditingQuestion(null);
+      setQuestionForm({
+        question_type: 'mcq', question_text: '', options: [{ text: '', is_correct: false }, { text: '', is_correct: false }],
+        correct_answer: '', max_points: 1,
+      });
+      const res = await lectureAssignmentsApi.getQuestions(assignmentId);
+      setAssignmentQuestions(res.data || []);
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to save question');
+    }
+  };
+
+  const handleDeleteQuestion = async (questionId) => {
+    try {
+      await lectureAssignmentsApi.deleteQuestion(showQuestionBuilder, questionId);
+      toast.success('Question deleted');
+      const res = await lectureAssignmentsApi.getQuestions(showQuestionBuilder);
+      setAssignmentQuestions(res.data || []);
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to delete question');
+    }
+  };
+
+  const handleSyncQuestions = async () => {
+    try {
+      await lectureAssignmentsApi.syncQuestions(showQuestionBuilder, assignmentQuestions);
+      toast.success('Questions saved');
+      const res = await lectureAssignmentsApi.getQuestions(showQuestionBuilder);
+      setAssignmentQuestions(res.data || []);
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to sync questions');
+    }
+  };
+
+  const openSubmissionForm = async (assignment) => {
+    setShowSubmissionForm(assignment.id);
+    try {
+      const res = await lectureAssignmentsApi.getQuestions(assignment.id);
+      setSubmissionAnswers((res.data || []).map(q => ({
+        question_id: q.id, answer_text: '', selected_option: '', uploaded_file_url: '',
+      })));
+    } catch {
+      setSubmissionAnswers([]);
+    }
+  };
+
+  const handleSubmitAssignment = async (assignmentId) => {
+    try {
+      const answers = submissionAnswers.filter(a => a.answer_text || a.selected_option || a.uploaded_file_url);
+      await lectureAssignmentsApi.submitAssignment(assignmentId, answers);
+      toast.success('Assignment submitted');
+      setShowSubmissionForm(null);
+      const res = await lectureAssignmentsApi.getAssignments(lecture.id);
+      setAssignments(res.data || []);
+      const completionRes = await lectureAssignmentsApi.checkMandatoryAssignments(lecture.id).catch(() => null);
+      if (completionRes) {
+        setCanCompleteLecture(completionRes.can_complete);
+        setMandatoryAssignmentsPending(completionRes.pending_assignments || []);
+      }
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to submit');
+    }
+  };
+
+  const openGradingView = async (assignment) => {
+    setShowGradingView(assignment.id);
+    try {
+      const res = await lectureAssignmentsApi.getSubmissions(assignment.id);
+      setSubmissions(res.data || []);
+    } catch {
+      setSubmissions([]);
+    }
+  };
+
+  const handleGradeSubmission = async (submissionId) => {
+    if (!gradingScore) { toast.error('Score required'); return; }
+    try {
+      await lectureAssignmentsApi.gradeSubmission(submissionId, parseFloat(gradingScore), gradingFeedback);
+      toast.success('Submission graded');
+      setGradingScore('');
+      setGradingFeedback('');
+      const res = await lectureAssignmentsApi.getSubmissions(showGradingView);
+      setSubmissions(res.data || []);
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to grade');
+    }
+  };
+
+  const handleAutoGrade = async (assignmentId) => {
+    try {
+      const res = await lectureAssignmentsApi.autoGrade(assignmentId);
+      toast.success(res.message || 'Auto-grading done');
+      const subRes = await lectureAssignmentsApi.getSubmissions(assignmentId);
+      setSubmissions(subRes.data || []);
+    } catch (err) {
+      toast.error(err.data?.message || 'Failed to auto-grade');
+    }
+  };
+
+  const getAssignmentStatusBadge = (status) => {
+    const map = {
+      draft: { label: 'Draft', color: 'bg-gray-200 text-gray-700' },
+      published: { label: 'Published', color: 'bg-green-100 text-green-700' },
+      closed: { label: 'Closed', color: 'bg-red-100 text-red-700' },
+    };
+    const s = map[status] || map.draft;
+    return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.color}`}>{s.label}</span>;
+  };
+
+  const getAssignmentTypeBadge = (type) => {
+    const map = {
+      objective: { label: 'Objective', color: 'bg-blue-100 text-blue-700' },
+      theory: { label: 'Theory', color: 'bg-purple-100 text-purple-700' },
+      resource: { label: 'Resource', color: 'bg-orange-100 text-orange-700' },
+    };
+    const s = map[type] || map.objective;
+    return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.color}`}>{s.label}</span>;
+  };
+
   // Parse content into sections (split by ## Heading)
   const parseContentSections = useCallback((content) => {
     if (!content) return [];
