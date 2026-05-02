@@ -677,6 +677,22 @@ class LectureController extends Controller
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
+        if ($request->is_completed) {
+            $pendingMandatory = \App\Models\LectureAssignment::where('lecture_id', $id)
+                ->where('is_mandatory', true)
+                ->where('status', 'published')
+                ->whereDoesntHave('submissions', function ($q) use ($user) {
+                    $q->where('student_id', $user->id);
+                })
+                ->count();
+
+            if ($pendingMandatory > 0) {
+                return response()->json([
+                    'message' => 'Cannot complete lecture: ' . $pendingMandatory . ' mandatory assignment(s) not yet submitted',
+                ], 400);
+            }
+        }
+
         $progress = StudentLectureProgress::updateOrCreate(
             ['student_id' => $user->id, 'lecture_id' => $id],
             [

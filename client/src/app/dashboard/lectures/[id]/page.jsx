@@ -878,13 +878,13 @@ export default function LecturePlayerPage() {
                   {!completedSections.includes(currentSectionIndex) && !isDirector && (
                     <button
                       onClick={markCompleteAndNext}
-                      disabled={lecture.type === 'sync' && lecture.status !== 'completed'}
+                      disabled={(lecture.type === 'sync' && lecture.status !== 'completed') || !canCompleteLecture}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                        lecture.type === 'sync' && lecture.status !== 'completed'
+                        (lecture.type === 'sync' && lecture.status !== 'completed') || !canCompleteLecture
                           ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                           : 'bg-success/10 text-success hover:bg-success/20'
                       }`}
-                      title={lecture.type === 'sync' && lecture.status !== 'completed' ? 'Wait for teacher to complete live session' : ''}
+                      title={!canCompleteLecture ? 'Complete mandatory assignments first' : lecture.type === 'sync' && lecture.status !== 'completed' ? 'Wait for teacher to complete live session' : ''}
                     >
                       <CheckCircle className="w-4 h-4" /> 
                       {lecture.type === 'sync' ? 'Mark Live Session Complete' : 'Mark Complete & Next'}
