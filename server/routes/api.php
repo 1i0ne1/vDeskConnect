@@ -8,11 +8,13 @@ use App\Http\Controllers\Api\TeacherController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\AcademicController;
 use App\Http\Controllers\Api\LectureController;
+use App\Http\Controllers\Api\LectureAssignmentController;
 use App\Http\Controllers\Api\ExamController;
 use App\Http\Controllers\Api\ResultController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\MarketplaceController;
 use App\Http\Controllers\Api\EnrollmentController;
+use App\Http\Controllers\Api\CaWeightConfigController;
 
 /*
 |--------------------------------------------------------------------------
