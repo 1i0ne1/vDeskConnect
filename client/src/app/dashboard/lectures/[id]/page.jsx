@@ -904,6 +904,95 @@ export default function LecturePlayerPage() {
                 </button>
               </div>
 
+              {/* Assignments Section */}
+              <div className="mt-12 pt-8 border-t border-border">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+                    <ClipboardList className="w-5 h-5" /> Assignments
+                  </h3>
+                  {isDirector && (
+                    <button
+                      onClick={() => {
+                        setEditingAssignment(null);
+                        setAssignmentForm({
+                          title: '', description: '', type: 'objective', max_score: 100,
+                          due_at: '', is_mandatory: true, allow_late_submission: false,
+                        });
+                        setShowAssignmentForm(true);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark"
+                    >
+                      <Plus className="w-4 h-4" /> Add Assignment
+                    </button>
+                  )}
+                </div>
+
+                {!canCompleteLecture && (
+                  <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-800">Mandatory assignments pending</p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        You must submit: {mandatoryAssignmentsPending.map(a => a.title).join(', ')}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {assignments.length === 0 ? (
+                  <p className="text-text-muted text-center py-4">No assignments attached.</p>
+                ) : (
+                  <div className="grid gap-3">
+                    {assignments.map(assignment => (
+                      <div key={assignment.id} className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-border">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-medium text-text-primary">{assignment.title}</h4>
+                            {getAssignmentTypeBadge(assignment.type)}
+                            {getAssignmentStatusBadge(assignment.status)}
+                            {assignment.is_mandatory && (
+                              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-red-100 text-red-700">Required</span>
+                            )}
+                          </div>
+                        </div>
+                        {assignment.description && <p className="text-sm text-text-muted mb-2">{assignment.description}</p>}
+                        <div className="flex items-center gap-4 text-xs text-text-muted mb-3">
+                          <span>Max: {assignment.max_score} pts</span>
+                          {assignment.due_at && <span>Due: {new Date(assignment.due_at).toLocaleString()}</span>}
+                          {assignment.questions && <span>{assignment.questions.length} question(s)</span>}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {user?.role === 'student' && assignment.status === 'published' && (
+                            <>
+                              {!assignment.my_submission ? (
+                                <button onClick={() => openSubmissionForm(assignment)} className="flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 text-sm">
+                                  <Send className="w-3.5 h-3.5" /> Submit
+                                </button>
+                              ) : (
+                                <span className={`text-xs px-2 py-1 rounded ${assignment.my_submission.status === 'graded' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                  {assignment.my_submission.status === 'graded' ? `Graded: ${assignment.my_submission.score}/${assignment.my_submission.max_score}` : 'Submitted — Awaiting Grade'}
+                                </span>
+                              )}
+                              {assignment.my_submission?.feedback && <p className="text-xs text-text-muted italic">Feedback: {assignment.my_submission.feedback}</p>}
+                            </>
+                          )}
+                          {isDirector && (
+                            <>
+                              {assignment.status === 'draft' && <button onClick={() => handlePublishAssignment(assignment.id)} className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">Publish</button>}
+                              {assignment.status === 'published' && <button onClick={() => handleCloseAssignment(assignment.id)} className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200">Close</button>}
+                              <button onClick={() => openGradingView(assignment)} className="flex items-center gap-1 text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"><Users className="w-3 h-3" /> Submissions</button>
+                              <button onClick={() => openQuestionBuilder(assignment)} className="flex items-center gap-1 text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"><Edit2 className="w-3 h-3" /> Questions</button>
+                              <button onClick={() => { setEditingAssignment(assignment); setAssignmentForm({ title: assignment.title, description: assignment.description || '', type: assignment.type, max_score: assignment.max_score, due_at: assignment.due_at ? assignment.due_at.slice(0, 16) : '', is_mandatory: assignment.is_mandatory, allow_late_submission: assignment.allow_late_submission }); setShowAssignmentForm(true); }} className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Edit</button>
+                              <button onClick={() => handleDeleteAssignment(assignment.id)} className="text-xs px-2 py-1 text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-3 h-3 inline" /></button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* All Resources */}
               <div className="mt-12 pt-8 border-t border-border">
                 <h3 className="text-lg font-semibold text-text-primary mb-4">All Lecture Resources</h3>
