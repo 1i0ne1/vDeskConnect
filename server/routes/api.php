@@ -178,6 +178,14 @@ Route::middleware('auth:sanctum')->group(function () {
         // School Config
         Route::get('config', [AcademicController::class, 'getSchoolConfig']);
         Route::put('config', [AcademicController::class, 'updateSchoolConfig']);
+
+        // CA Weight Config (Phase 7.6)
+        Route::prefix('ca-weight-config')->group(function () {
+            Route::get('/', [CaWeightConfigController::class, 'index']);
+            Route::post('/', [CaWeightConfigController::class, 'store']);
+            Route::put('/{id}', [CaWeightConfigController::class, 'update']);
+            Route::delete('/{id}', [CaWeightConfigController::class, 'destroy']);
+        });
     });
 
     // AI Endpoints (outside academic group)
@@ -208,6 +216,33 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}/progress', [LectureController::class, 'getProgress']);
         Route::post('/{id}/progress', [LectureController::class, 'updateProgress']);
         Route::get('/{id}/progress-report', [LectureController::class, 'getLectureProgressReport']);
+
+        // Lecture Assignments
+        Route::get('/{id}/assignments', [LectureAssignmentController::class, 'index']);
+        Route::get('/assignments/{assignmentId}', [LectureAssignmentController::class, 'show']);
+        Route::post('/{id}/assignments', [LectureAssignmentController::class, 'store']);
+        Route::put('/assignments/{assignmentId}', [LectureAssignmentController::class, 'update']);
+        Route::delete('/assignments/{assignmentId}', [LectureAssignmentController::class, 'destroy']);
+        Route::put('/assignments/{assignmentId}/publish', [LectureAssignmentController::class, 'publish']);
+        Route::put('/assignments/{assignmentId}/close', [LectureAssignmentController::class, 'close']);
+
+        // Lecture Assignment Questions
+        Route::get('/assignments/{assignmentId}/questions', [LectureAssignmentController::class, 'getQuestions']);
+        Route::post('/assignments/{assignmentId}/questions', [LectureAssignmentController::class, 'addQuestion']);
+        Route::put('/assignments/{assignmentId}/questions/{questionId}', [LectureAssignmentController::class, 'updateQuestion']);
+        Route::delete('/assignments/{assignmentId}/questions/{questionId}', [LectureAssignmentController::class, 'deleteQuestion']);
+        Route::post('/assignments/{assignmentId}/questions/sync', [LectureAssignmentController::class, 'syncQuestions']);
+
+        // Lecture Assignment Submissions
+        Route::get('/assignments/{assignmentId}/submissions', [LectureAssignmentController::class, 'getSubmissions']);
+        Route::get('/assignments/{assignmentId}/submission', [LectureAssignmentController::class, 'getMySubmission']);
+        Route::get('/submissions/{submissionId}', [LectureAssignmentController::class, 'getSubmissionDetails']);
+        Route::post('/assignments/{assignmentId}/submit', [LectureAssignmentController::class, 'submit']);
+        Route::put('/submissions/{submissionId}/grade', [LectureAssignmentController::class, 'gradeSubmission']);
+        Route::post('/assignments/{assignmentId}/auto-grade', [LectureAssignmentController::class, 'autoGrade']);
+
+        // Lecture Completion Check (mandatory assignments)
+        Route::get('/{id}/check-completion', [LectureAssignmentController::class, 'checkMandatoryAssignments']);
     });
 
     // AI Lecture Generator
