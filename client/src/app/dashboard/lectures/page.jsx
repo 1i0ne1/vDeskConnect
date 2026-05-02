@@ -901,7 +901,7 @@ export default function LecturesPage() {
 
               {/* Tabs */}
               <div className="flex border-b border-border">
-                {['overview', 'content', 'resources', 'attendance'].map(tab => (
+                {['overview', 'content', 'resources', isStaff ? 'progress' : 'attendance'].map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -1045,8 +1045,85 @@ export default function LecturesPage() {
                       </div>
                     )}
 
-                    {/* Attendance Tab */}
-                    {activeTab === 'attendance' && (
+                    {/* Progress Tab (Staff Only) */}
+                    {isStaff && activeTab === 'progress' && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/10 shadow-sm">
+                          <div>
+                            <p className="text-sm text-text-muted">Completion Rate</p>
+                            <p className="text-2xl font-bold text-text-primary">
+                              {progressReport ? `${progressReport.completed_count} / ${progressReport.total_students}` : '0 / 0'}
+                            </p>
+                          </div>
+                          <div className="w-32 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                             <div 
+                               className="h-full bg-success transition-all duration-500"
+                               style={{ width: `${progressReport?.total_students > 0 ? (progressReport.completed_count / progressReport.total_students) * 100 : 0}%` }}
+                             />
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-medium text-text-primary flex items-center gap-2">
+                            <Users className="w-4 h-4 text-primary" />
+                            Student Completion Status
+                          </h4>
+                          {progressReport?.records?.length === 0 ? (
+                            <div className="text-center py-10 bg-white/5 rounded-xl border border-white/10 border-dashed">
+                              <Users className="w-10 h-10 mx-auto text-text-muted mb-3 opacity-20" />
+                              <p className="text-text-muted text-sm">No students have started this lecture yet.</p>
+                            </div>
+                          ) : (
+                            <div className="border border-white/10 rounded-xl overflow-hidden bg-white/5">
+                              <table className="w-full text-sm text-left">
+                                <thead className="bg-white/5 text-text-secondary border-b border-white/10">
+                                  <tr>
+                                    <th className="px-4 py-3 font-medium">Student</th>
+                                    <th className="px-4 py-3 font-medium text-center">Status</th>
+                                    <th className="px-4 py-3 font-medium">Completed At</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                  {progressReport?.records?.map(record => {
+                                    const profile = record.student?.profile;
+                                    const profileData = profile?.data ? (typeof profile.data === 'string' ? JSON.parse(profile.data) : profile.data) : {};
+                                    const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || record.student?.email || 'Unknown Student';
+                                    
+                                    return (
+                                      <tr key={record.id} className="hover:bg-white/5 transition-colors">
+                                        <td className="px-4 py-3">
+                                          <div className="flex flex-col">
+                                            <span className="font-medium text-text-primary">{fullName}</span>
+                                            <span className="text-xs text-text-muted">{record.student?.email}</span>
+                                          </div>
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                          {record.is_completed ? (
+                                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-success/10 text-success rounded-lg text-[10px] font-medium border border-success/20">
+                                              <CheckCircle className="w-3 h-3" /> Completed
+                                            </span>
+                                          ) : (
+                                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-warning/10 text-warning rounded-lg text-[10px] font-medium border border-warning/20">
+                                              <Clock3 className="w-3 h-3" /> In Progress
+                                            </span>
+                                          )}
+                                        </td>
+                                        <td className="px-4 py-3 text-text-secondary text-xs">
+                                          {record.completed_at ? new Date(record.completed_at).toLocaleString() : '-'}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Attendance Tab (Students Only or fallback) */}
+                    {!isStaff && activeTab === 'attendance' && (
                       <div>
                         <p className="text-text-muted text-center py-8">Attendance tracking will be available in the student dashboard.</p>
                       </div>
