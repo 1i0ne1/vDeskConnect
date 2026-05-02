@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Lecture extends Model
@@ -54,6 +53,11 @@ class Lecture extends Model
         return $this->belongsTo(GradeLevel::class);
     }
 
+    public function term(): BelongsTo
+    {
+        return $this->belongsTo(AcademicTerm::class);
+    }
+
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
@@ -82,5 +86,10 @@ class Lecture extends Model
     public function studentProgress(): HasMany
     {
         return $this->hasMany(StudentLectureProgress::class);
+    }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(LectureAssignment::class);
     }
 }
