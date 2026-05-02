@@ -213,14 +213,16 @@ export default function AcademicPage() {
       }
 
       // Fetch Phase 2 data
-      const [gradesRes, subjectsRes, departmentsRes] = await Promise.all([
+      const [gradesRes, subjectsRes, departmentsRes, caWeightRes] = await Promise.all([
         academicApi.gradeLevels.getAll().catch(() => ({ grade_levels: [] })),
         academicApi.subjects.getAll().catch(() => ({ subjects: [] })),
         academicApi.departments.getAll().catch(() => ({ departments: [] })),
+        caWeightConfigApi.getConfigs().catch(() => ({ data: [] })),
       ]);
       setGradeLevels(gradesRes.grade_levels || []);
       setSubjects(subjectsRes.subjects || []);
       setDepartments(departmentsRes.departments || []);
+      setCaWeightConfigs(caWeightRes.data || []);
 
       // Fetch grade levels and subjects for CA weeks (reuse Phase 2 data)
       // (already fetched above as gradesRes and subjectsRes)
