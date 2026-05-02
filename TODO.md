@@ -462,9 +462,9 @@ This document outlines the complete implementation roadmap for building the **Ac
 
 ---
 
-## 🔴 NEW Phase 7.5: Lecture Assignments & Graded Work
+## ✅ Phase 7.5: COMPLETE — Lecture Assignments & Graded Work
 
-**Status:** ⏳ **PENDING — CRITICAL MISSING FEATURE**
+**Status:** ✅ **FULLY IMPLEMENTED** (Completed May 03, 2026)
 
 **Why Critical:** Lectures currently have no mechanism for attaching graded assignments. Students cannot submit work tied to lectures, and teachers/directors cannot grade lecture-based assignments. Continuous Assessment (CA) currently only accounts for tests — it MUST now include assignments as well.
 
@@ -477,16 +477,16 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
 > **Key Rule:** An assignment can be **optional** or **mandatory**. If mandatory, the student **cannot complete the lecture** without submitting the assignment.
 
 ### 7.5.2 Lecture Assignments Database & API
-- [ ] **Backend**: Create `lecture_assignments` table migration
+- [x] **Backend**: Create `lecture_assignments` table migration
   - Columns: `id`, `school_id`, `lecture_id` (FK), `title`, `description` (text), `type` (objective, theory, resource), `max_score` (int), `due_at` (datetime, nullable), `is_mandatory` (boolean, default true), `allow_late_submission` (boolean), `status` (draft, published, closed), `created_by` (teacher/director), timestamps
 
-- [ ] **Backend**: Create `lecture_assignment_questions` table migration
+- [x] **Backend**: Create `lecture_assignment_questions` table migration
   - Columns: `id`, `assignment_id` (FK), `question_type` (mcq, theory, fill_blank, true_false, file_upload), `question_text` (text), `options` (JSONB for MCQ: `[{ text, is_correct }]`), `correct_answer` (text/JSON, nullable for theory), `max_points` (int), `order_index` (int), timestamps
 
-- [ ] **Backend**: Create `lecture_assignment_submissions` table migration
+- [x] **Backend**: Create `lecture_assignment_submissions` table migration
   - Columns: `id`, `assignment_id` (FK), `student_id` (FK), `answers` (JSONB: `[{ question_id, answer_text, selected_option, uploaded_file_url }]`), `submitted_at` (datetime), `status` (submitted, graded, late), `score` (decimal, nullable), `max_score` (int), `feedback` (text, nullable), `graded_by` (FK to users, nullable), `graded_at` (datetime, nullable), timestamps
 
-- [ ] **Backend**: API endpoints for lecture assignments
+- [x] **Backend**: API endpoints for lecture assignments
   - `GET /api/lectures/{id}/assignments` — List assignments for a lecture
   - `POST /api/lectures/{id}/assignments` — Create assignment
   - `PUT /api/lectures/assignments/{id}` — Update assignment
@@ -498,7 +498,7 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
   - `POST /api/lectures/assignments/{id}/publish` — Publish assignment
   - `POST /api/lectures/assignments/{id}/close` — Close assignment
 
-- [ ] **Backend**: API endpoints for assignment submissions
+- [x] **Backend**: API endpoints for assignment submissions
   - `GET /api/lectures/assignments/{id}/submissions` — List submissions (teacher/director view)
   - `POST /api/lectures/assignments/{id}/submit` — Student submits assignment
   - `GET /api/lectures/assignments/{id}/my-submission` — Student view own submission
