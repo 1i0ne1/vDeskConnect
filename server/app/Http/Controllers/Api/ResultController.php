@@ -132,13 +132,50 @@ class ResultController extends Controller
         $caWeight = $config['ca_weight'] ?? 40;
         $examWeight = $config['exam_weight'] ?? 60;
 
+        // Fetch CA weight config for assignment vs test split
+        $caWeightConfig = DB::table('ca_weight_config')
+            ->where('school_id', $schoolId)
+            ->where('grade_level_id', $gradeLevelId)
+            ->where('subject_id', $subject->id)
+            ->where('term_id', $termId)
+            ->first();
+
+        $assignmentWeightPct = $caWeightConfig ? $caWeightConfig->assignment_weight_percentage : 50;
+        $testWeightPct = $caWeightConfig ? $caWeightConfig->test_weight_percentage : 50;
+
         $processedCount = 0;
 
         foreach ($subjects as $subject) {
             $subjectScores = [];
 
             foreach ($students as $student) {
-                // 1. CA Score — Scaled sum of all graded CA tests
+                // 1. Assignment CA Score — from lecture assignments
+                $assignmentSubmissions = DB::table('lecture_assignment_submissions')
+                    ->join('lecture_assignments', 'lecture_assignment_submissions.assignment_id', '=', 'lecture_assignments.id')
+                    ->join('lectures', 'lecture_assignments.lecture_id', '=', 'lectures.id')
+                    ->where('lectures.school_id', $schoolId)
+                    ->where('lectures.grade_level_id', $gradeLevelId)
+                    ->where('lectures.subject_id', $subject->id)
+                    ->when($termId, function ($q) use ($termId) {
+                        // Only if lecture has term_id set
+                        $q->where('lectures.term_id', $termId);
+                    })
+                    ->where('lecture_assignment_submissions.student_id', $student->id)
+                    ->where('lecture_assignment_submissions.score', '!=', null)
+                    ->select('lecture_assignment_submissions.score', 'lecture_assignment_submissions.max_score')
+                    ->get();
+
+                $assignmentObtained = 0;
+                $assignmentMaxPossible = 0;
+                foreach ($assignmentSubmissions as $sub) {
+                    $assignmentObtained += $sub->score;
+                    $assignmentMaxPossible += $sub->max_score;
+                }
+
+                $assignmentPct = ($assignmentMaxPossible > 0) ? ($assignmentObtained / $assignmentMaxPossible) : 0;
+                $assignmentFinal = $assignmentPct * ($caWeight * ($assignmentWeightPct / 100));
+
+                // 2. Test CA Score — from CA exams/tests
                 $caSubmissions = ExamSubmission::whereHas('exam', function($q) use ($subject, $gradeLevelId, $termId) {
                         $q->where('subject_id', $subject->id)
                           ->where('grade_level_id', $gradeLevelId)
@@ -158,7 +195,11 @@ class ResultController extends Controller
                     $caMaxPossible += $sub->exam->total_marks ?? 0;
                 }
 
-                $caFinal = ($caMaxPossible > 0) ? ($caObtained / $caMaxPossible) * $caWeight : 0;
+                $testPct = ($caMaxPossible > 0) ? ($caObtained / $caMaxPossible) : 0;
+                $testFinal = $testPct * ($caWeight * ($testWeightPct / 100));
+
+                // Combined CA
+                $caFinal = round($assignmentFinal + $testFinal, 2);
 
                 // 2. Exam Score — Scaled highest graded FINAL exam
                 $examSubmission = ExamSubmission::whereHas('exam', function($q) use ($subject, $gradeLevelId, $termId) {
@@ -189,7 +230,9 @@ class ResultController extends Controller
 
                 $subjectScores[] = [
                     'student_id' => $student->id,
-                    'ca_score' => round($caFinal, 2),
+                    'ca_score' => $caFinal,
+                    'ca_assignment_score' => round($assignmentFinal, 2),
+                    'ca_test_score' => round($testFinal, 2),
                     'exam_score' => round($examFinal, 2),
                     'total_score' => $totalScore,
                     'grade' => $gradeInfo['grade'] ?? 'F',
