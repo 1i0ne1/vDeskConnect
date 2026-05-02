@@ -880,27 +880,31 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
 10. `lesson_notes`
 11. `lectures`
 12. `lecture_resources`
-13. `attendances`
-14. `ca_weeks`
-15. `exams`
-16. `exam_questions`
-17. `exam_submissions`
-18. `exam_answers`
-19. `grade_scales`
-20. `student_grades`
-21. `report_cards`
-22. `result_checks`
-23. `student_enrollments`
-24. `textbooks`
-25. `marketplace_orders`
-26. `events`
-27. `event_attendees`
-28. `fee_structures`
-29. `payments`
-30. `notices`
-31. `syllabuses`
-32. `routines`
-33. `promotions`
+13. `lecture_assignments`
+14. `lecture_assignment_questions`
+15. `lecture_assignment_submissions`
+16. `attendances`
+17. `ca_weeks`
+18. `ca_weight_config`
+19. `exams`
+20. `exam_questions`
+21. `exam_submissions`
+22. `exam_answers`
+23. `grade_scales`
+24. `student_grades`
+25. `report_cards`
+26. `result_checks`
+27. `student_enrollments`
+28. `textbooks`
+29. `marketplace_orders`
+30. `events`
+31. `event_attendees`
+32. `fee_structures`
+33. `payments`
+34. `notices`
+35. `syllabuses`
+36. `routines`
+37. `promotions`
 
 ### 17.2 Seeders
 - [ ] Default grade scales (Nigerian WAEC, American GPA, French Baccalaureat)
@@ -941,9 +945,12 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
 ### Nigerian School Context
 - **Junior Secondary (JSS1–JSS3):** All students take the same core subjects.
 - **Senior Secondary (SS1–SS3):** Students take common subjects + departmental subjects (Science, Arts, Commercial).
-- **CA (Continuous Assessment):** Aggregate of tests set throughout the term (e.g., 30% of total score).
+- **CA (Continuous Assessment):** Aggregate of **assignments** and **tests** set throughout the term (e.g., 40% of total score).
+  - The Director configures how the CA weight is split: e.g., 60% of CA from assignments, 40% from tests.
+  - Assignments: Graded work attached to lectures (objective, theory, resource-based). Must be submitted before lecture completion if mandatory.
+  - Tests: CA tests/exams set during configured CA weeks.
 - **Exam:** Final term exam (e.g., 70% of total score).
-- **Total Score = CA + Exam**, then graded using the school's grade scale.
+- **Total Score = CA (Assignments + Tests) + Exam**, then graded using the school's grade scale.
 
 ### Academic Session Configuration Flow
 1. Admin creates Academic Session (e.g., "2025/2026").
