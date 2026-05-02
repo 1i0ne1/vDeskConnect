@@ -506,7 +506,7 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
   - `POST /api/lectures/assignments/{id}/auto-grade` — Auto-grade objective questions (MCQ, true/false, fill-blank)
 
 ### 7.5.3 Assignment Creation UI (Teacher/Director)
-- [ ] **Frontend**: Assignment creation modal/form within lecture detail view
+- [x] **Frontend**: Assignment creation modal/form within lecture detail view
   - New tab in lecture detail: **"Assignments"**
   - "Add Assignment" button
   - Assignment form:
@@ -526,7 +526,7 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
   - List of existing assignments with status badges
 
 ### 7.5.4 Assignment Submission UI (Student)
-- [ ] **Frontend**: Student lecture page updated with assignment section
+- [x] **Frontend**: Student lecture page updated with assignment section
   - Assignments displayed in lecture detail/content view
   - If mandatory assignment exists → "Complete Assignment" required before "Mark Lecture as Complete"
   - Assignment taking interface:
@@ -538,7 +538,7 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
   - View score and feedback after grading
 
 ### 7.5.5 Assignment Grading UI (Teacher/Director)
-- [ ] **Frontend**: Grading dashboard for lecture assignments
+- [x] **Frontend**: Grading dashboard for lecture assignments
   - Accessible from lecture detail → Assignments tab → View Submissions
   - List of all student submissions with status (Submitted, Late, Graded, Not Submitted)
   - For each submission:
@@ -552,31 +552,31 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
   - Summary stats: Average score, submissions count, pending count
 
 ### 7.5.6 Lecture Completion Validation
-- [ ] **Frontend/Backend**: Enforce mandatory assignment completion
+- [x] **Frontend/Backend**: Enforce mandatory assignment completion
   - Backend: Lecture completion endpoint checks if all mandatory assignments are submitted
   - Frontend: "Mark as Complete" button disabled/grayed out until mandatory assignments submitted
   - Show warning message: "You must submit [X] assignment(s) before completing this lecture"
 
 ---
 
-## 🔴 NEW Phase 7.6: CA Weight Configuration — Assignments vs Tests
+## ✅ Phase 7.6: COMPLETE — CA Weight Configuration — Assignments vs Tests
 
-**Status:** ⏳ **PENDING — CRITICAL MISSING FEATURE**
+**Status:** ✅ **FULLY IMPLEMENTED** (Completed May 03, 2026)
 
 **Why Critical:** Continuous Assessment (CA) was previously tests-only. Now CA = Assignments + Tests. The director must be able to configure what percentage of the CA weight goes to assignments vs tests.
 
 ### 7.6.1 CA Weight Configuration Database & API
-- [ ] **Backend**: Update `ca_weeks` table OR create new `ca_weight_config` table
+- [x] **Backend**: Update `ca_weeks` table OR create new `ca_weight_config` table
   - Columns: `id`, `school_id`, `grade_level_id` (FK), `subject_id` (FK), `term_id` (FK), `total_ca_percentage` (int, e.g., 40), `assignment_weight_percentage` (int, e.g., 60 — meaning 60% of the 40% CA is from assignments), `test_weight_percentage` (int, e.g., 40 — meaning 40% of the 40% CA is from tests), `updated_by`, timestamps
   - Constraint: `assignment_weight_percentage + test_weight_percentage = 100`
 
-- [ ] **Backend**: API endpoints for CA weight configuration
+- [x] **Backend**: API endpoints for CA weight configuration
   - `GET /api/academic/ca-weight-config` — List CA weight configs
   - `POST /api/academic/ca-weight-config` — Create/update CA weight config
   - `PUT /api/academic/ca-weight-config/{id}` — Update CA weight config
 
 ### 7.6.2 CA Weight Configuration UI (Director/Admin)
-- [ ] **Frontend**: CA Weight Configuration tab in Academic page (or Grade Detail view)
+- [x] **Frontend**: CA Weight Configuration tab in Academic page (or Grade Detail view)
   - Select: Grade Level, Subject, Term
   - Display: Total CA Percentage (e.g., 40% — pulled from existing CA config)
   - Weight Split Configuration:
@@ -590,7 +590,7 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
   - Preview: How this affects student final grade calculation
 
 ### 7.6.3 Updated CA Calculation Logic
-- [ ] **Backend**: Update grade computation logic to incorporate assignments
+- [x] **Backend**: Update grade computation logic to incorporate assignments
   - New formula:
     ```
     CA_Total = (Assignment_Aggregate × assignment_weight%) + (Test_Aggregate × test_weight%)
@@ -606,7 +606,7 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
     - Total
 
 ### 7.6.4 Updated Student Results View
-- [ ] **Frontend**: Student results page (`/dashboard/results`) updated
+- [x] **Frontend**: Student results page (`/dashboard/results`) updated
   - Show CA breakdown:
     - Assignments: Score / Total (with weight %)
     - Tests: Score / Total (with weight %)
@@ -614,13 +614,17 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
   - Exam score
   - Final Total
   - Grade and Remark
-- [ ] **Frontend**: Report card updated to reflect new CA structure
+- [x] **Frontend**: Report card updated to reflect new CA structure
   - Line items for "CA - Assignments" and "CA - Tests"
   - Clear weight annotations
 
 ---
 
 ## ✅ Phase 8: COMPLETE — Exams & Assessments
+
+**Status:** ✅ **FULLY IMPLEMENTED** (Completed April 26, 2026)
+
+**Why Eighth:** Exams depend on grades, subjects, terms, and CA week configuration.
 
 **Status:** ✅ **FULLY IMPLEMENTED** (Completed April 26, 2026)
 
@@ -870,43 +874,44 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
 **Why Throughout:** All migrations should be done alongside frontend work.
 
 ### 17.1 Migration Order
-1. `academic_sessions`
-2. `academic_terms`
-3. `grade_levels`
-4. `sections`
-5. `departments`
-6. `subjects`
-7. `grade_level_subjects`
-8. `teacher_subjects`
-9. `schemes_of_work`
-10. `lesson_notes`
-11. `lectures`
-12. `lecture_resources`
-13. `lecture_assignments`
-14. `lecture_assignment_questions`
-15. `lecture_assignment_submissions`
-16. `attendances`
-17. `ca_weeks`
-18. `ca_weight_config`
-19. `exams`
-20. `exam_questions`
-21. `exam_submissions`
-22. `exam_answers`
-23. `grade_scales`
-24. `student_grades`
-25. `report_cards`
-26. `result_checks`
-27. `student_enrollments`
-28. `textbooks`
-29. `marketplace_orders`
-30. `events`
-31. `event_attendees`
-32. `fee_structures`
-33. `payments`
-34. `notices`
-35. `syllabuses`
-36. `routines`
-37. `promotions`
+1. [x] `academic_sessions`
+2. [x] `academic_terms`
+3. [x] `grade_levels`
+4. [x] `sections`
+5. [x] `departments`
+6. [x] `subjects`
+7. [x] `grade_level_subjects`
+8. [x] `teacher_subjects`
+9. [x] `schemes_of_work`
+10. [x] `lesson_notes`
+11. [x] `lectures`
+12. [x] `lecture_resources`
+13. [x] `lecture_assignments`
+14. [x] `lecture_assignment_questions`
+15. [x] `lecture_assignment_submissions`
+16. [x] `attendances`
+17. [x] `ca_weeks`
+18. [x] `ca_weight_config`
+19. [x] `exams`
+20. [x] `exam_questions`
+21. [x] `exam_submissions`
+22. [x] `exam_answers`
+23. [x] `grade_scales`
+24. [x] `student_grades`
+25. [x] `report_cards`
+26. [x] `result_checks`
+27. [x] `student_enrollments`
+28. [x] `textbooks`
+29. [x] `marketplace_orders`
+30. [x] `events`
+31. [x] `event_attendees`
+32. [x] `fee_structures`
+33. [x] `payments`
+34. [x] `notices`
+35. [x] `syllabuses`
+36. [x] `routines`
+37. [x] `promotions`
+38. [x] `ca_breakdown` (student_grades columns)
 
 ### 17.2 Seeders
 - [ ] Default grade scales (Nigerian WAEC, American GPA, French Baccalaureat)
@@ -993,8 +998,8 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
 | 🟠 **P1** | 5 | Scheme of Work Builder (Manual + AI) | ✅ Complete |
 | 🟠 **P1** | 6 | Lesson Notes Builder (Manual + AI) | ✅ Complete |
 | 🟡 **P2** | 7 | Lectures (Manual + AI, Attendance) | ✅ Complete |
-| 🔴 **P0** | 7.5 | **Lecture Assignments & Graded Work** (NEW — Critical Missing Feature) | ⏳ Pending |
-| 🔴 **P0** | 7.6 | **CA Weight Config — Assignments vs Tests** (NEW — Critical Missing Feature) | ⏳ Pending |
+| 🔴 **P0** | 7.5 | **Lecture Assignments & Graded Work** (NEW — Critical Missing Feature) | ✅ Complete |
+| 🔴 **P0** | 7.6 | **CA Weight Config — Assignments vs Tests** (NEW — Critical Missing Feature) | ✅ Complete |
 | 🟡 **P2** | 8 | Exams & Assessments (CA Tests, Exams, Grading) | ✅ Complete |
 | 🟢 **P3** | 9 | Reports & Grades (Report Cards, Result Pins) | ✅ Complete |
 | 🟢 **P3** | 10 | Marketplace (Textbook Store) | Pending |
