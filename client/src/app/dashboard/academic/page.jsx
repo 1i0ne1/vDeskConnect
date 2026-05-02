@@ -2107,6 +2107,145 @@ export default function AcademicPage() {
           </div>
         )}
 
+        {/* ==================== CA WEIGHT TAB ==================== */}
+        {activeTab === TABS.CA_WEIGHT && (
+          <div className="space-y-6">
+            <div className="bg-card rounded-lg p-4 md:p-6 border border-border">
+              <h3 className="text-base md:text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+                <Percent className="w-4 h-4 md:w-5 md:h-5" /> CA Weight Configuration
+              </h3>
+              <p className="text-xs md:text-sm text-text-muted mb-4">
+                Configure how the Continuous Assessment (CA) percentage is split between Assignments and Tests for each grade, subject, and term.
+              </p>
+
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!caWeightForm.grade_level_id || !caWeightForm.subject_id || !caWeightForm.term_id) {
+                  toast.error('Please select grade, subject, and term');
+                  return;
+                }
+                if (caWeightForm.assignment_weight_percentage + caWeightForm.test_weight_percentage !== 100) {
+                  toast.error('Assignment and test weights must sum to 100%');
+                  return;
+                }
+                setCaWeightSaving(true);
+                try {
+                  await caWeightConfigApi.saveConfig(caWeightForm);
+                  toast.success('CA weight configuration saved');
+                  const res = await caWeightConfigApi.getConfigs();
+                  setCaWeightConfigs(res.data || []);
+                } catch (err) {
+                  toast.error(err.data?.message || 'Failed to save');
+                } finally {
+                  setCaWeightSaving(false);
+                }
+              }} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1">Grade Level</label>
+                    <select value={caWeightForm.grade_level_id} onChange={e => setCaWeightForm({ ...caWeightForm, grade_level_id: e.target.value })} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary text-sm">
+                      <option value="">Select Grade</option>
+                      {gradeLevels.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1">Subject</label>
+                    <select value={caWeightForm.subject_id} onChange={e => setCaWeightForm({ ...caWeightForm, subject_id: e.target.value })} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary text-sm">
+                      <option value="">Select Subject</option>
+                      {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1">Term</label>
+                    <select value={caWeightForm.term_id} onChange={e => setCaWeightForm({ ...caWeightForm, term_id: e.target.value })} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary text-sm">
+                      <option value="">Select Term</option>
+                      {terms.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1">Total CA % of Final Grade</label>
+                    <input type="number" value={caWeightForm.total_ca_percentage} onChange={e => setCaWeightForm({ ...caWeightForm, total_ca_percentage: parseInt(e.target.value) || 40 })} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary" min="0" max="100" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1">Assignment Weight within CA (%)</label>
+                    <input type="number" value={caWeightForm.assignment_weight_percentage} onChange={e => setCaWeightForm({ ...caWeightForm, assignment_weight_percentage: parseInt(e.target.value) || 0, test_weight_percentage: 100 - (parseInt(e.target.value) || 0) })} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary" min="0" max="100" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1">Test Weight within CA (%)</label>
+                    <input type="number" value={caWeightForm.test_weight_percentage} onChange={e => setCaWeightForm({ ...caWeightForm, test_weight_percentage: parseInt(e.target.value) || 0, assignment_weight_percentage: 100 - (parseInt(e.target.value) || 0) })} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary" min="0" max="100" />
+                  </div>
+                </div>
+
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <p className="text-sm font-medium text-blue-800 dark:text-blue-300">Preview:</p>
+                  <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                    Assignments: {caWeightForm.assignment_weight_percentage}% of {caWeightForm.total_ca_percentage}% CA = {(caWeightForm.assignment_weight_percentage / 100 * caWeightForm.total_ca_percentage).toFixed(1)}% of final grade
+                  </p>
+                  <p className="text-xs text-blue-700 dark:text-blue-400">
+                    Tests: {caWeightForm.test_weight_percentage}% of {caWeightForm.total_ca_percentage}% CA = {(caWeightForm.test_weight_percentage / 100 * caWeightForm.total_ca_percentage).toFixed(1)}% of final grade
+                  </p>
+                </div>
+
+                <button type="submit" disabled={caWeightSaving} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50">
+                  <Save className="w-4 h-4" /> {caWeightSaving ? 'Saving...' : 'Save Configuration'}
+                </button>
+              </form>
+            </div>
+
+            {/* Existing Configurations */}
+            <div className="bg-card rounded-lg p-4 md:p-6 border border-border">
+              <h3 className="text-base md:text-lg font-semibold text-text-primary mb-4">Saved Configurations</h3>
+              {caWeightConfigs.length === 0 ? (
+                <p className="text-text-muted text-center py-4">No configurations yet.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left p-2 text-text-secondary font-medium">Grade</th>
+                        <th className="text-left p-2 text-text-secondary font-medium">Subject</th>
+                        <th className="text-left p-2 text-text-secondary font-medium">Term</th>
+                        <th className="text-center p-2 text-text-secondary font-medium">CA %</th>
+                        <th className="text-center p-2 text-text-secondary font-medium">Assignment %</th>
+                        <th className="text-center p-2 text-text-secondary font-medium">Test %</th>
+                        <th className="text-center p-2 text-text-secondary font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {caWeightConfigs.map(cfg => (
+                        <tr key={cfg.id} className="border-b border-border hover:bg-bg-main">
+                          <td className="p-2 text-text-primary">{cfg.grade_level?.name}</td>
+                          <td className="p-2 text-text-primary">{cfg.subject?.name}</td>
+                          <td className="p-2 text-text-primary">{cfg.term?.name}</td>
+                          <td className="p-2 text-center text-text-primary">{cfg.total_ca_percentage}%</td>
+                          <td className="p-2 text-center text-blue-600">{cfg.assignment_weight_percentage}%</td>
+                          <td className="p-2 text-center text-green-600">{cfg.test_weight_percentage}%</td>
+                          <td className="p-2 text-center">
+                            <button onClick={async () => {
+                              if (!confirm('Delete this configuration?')) return;
+                              try {
+                                await caWeightConfigApi.deleteConfig(cfg.id);
+                                toast.success('Deleted');
+                                const res = await caWeightConfigApi.getConfigs();
+                                setCaWeightConfigs(res.data || []);
+                              } catch (err) {
+                                toast.error('Failed to delete');
+                              }
+                            }} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4 inline" /></button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
     </DashboardLayout>
   );
