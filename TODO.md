@@ -462,6 +462,164 @@ This document outlines the complete implementation roadmap for building the **Ac
 
 ---
 
+## 🔴 NEW Phase 7.5: Lecture Assignments & Graded Work
+
+**Status:** ⏳ **PENDING — CRITICAL MISSING FEATURE**
+
+**Why Critical:** Lectures currently have no mechanism for attaching graded assignments. Students cannot submit work tied to lectures, and teachers/directors cannot grade lecture-based assignments. Continuous Assessment (CA) currently only accounts for tests — it MUST now include assignments as well.
+
+### 7.5.1 Assignment Types (Per Lecture)
+Assignments can be attached to **any lecture type** (sync, async, hybrid):
+1. **Objective Questions** — MCQ, fill-in-the-blank, true/false
+2. **Theory Questions** — Essay, short answer, blank space for written response
+3. **Resource-Based** — Attach a file/resource the student must work on and submit (e.g., a worksheet PDF they complete and re-upload)
+
+> **Key Rule:** An assignment can be **optional** or **mandatory**. If mandatory, the student **cannot complete the lecture** without submitting the assignment.
+
+### 7.5.2 Lecture Assignments Database & API
+- [ ] **Backend**: Create `lecture_assignments` table migration
+  - Columns: `id`, `school_id`, `lecture_id` (FK), `title`, `description` (text), `type` (objective, theory, resource), `max_score` (int), `due_at` (datetime, nullable), `is_mandatory` (boolean, default true), `allow_late_submission` (boolean), `status` (draft, published, closed), `created_by` (teacher/director), timestamps
+
+- [ ] **Backend**: Create `lecture_assignment_questions` table migration
+  - Columns: `id`, `assignment_id` (FK), `question_type` (mcq, theory, fill_blank, true_false, file_upload), `question_text` (text), `options` (JSONB for MCQ: `[{ text, is_correct }]`), `correct_answer` (text/JSON, nullable for theory), `max_points` (int), `order_index` (int), timestamps
+
+- [ ] **Backend**: Create `lecture_assignment_submissions` table migration
+  - Columns: `id`, `assignment_id` (FK), `student_id` (FK), `answers` (JSONB: `[{ question_id, answer_text, selected_option, uploaded_file_url }]`), `submitted_at` (datetime), `status` (submitted, graded, late), `score` (decimal, nullable), `max_score` (int), `feedback` (text, nullable), `graded_by` (FK to users, nullable), `graded_at` (datetime, nullable), timestamps
+
+- [ ] **Backend**: API endpoints for lecture assignments
+  - `GET /api/lectures/{id}/assignments` — List assignments for a lecture
+  - `POST /api/lectures/{id}/assignments` — Create assignment
+  - `PUT /api/lectures/assignments/{id}` — Update assignment
+  - `DELETE /api/lectures/assignments/{id}` — Delete assignment
+  - `GET /api/lectures/assignments/{id}/questions` — Get assignment questions
+  - `POST /api/lectures/assignments/{id}/questions` — Add question to assignment
+  - `PUT /api/lectures/assignments/{id}/questions/{qid}` — Update question
+  - `DELETE /api/lectures/assignments/{id}/questions/{qid}` — Delete question
+  - `POST /api/lectures/assignments/{id}/publish` — Publish assignment
+  - `POST /api/lectures/assignments/{id}/close` — Close assignment
+
+- [ ] **Backend**: API endpoints for assignment submissions
+  - `GET /api/lectures/assignments/{id}/submissions` — List submissions (teacher/director view)
+  - `POST /api/lectures/assignments/{id}/submit` — Student submits assignment
+  - `GET /api/lectures/assignments/{id}/my-submission` — Student view own submission
+  - `PUT /api/lectures/assignments/submissions/{id}/grade` — Teacher/director grade submission
+  - `POST /api/lectures/assignments/{id}/auto-grade` — Auto-grade objective questions (MCQ, true/false, fill-blank)
+
+### 7.5.3 Assignment Creation UI (Teacher/Director)
+- [ ] **Frontend**: Assignment creation modal/form within lecture detail view
+  - New tab in lecture detail: **"Assignments"**
+  - "Add Assignment" button
+  - Assignment form:
+    - Title
+    - Description/instructions
+    - Type selector: Objective / Theory / Resource-Based
+    - Max Score input
+    - Due date & time (optional)
+    - Toggle: Is Mandatory? (if yes, student cannot complete lecture without submitting)
+    - Toggle: Allow Late Submission?
+    - Save as Draft / Publish
+  - Question builder (inline or modal):
+    - For **Objective**: MCQ builder (add options, mark correct answer), True/False, Fill-in-the-blank
+    - For **Theory**: Question text + blank space indicator (free-text response)
+    - For **Resource-Based**: Upload attachment (worksheet, template file) that student must complete and re-upload
+    - Reorder questions (drag-and-drop or order_index)
+  - List of existing assignments with status badges
+
+### 7.5.4 Assignment Submission UI (Student)
+- [ ] **Frontend**: Student lecture page updated with assignment section
+  - Assignments displayed in lecture detail/content view
+  - If mandatory assignment exists → "Complete Assignment" required before "Mark Lecture as Complete"
+  - Assignment taking interface:
+    - **Objective**: MCQ radio buttons, True/False toggles, text input for fill-blank
+    - **Theory**: Large text area for essay/short answer
+    - **Resource-Based**: Download attached resource + file upload for completed work
+  - Submit button with confirmation
+  - View submission status: Submitted / Graded / Pending Grading
+  - View score and feedback after grading
+
+### 7.5.5 Assignment Grading UI (Teacher/Director)
+- [ ] **Frontend**: Grading dashboard for lecture assignments
+  - Accessible from lecture detail → Assignments tab → View Submissions
+  - List of all student submissions with status (Submitted, Late, Graded, Not Submitted)
+  - For each submission:
+    - View student answers side-by-side with correct answers (for objective)
+    - Read theory responses
+    - Download student-uploaded files (for resource-based)
+    - Input score (out of max_score)
+    - Add feedback/comments
+    - "Grade" / "Save" button
+  - Bulk auto-grade for objective questions (MCQ, True/False, Fill-blank with exact match)
+  - Summary stats: Average score, submissions count, pending count
+
+### 7.5.6 Lecture Completion Validation
+- [ ] **Frontend/Backend**: Enforce mandatory assignment completion
+  - Backend: Lecture completion endpoint checks if all mandatory assignments are submitted
+  - Frontend: "Mark as Complete" button disabled/grayed out until mandatory assignments submitted
+  - Show warning message: "You must submit [X] assignment(s) before completing this lecture"
+
+---
+
+## 🔴 NEW Phase 7.6: CA Weight Configuration — Assignments vs Tests
+
+**Status:** ⏳ **PENDING — CRITICAL MISSING FEATURE**
+
+**Why Critical:** Continuous Assessment (CA) was previously tests-only. Now CA = Assignments + Tests. The director must be able to configure what percentage of the CA weight goes to assignments vs tests.
+
+### 7.6.1 CA Weight Configuration Database & API
+- [ ] **Backend**: Update `ca_weeks` table OR create new `ca_weight_config` table
+  - Columns: `id`, `school_id`, `grade_level_id` (FK), `subject_id` (FK), `term_id` (FK), `total_ca_percentage` (int, e.g., 40), `assignment_weight_percentage` (int, e.g., 60 — meaning 60% of the 40% CA is from assignments), `test_weight_percentage` (int, e.g., 40 — meaning 40% of the 40% CA is from tests), `updated_by`, timestamps
+  - Constraint: `assignment_weight_percentage + test_weight_percentage = 100`
+
+- [ ] **Backend**: API endpoints for CA weight configuration
+  - `GET /api/academic/ca-weight-config` — List CA weight configs
+  - `POST /api/academic/ca-weight-config` — Create/update CA weight config
+  - `PUT /api/academic/ca-weight-config/{id}` — Update CA weight config
+
+### 7.6.2 CA Weight Configuration UI (Director/Admin)
+- [ ] **Frontend**: CA Weight Configuration tab in Academic page (or Grade Detail view)
+  - Select: Grade Level, Subject, Term
+  - Display: Total CA Percentage (e.g., 40% — pulled from existing CA config)
+  - Weight Split Configuration:
+    - Slider or input: "Assignment Weight within CA" (0–100%)
+    - Slider or input: "Test Weight within CA" (0–100%)
+    - Auto-validation: Both must sum to 100%
+    - Visual breakdown showing:
+      - "Assignments contribute X% to final grade" (e.g., 60% of 40% = 24% of total)
+      - "Tests contribute Y% to final grade" (e.g., 40% of 40% = 16% of total)
+  - Save configuration
+  - Preview: How this affects student final grade calculation
+
+### 7.6.3 Updated CA Calculation Logic
+- [ ] **Backend**: Update grade computation logic to incorporate assignments
+  - New formula:
+    ```
+    CA_Total = (Assignment_Aggregate × assignment_weight%) + (Test_Aggregate × test_weight%)
+    Final_Total = CA_Total + Exam_Score
+    ```
+  - `Assignment_Aggregate` = Average or sum of all graded lecture assignment scores (normalized to CA scale)
+  - `Test_Aggregate` = Sum of all CA test scores from existing exam system
+  - Update `POST /api/academic/grades/compute` endpoint
+  - Update report card generation to show breakdown:
+    - CA: Assignments (X%)
+    - CA: Tests (Y%)
+    - Exam (Z%)
+    - Total
+
+### 7.6.4 Updated Student Results View
+- [ ] **Frontend**: Student results page (`/dashboard/results`) updated
+  - Show CA breakdown:
+    - Assignments: Score / Total (with weight %)
+    - Tests: Score / Total (with weight %)
+    - CA Total (combined)
+  - Exam score
+  - Final Total
+  - Grade and Remark
+- [ ] **Frontend**: Report card updated to reflect new CA structure
+  - Line items for "CA - Assignments" and "CA - Tests"
+  - Clear weight annotations
+
+---
+
 ## ✅ Phase 8: COMPLETE — Exams & Assessments
 
 **Status:** ✅ **FULLY IMPLEMENTED** (Completed April 26, 2026)
