@@ -209,11 +209,12 @@ export default function LecturePlayerPage() {
   const fetchLecture = useCallback(async () => {
     setLoading(true);
     try {
-      const [userRes, lectureRes, resourcesRes, progressRes] = await Promise.all([
+      const [userRes, lectureRes, resourcesRes, progressRes, assignmentsRes] = await Promise.all([
         api.get('/user').catch(() => ({ user: null })),
         academicApi.lectures.getOne(params.id),
         academicApi.lectureResources.getAll(params.id).catch(() => ({ resources: [] })),
         academicApi.lectureProgress.get(params.id).catch(() => ({ progress: null })),
+        lectureAssignmentsApi.getAssignments(params.id).catch(() => ({ data: [] })),
       ]);
       setUser(userRes.user);
       const isSchoolAdmin = userRes.user?.role === 'admin' || userRes.user?.role === 'director';
@@ -221,9 +222,18 @@ export default function LecturePlayerPage() {
       setLecture(lectureRes.lecture);
       setResources(resourcesRes.resources || []);
       setSectionContents(parseContentSections(lectureRes.lecture?.content));
+      setAssignments(assignmentsRes.data || []);
       
       if (progressRes.progress) {
         setCompletedSections(progressRes.progress.progress_data?.completed_sections || []);
+      }
+
+      if (userRes.user?.role === 'student') {
+        const completionRes = await lectureAssignmentsApi.checkMandatoryAssignments(params.id).catch(() => null);
+        if (completionRes) {
+          setCanCompleteLecture(completionRes.can_complete);
+          setMandatoryAssignmentsPending(completionRes.pending_assignments || []);
+        }
       }
     } catch (err) {
       toast.error('Failed to load lecture');
