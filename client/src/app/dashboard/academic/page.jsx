@@ -81,6 +81,14 @@ export default function AcademicPage() {
   const [mappings, setMappings] = useState([]);
   const [selectedGradeForMappings, setSelectedGradeForMappings] = useState(null);
 
+  // CA Weight Config state
+  const [caWeightConfigs, setCaWeightConfigs] = useState([]);
+  const [caWeightForm, setCaWeightForm] = useState({
+    grade_level_id: '', subject_id: '', term_id: '', total_ca_percentage: 40,
+    assignment_weight_percentage: 50, test_weight_percentage: 50,
+  });
+  const [caWeightSaving, setCaWeightSaving] = useState(false);
+
   // Phase 2 modals
   const [showGradeLevelModal, setShowGradeLevelModal] = useState(false);
   const [gradeLevelForm, setGradeLevelForm] = useState({ name: '', short_name: '', order: 1, cycle: '' });
