@@ -56,6 +56,31 @@ export default function LecturePlayerPage() {
   const [resourceSaving, setResourceSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  // Assignments
+  const [assignments, setAssignments] = useState([]);
+  const [showAssignments, setShowAssignments] = useState(false);
+  const [showAssignmentForm, setShowAssignmentForm] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState(null);
+  const [assignmentForm, setAssignmentForm] = useState({
+    title: '', description: '', type: 'objective', max_score: 100,
+    due_at: '', is_mandatory: true, allow_late_submission: false,
+  });
+  const [showQuestionBuilder, setShowQuestionBuilder] = useState(null);
+  const [assignmentQuestions, setAssignmentQuestions] = useState([]);
+  const [editingQuestion, setEditingQuestion] = useState(null);
+  const [questionForm, setQuestionForm] = useState({
+    question_type: 'mcq', question_text: '', options: [{ text: '', is_correct: false }, { text: '', is_correct: false }],
+    correct_answer: '', max_points: 1,
+  });
+  const [showSubmissionForm, setShowSubmissionForm] = useState(null);
+  const [submissionAnswers, setSubmissionAnswers] = useState([]);
+  const [showGradingView, setShowGradingView] = useState(null);
+  const [submissions, setSubmissions] = useState([]);
+  const [gradingScore, setGradingScore] = useState('');
+  const [gradingFeedback, setGradingFeedback] = useState('');
+  const [mandatoryAssignmentsPending, setMandatoryAssignmentsPending] = useState([]);
+  const [canCompleteLecture, setCanCompleteLecture] = useState(true);
+
   // Detect YouTube URL and set type automatically
   const detectResourceType = (url) => {
     if (!url) return 'link';
