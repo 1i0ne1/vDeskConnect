@@ -1526,7 +1526,7 @@ export default function LecturePlayerPage() {
               </div>
               <div className="p-4 space-y-4">
                 {submissionAnswers.length === 0 ? <p className="text-text-muted text-center">No questions to answer.</p> : submissionAnswers.map((answer, i) => {
-                  const question = assignmentQuestions[i] || {};
+                  const question = submissionQuestions[i] || {};
                   return (
                     <div key={answer.question_id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                       <p className="text-sm font-medium text-text-primary mb-2">{i + 1}. {question.question_text}</p>
