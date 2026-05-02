@@ -1385,6 +1385,205 @@ export default function LecturePlayerPage() {
             </div>
           </div>
         )}
+
+        {/* Assignment Create/Edit Modal */}
+        {showAssignmentForm && (
+          <div className="fixed inset-0 bg-black/50 z-[80] flex items-center justify-center p-4" onClick={() => setShowAssignmentForm(false)}>
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h3 className="font-semibold text-text-primary">{editingAssignment ? 'Edit Assignment' : 'New Assignment'}</h3>
+                <button onClick={() => setShowAssignmentForm(false)} className="text-text-muted hover:text-text-primary"><X className="w-5 h-5" /></button>
+              </div>
+              <div className="p-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1">Title *</label>
+                  <input type="text" value={assignmentForm.title} onChange={e => setAssignmentForm({ ...assignmentForm, title: e.target.value })} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary" placeholder="Assignment title" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1">Description</label>
+                  <textarea value={assignmentForm.description} onChange={e => setAssignmentForm({ ...assignmentForm, description: e.target.value })} rows={3} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary" placeholder="Instructions for students" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1">Type</label>
+                  <select value={assignmentForm.type} onChange={e => setAssignmentForm({ ...assignmentForm, type: e.target.value })} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary">
+                    <option value="objective">Objective (MCQ/True-False/Fill-Blank)</option>
+                    <option value="theory">Theory (Essay/Short Answer)</option>
+                    <option value="resource">Resource-Based (File Upload)</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1">Max Score</label>
+                    <input type="number" value={assignmentForm.max_score} onChange={e => setAssignmentForm({ ...assignmentForm, max_score: parseInt(e.target.value) || 100 })} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary" min="1" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1">Due Date (optional)</label>
+                    <input type="datetime-local" value={assignmentForm.due_at} onChange={e => setAssignmentForm({ ...assignmentForm, due_at: e.target.value })} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-700 text-text-primary" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={assignmentForm.is_mandatory} onChange={e => setAssignmentForm({ ...assignmentForm, is_mandatory: e.target.checked })} className="w-4 h-4" /><span className="text-sm text-text-primary">Mandatory (must submit to complete lecture)</span></label>
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={assignmentForm.allow_late_submission} onChange={e => setAssignmentForm({ ...assignmentForm, allow_late_submission: e.target.checked })} className="w-4 h-4" /><span className="text-sm text-text-primary">Allow late submissions</span></label>
+                </div>
+                <button onClick={handleSaveAssignment} className="w-full py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark">{editingAssignment ? 'Update' : 'Create'}</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Question Builder Modal */}
+        {showQuestionBuilder && (
+          <div className="fixed inset-0 bg-black/50 z-[80] flex items-center justify-center p-4" onClick={() => setShowQuestionBuilder(null)}>
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h3 className="font-semibold text-text-primary">Question Builder</h3>
+                <button onClick={() => setShowQuestionBuilder(null)} className="text-text-muted hover:text-text-primary"><X className="w-5 h-5" /></button>
+              </div>
+              <div className="p-4 space-y-4">
+                {/* Question Form */}
+                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-3">
+                  <h4 className="text-sm font-medium text-text-primary">{editingQuestion ? 'Edit Question' : 'Add Question'}</h4>
+                  <select value={questionForm.question_type} onChange={e => setQuestionForm({ ...questionForm, question_type: e.target.value, options: e.target.value === 'mcq' ? [{ text: '', is_correct: false }, { text: '', is_correct: false }] : [] })} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-600 text-text-primary text-sm">
+                    <option value="mcq">Multiple Choice</option>
+                    <option value="true_false">True / False</option>
+                    <option value="fill_blank">Fill in the Blank</option>
+                    <option value="theory">Theory (Essay)</option>
+                  </select>
+                  <textarea value={questionForm.question_text} onChange={e => setQuestionForm({ ...questionForm, question_text: e.target.value })} rows={2} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-600 text-text-primary text-sm" placeholder="Question text" />
+                  {(questionForm.question_type === 'mcq') && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-text-muted">Options (mark correct answer):</p>
+                      {questionForm.options.map((opt, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <input type="radio" name="correctOpt" checked={opt.is_correct} onChange={() => setQuestionForm({ ...questionForm, options: questionForm.options.map((o, j) => ({ ...o, is_correct: j === i })) })} className="w-4 h-4" />
+                          <input type="text" value={opt.text} onChange={e => { const opts = [...questionForm.options]; opts[i] = { ...opts[i], text: e.target.value }; setQuestionForm({ ...questionForm, options: opts }); }} className="flex-1 px-2 py-1 border border-border rounded text-sm bg-white dark:bg-gray-600 text-text-primary" placeholder={`Option ${i + 1}`} />
+                          {questionForm.options.length > 2 && <button onClick={() => setQuestionForm({ ...questionForm, options: questionForm.options.filter((_, j) => j !== i) })} className="text-red-500"><X className="w-3 h-3" /></button>}
+                        </div>
+                      ))}
+                      <button onClick={() => setQuestionForm({ ...questionForm, options: [...questionForm.options, { text: '', is_correct: false }] })} className="text-xs text-primary hover:underline">+ Add Option</button>
+                    </div>
+                  )}
+                  {questionForm.question_type === 'true_false' && (
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-1 text-sm"><input type="radio" name="tfAnswer" value="true" checked={questionForm.correct_answer === 'true'} onChange={e => setQuestionForm({ ...questionForm, correct_answer: e.target.value })} /> True</label>
+                      <label className="flex items-center gap-1 text-sm"><input type="radio" name="tfAnswer" value="false" checked={questionForm.correct_answer === 'false'} onChange={e => setQuestionForm({ ...questionForm, correct_answer: e.target.value })} /> False</label>
+                    </div>
+                  )}
+                  {(questionForm.question_type === 'fill_blank' || questionForm.question_type === 'theory') && (
+                    <div>
+                      {questionForm.question_type === 'fill_blank' && <p className="text-xs text-text-muted mb-1">Correct answer (exact match for auto-grading):</p>}
+                      <input type="text" value={questionForm.correct_answer} onChange={e => setQuestionForm({ ...questionForm, correct_answer: e.target.value })} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-600 text-text-primary text-sm" placeholder={questionForm.question_type === 'fill_blank' ? 'Correct answer' : 'Leave blank — teacher will grade manually'} />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <input type="number" value={questionForm.max_points} onChange={e => setQuestionForm({ ...questionForm, max_points: parseInt(e.target.value) || 1 })} className="w-20 px-2 py-1 border border-border rounded text-sm bg-white dark:bg-gray-600 text-text-primary" min="1" />
+                    <span className="text-xs text-text-muted">points</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={handleSaveQuestion} className="flex-1 py-1.5 bg-primary text-white rounded-lg text-sm">{editingQuestion ? 'Update' : 'Add'} Question</button>
+                    {editingQuestion && <button onClick={() => { setEditingQuestion(null); setQuestionForm({ question_type: 'mcq', question_text: '', options: [{ text: '', is_correct: false }, { text: '', is_correct: false }], correct_answer: '', max_points: 1 }); }} className="px-3 py-1.5 border border-border rounded-lg text-sm">Cancel</button>}
+                  </div>
+                </div>
+
+                {/* Existing Questions List */}
+                <div>
+                  <h4 className="text-sm font-medium text-text-primary mb-2">Existing Questions ({assignmentQuestions.length})</h4>
+                  {assignmentQuestions.length === 0 ? <p className="text-xs text-text-muted">No questions yet.</p> : (
+                    <div className="space-y-2">
+                      {assignmentQuestions.map((q, i) => (
+                        <div key={q.id} className="p-2 bg-white dark:bg-gray-600 rounded border border-border text-sm">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <span className="text-xs text-text-muted">#{i + 1} [{q.question_type}]</span>
+                              <p className="text-text-primary">{q.question_text}</p>
+                              <span className="text-xs text-text-muted">{q.max_points} pt(s)</span>
+                            </div>
+                            <div className="flex gap-1">
+                              <button onClick={() => { setEditingQuestion(q); setQuestionForm({ question_type: q.question_type, question_text: q.question_text, options: q.options || [{ text: '', is_correct: false }], correct_answer: q.correct_answer || '', max_points: q.max_points }); }} className="text-xs text-blue-600 hover:underline">Edit</button>
+                              <button onClick={() => handleDeleteQuestion(q.id)} className="text-xs text-red-600 hover:underline">Del</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Student Submission Modal */}
+        {showSubmissionForm && (
+          <div className="fixed inset-0 bg-black/50 z-[80] flex items-center justify-center p-4" onClick={() => setShowSubmissionForm(null)}>
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h3 className="font-semibold text-text-primary">Submit Assignment</h3>
+                <button onClick={() => setShowSubmissionForm(null)} className="text-text-muted hover:text-text-primary"><X className="w-5 h-5" /></button>
+              </div>
+              <div className="p-4 space-y-4">
+                {submissionAnswers.length === 0 ? <p className="text-text-muted text-center">No questions to answer.</p> : submissionAnswers.map((answer, i) => {
+                  const question = assignmentQuestions[i] || {};
+                  return (
+                    <div key={answer.question_id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <p className="text-sm font-medium text-text-primary mb-2">{i + 1}. {question.question_text}</p>
+                      {question.question_type === 'mcq' && question.options && question.options.map((opt, j) => (
+                        <label key={j} className="flex items-center gap-2 mb-1 text-sm"><input type="radio" name={`q_${answer.question_id}`} checked={answer.selected_option === opt.text} onChange={() => { const ans = [...submissionAnswers]; ans[i] = { ...ans[i], selected_option: opt.text }; setSubmissionAnswers(ans); }} className="w-4 h-4" />{opt.text}</label>
+                      ))}
+                      {question.question_type === 'true_false' && (
+                        <div className="flex gap-4">
+                          {['true', 'false'].map(val => (<label key={val} className="flex items-center gap-1 text-sm"><input type="radio" name={`q_${answer.question_id}`} checked={answer.selected_option === val} onChange={() => { const ans = [...submissionAnswers]; ans[i] = { ...ans[i], selected_option: val }; setSubmissionAnswers(ans); }} className="w-4 h-4" />{val.charAt(0).toUpperCase() + val.slice(1)}</label>))}
+                        </div>
+                      )}
+                      {(question.question_type === 'fill_blank' || question.question_type === 'theory') && (
+                        <textarea value={answer.answer_text} onChange={e => { const ans = [...submissionAnswers]; ans[i] = { ...ans[i], answer_text: e.target.value }; setSubmissionAnswers(ans); }} rows={question.question_type === 'theory' ? 6 : 2} className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-gray-600 text-text-primary text-sm" placeholder={question.question_type === 'theory' ? 'Write your answer here...' : 'Type your answer...'} />
+                      )}
+                    </div>
+                  );
+                })}
+                <button onClick={() => handleSubmitAssignment(showSubmissionForm)} className="w-full flex items-center justify-center gap-2 py-2.5 bg-success text-white rounded-lg hover:bg-success/90"><Send className="w-4 h-4" /> Submit Assignment</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Grading View Modal */}
+        {showGradingView && (
+          <div className="fixed inset-0 bg-black/50 z-[80] flex items-center justify-center p-4" onClick={() => setShowGradingView(null)}>
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h3 className="font-semibold text-text-primary">Submissions</h3>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handleAutoGrade(showGradingView)} className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Auto-Grade</button>
+                  <button onClick={() => setShowGradingView(null)} className="text-text-muted hover:text-text-primary"><X className="w-5 h-5" /></button>
+                </div>
+              </div>
+              <div className="p-4 space-y-3">
+                {submissions.length === 0 ? <p className="text-text-muted text-center">No submissions yet.</p> : submissions.map(sub => (
+                  <div key={sub.id} className="p-3 bg-white dark:bg-gray-700 rounded border border-border">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="font-medium text-text-primary text-sm">{sub.student?.profile?.data?.first_name || ''} {sub.student?.profile?.data?.last_name || sub.student?.email}</p>
+                        <p className="text-xs text-text-muted">Submitted: {sub.submitted_at ? new Date(sub.submitted_at).toLocaleString() : 'N/A'} • Status: {sub.status}</p>
+                      </div>
+                      <span className={`text-xs px-2 py-1 rounded ${sub.status === 'graded' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                        {sub.status === 'graded' ? `${sub.score}/${sub.max_score}` : 'Pending'}
+                      </span>
+                    </div>
+                    {sub.status !== 'graded' && (
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
+                        <input type="number" placeholder="Score" value={gradingScore} onChange={e => setGradingScore(e.target.value)} className="w-20 px-2 py-1 border border-border rounded text-sm bg-white dark:bg-gray-600 text-text-primary" min="0" max={sub.max_score} step="0.5" />
+                        <input type="text" placeholder="Feedback" value={gradingFeedback} onChange={e => setGradingFeedback(e.target.value)} className="flex-1 px-2 py-1 border border-border rounded text-sm bg-white dark:bg-gray-600 text-text-primary" />
+                        <button onClick={() => handleGradeSubmission(sub.id)} className="px-3 py-1 bg-success text-white rounded text-sm">Grade</button>
+                      </div>
+                    )}
+                    {sub.feedback && <p className="text-xs text-text-muted mt-1 italic">Feedback: {sub.feedback}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
