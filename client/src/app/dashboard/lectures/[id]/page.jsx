@@ -7,6 +7,7 @@ import {
   ChevronDown, ChevronUp, ChevronRight, ChevronLeft, X,
   Eye, File, Download, Save, Clock, Loader, Edit2, Plus, Upload,
   FileText, Image, Globe, Video, ExternalLink, Trash2, Menu,
+  ClipboardList, BookOpen, AlertCircle, Send, Award, Users,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -14,6 +15,7 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { academicApi } from '@/lib/academic-api';
 import { api } from '@/lib/api';
 import { useToast } from '@/contexts/ToastProvider';
+import { lectureAssignmentsApi } from '@/lib/lecture-assignments-api';
 
 const TYPE_LABELS = {
   async: 'Recorded (Async)',
