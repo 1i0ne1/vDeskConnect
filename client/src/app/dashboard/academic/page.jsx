@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import {
   Settings, CalendarDays, BookOpen, Scale, Plus, Trash2, CheckCircle,
   AlertTriangle, X, Save, Star, Copy, Edit2, School, Tag, Layers,
+  Percent,
 } from 'lucide-react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { academicApi } from '@/lib/academic-api';
 import { api } from '@/lib/api';
 import { useToast } from '@/contexts/ToastProvider';
+import { caWeightConfigApi } from '@/lib/lecture-assignments-api';
 
 const TABS = {
   SESSIONS: 'sessions',
@@ -21,6 +23,7 @@ const TABS = {
   SUBJECTS: 'subjects',
   MAPPINGS: 'mappings',
   SETTINGS: 'settings',
+  CA_WEIGHT: 'ca_weight',
 };
 
 export default function AcademicPage() {
