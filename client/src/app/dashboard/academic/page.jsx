@@ -740,6 +740,7 @@ export default function AcademicPage() {
               { id: TABS.SUBJECTS, label: 'Subjects', shortLabel: 'Subjects', icon: Tag },
               { id: TABS.SECTIONS, label: 'Sections', shortLabel: 'Sections', icon: Layers },
               { id: TABS.MAPPINGS, label: 'Mappings', shortLabel: 'Mappings', icon: BookOpen },
+              { id: TABS.CA_WEIGHT, label: 'CA Weight', shortLabel: 'CA Weight', icon: Percent },
               { id: TABS.SETTINGS, label: 'Settings', shortLabel: 'Settings', icon: Settings },
             ].map(tab => (
               <button
