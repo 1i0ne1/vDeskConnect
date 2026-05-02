@@ -1,7 +1,7 @@
 # vDeskConnect — Comprehensive Implementation Plan
 
 ## Overview
-This document outlines the complete implementation roadmap for building the **Academic Management System**, **Classes & Grades**, **Lectures**, **Exams**, **Marketplace**, and all related modules as specified in the `model/architecture.md` file.
+This document outlines the complete implementation roadmap for building the **Academic Management System**, **Classes & Grades**, **Lectures**, **Lecture Assignments**, **Exams**, **Marketplace**, and all related modules as specified in the `model/architecture.md` file.
 
 ---
 
@@ -842,24 +842,26 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
   3. My Subjects
   4. Scheme of Work (create/edit for assigned subjects)
   5. Lesson Notes
-  6. Lectures
+  6. Lectures (create/edit lectures + **attach assignments**)
   7. Exams (create, grade)
-  8. My Students (view students in assigned grades)
-  9. Profile
-  10. Settings
+  8. **Assignments** (view, create, grade lecture assignments)
+  9. My Students (view students in assigned grades)
+  10. Profile
+  11. Settings
 
 ### 16.3 Student-Specific Navigation
 - [ ] **Frontend**: Student sidebar:
   1. Dashboard
   2. My Classes (view own grade/section)
   3. My Subjects
-  4. Lectures (view scheduled lectures, join links)
+  4. Lectures (view scheduled lectures, join links, **complete assignments**)
   5. Exams (take exams, view results)
-  6. My Results (view grades, download report card)
-  7. Events
-  8. Marketplace (buy books)
-  9. Profile
-  10. Settings
+  6. **My Assignments** (view pending/submitted/graded lecture assignments)
+  7. My Results (view grades with **CA breakdown: Assignments + Tests**, download report card)
+  8. Events
+  9. Marketplace (buy books)
+  10. Profile
+  11. Settings
 
 ---
 
@@ -959,13 +961,16 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
 4. Admin creates Subjects.
 5. Admin maps Subjects to Grade Levels.
 6. Admin configures CA weeks per grade + subject (which weeks have tests, which has exam).
-7. Admin assigns Teachers to Subject + Grade.
-8. Teachers create Scheme of Work (manual or AI).
-9. Teachers create Lesson Notes (manual or AI) based on scheme.
-10. Teachers create Lectures (manual or AI).
-11. Teachers create Exams/CA Tests (manual or AI).
-12. Students take exams, teachers grade.
-13. System computes CA aggregate + Exam = Total → Grade → Report Card.
+7. **Director configures CA weight split** per grade + subject + term (e.g., 60% assignments, 40% tests within the CA percentage).
+8. Admin assigns Teachers to Subject + Grade.
+9. Teachers create Scheme of Work (manual or AI).
+10. Teachers create Lesson Notes (manual or AI) based on scheme.
+11. Teachers create Lectures (manual or AI).
+12. **Teachers attach Assignments to Lectures** (objective, theory, resource-based — optional or mandatory).
+13. Teachers create Exams/CA Tests (manual or AI).
+14. Students attend lectures, **submit mandatory assignments**, take exams/tests.
+15. Teachers grade assignments and theory exam responses.
+16. System computes: **CA = (Assignment Aggregate × assignment_weight%) + (Test Aggregate × test_weight%)**, then CA + Exam = Total → Grade → Report Card.
 
 ### Marketplace Flow
 1. Receptionist/Admin lists textbooks (electronic or physical).
@@ -988,6 +993,8 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
 | 🟠 **P1** | 5 | Scheme of Work Builder (Manual + AI) | ✅ Complete |
 | 🟠 **P1** | 6 | Lesson Notes Builder (Manual + AI) | ✅ Complete |
 | 🟡 **P2** | 7 | Lectures (Manual + AI, Attendance) | ✅ Complete |
+| 🔴 **P0** | 7.5 | **Lecture Assignments & Graded Work** (NEW — Critical Missing Feature) | ⏳ Pending |
+| 🔴 **P0** | 7.6 | **CA Weight Config — Assignments vs Tests** (NEW — Critical Missing Feature) | ⏳ Pending |
 | 🟡 **P2** | 8 | Exams & Assessments (CA Tests, Exams, Grading) | ✅ Complete |
 | 🟢 **P3** | 9 | Reports & Grades (Report Cards, Result Pins) | ✅ Complete |
 | 🟢 **P3** | 10 | Marketplace (Textbook Store) | Pending |
