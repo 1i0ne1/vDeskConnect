@@ -565,7 +565,7 @@ class LectureAssignmentController extends Controller
             ->get();
 
         foreach ($submissions as $submission) {
-            $this->autoGrade($submission, $assignment);
+            $this->performAutoGrade($submission, $assignment);
             $gradedCount++;
         }
 
