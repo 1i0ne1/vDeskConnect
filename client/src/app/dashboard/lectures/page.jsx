@@ -87,6 +87,7 @@ export default function LecturesPage() {
   const [viewLoading, setViewLoading] = useState(false);
   const [lectureResources, setLectureResources] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
+  const [progressReport, setProgressReport] = useState(null);
 
   // Add resource modal
   const [showResourceModal, setShowResourceModal] = useState(false);
@@ -245,13 +246,22 @@ export default function LecturesPage() {
   const openViewModal = async (lecture) => {
     setViewLoading(true);
     setActiveTab('overview');
+    setProgressReport(null);
     try {
-      const [lectureRes, resourcesRes] = await Promise.all([
+      const promises = [
         academicApi.lectures.getOne(lecture.id),
         academicApi.lectureResources.getAll(lecture.id).catch(() => ({ resources: [] })),
-      ]);
+      ];
+
+      if (isStaff) {
+        promises.push(academicApi.lectureProgress.getReport(lecture.id).catch(() => null));
+      }
+
+      const [lectureRes, resourcesRes, reportRes] = await Promise.all(promises);
+      
       setViewingLecture(lectureRes.lecture || lecture);
       setLectureResources(resourcesRes.resources || []);
+      if (reportRes) setProgressReport(reportRes);
     } catch (err) {
       toast.error('Failed to load lecture details');
       setViewingLecture(lecture);

@@ -702,7 +702,7 @@ class LectureController extends Controller
         }
 
         $progressRecords = StudentLectureProgress::where('lecture_id', $id)
-            ->with('student:id,email')
+            ->with(['student.profile'])
             ->get();
 
         return response()->json([
