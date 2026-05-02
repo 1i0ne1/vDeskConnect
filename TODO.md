@@ -914,11 +914,38 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
 38. [x] `ca_breakdown` (student_grades columns)
 
 ### 17.2 Seeders
-- [ ] Default grade scales (Nigerian WAEC, American GPA, French Baccalaureat)
-- [ ] Sample academic session + terms
-- [ ] Sample grade levels (JSS1–SS3 for Nigerian schools preset)
-- [ ] Sample subjects (Mathematics, English, Biology, Chemistry, Physics, etc.)
-- [ ] Sample subjects-to-grade mappings (Junior Core, Senior Core, Science Dept, Arts Dept)
+- [x] Default grade scales (Nigerian WAEC, American GPA, French Baccalaureat)
+- [x] Sample academic session + terms
+- [x] Sample grade levels (JSS1–SS3 for Nigerian schools preset)
+- [x] Sample subjects (Mathematics, English, Biology, Chemistry, Physics, etc.)
+- [x] Sample subjects-to-grade mappings (Junior Core, Senior Core, Science Dept, Arts Dept)
+- [x] Bulk lecture data (60 lectures with various types/statuses)
+- [x] **Lecture Assignments + Submissions seed data** — Attach assignments to existing lectures with:
+  - Objective (MCQ/True-False/Fill-Blank) questions with correct answers for auto-grading
+  - Theory questions (free-text, teacher-graded)
+  - Resource-based assignments
+  - Mix of mandatory and optional assignments
+  - Student submissions from seeded accounts (fatima@student.com) with grades and feedback
+- [x] **CA Weight Config seed data** — Sample weight splits for testing (e.g., 60% assignments / 40% tests)
+
+### 17.3 Manual Testing Checklist
+- [x] Run `php artisan db:seed` with updated seeder
+- [x] **Director/Teacher end testing:**
+  - Login as `director@greenfield.edu` / `SchoolAdmin@2026!`
+  - Navigate to a lecture → verify assignments tab exists
+  - Create/edit/publish/close assignments
+  - Build questions (MCQ, True/False, Fill-Blank, Theory)
+  - View student submissions
+  - Grade theory submissions manually
+  - Auto-grade objective submissions
+- [x] **Student end testing:**
+  - Login as `fatima@student.com` / `Password@2026!`
+  - Navigate to a lecture → verify assignments section visible
+  - Submit assignment (MCQ, True/False, fill-blank, theory)
+  - Verify mandatory assignment blocks lecture completion
+  - View submitted score and teacher feedback after grading
+  - Verify CA Weight tab visible in Academic page (director only)
+- [x] Verify CA calculation incorporates assignment scores + test scores
 
 ---
 
