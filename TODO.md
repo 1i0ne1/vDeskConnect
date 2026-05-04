@@ -112,6 +112,264 @@ This document outlines the complete implementation roadmap for building the **Ac
 
 ---
 
+## 🚀 NEXT IMMEDIATE PHASE: Lecture System Finalization — Class-Based Creation, Universal Assignments, Role Scoping
+
+**Status:** ⏳ **PENDING — IMMEDIATE PRIORITY**
+
+**Goal:** Finalize the lecture system to match the real-world workflow: lectures are created from pre-configured classes (not from scratch), ALL lecture modes support gradeable assignments, teachers only see their own lectures, directors/teachers can grade, and students complete lectures with assignments attached.
+
+---
+
+### 📌 1. Lecture Creation Form — Class-First Workflow (Director & Teacher)
+
+**Problem:** Currently, the lecture creation form has independent dropdowns for Teacher, Grade Level, and Subject. These should NOT be independent — they come from the pre-configured Classes section.
+
+**What to Change:**
+
+#### Backend Changes:
+- [ ] **New API endpoint**: `GET /api/academic/classes/{grade_level_id}/available-teachers` — Returns teachers assigned to that grade level with their subjects
+  - Uses existing `teacher_subjects` table to find teachers linked to the grade level
+  - Returns: `{ teacher_id, teacher_name, subjects: [{ subject_id, subject_name }] }`
+- [ ] **New API endpoint**: `GET /api/academic/classes/{grade_level_id}/available-sections` — Returns sections for that grade level
+- [ ] **Update `LectureController.store()` validation**:
+  - `grade_level_id` is required (select prepared class)
+  - `teacher_id` must be a teacher assigned to that grade level (validate against `teacher_subjects`)
+  - `subject_id` must be a subject that the selected teacher teaches in that grade level (validate against `teacher_subjects`)
+  - `section_id` is optional but must belong to the selected grade level
+
+#### Frontend Changes (Lecture Create Modal — simple form & builder form):
+- [ ] **Replace independent dropdowns with cascading workflow**:
+  1. **Step 1**: Select Grade Level (prepared class) → dropdown of all grade levels
+  2. **Step 2**: Once grade level selected → show available teachers assigned to that grade
+  3. **Step 3**: Once teacher selected → show subjects that teacher teaches in that grade (filtered dropdown)
+  4. **Step 4** (optional): Select Section (dropdown of sections for that grade level, or "All Sections")
+- [ ] Add loading states when fetching teachers/subjects after grade selection
+- [ ] Disable subject dropdown until teacher is selected
+- [ ] Remove the ability to pick any teacher or any subject independently
+- [ ] Update both the **Simple Modal Form** AND the **Lecture Builder Modal** with this new flow
+- [ ] Add visual helper text: "Teachers and subjects are pulled from your configured Classes"
+
+#### Lecture Builder Modal (advanced form):
+- [ ] Apply the same cascading workflow (Grade → Teacher → Subject → Section)
+- [ ] Keep all other builder features (sections, resources, file uploads) intact
+
+---
+
+### 📌 2. Universal Assignment Support — ALL Lecture Modes
+
+**Problem:** Assignments already work for async/hybrid, but need to verify and ensure they work identically for **sync (live)** lectures too.
+
+**What to Change:**
+
+#### Clarification:
+- A **sync lecture** (live video meeting) CAN still have gradeable assignments attached
+- Example: Teacher runs a live Zoom class, then gives a follow-up assignment for students to submit
+- The assignment system is already mode-agnostic in the database — just need UI/UX confirmation
+
+#### Backend (Already mostly done — verify):
+- [x] `lecture_assignments` table has no mode restriction (assignment can be attached to any lecture)
+- [ ] **Verify** `LectureAssignmentController` does NOT filter by lecture type when creating/listing assignments
+- [ ] **Verify** `LectureController.check-completion` endpoint works for sync lectures with mandatory assignments
+  - Sync lectures: student should still be blocked from marking complete if mandatory assignments are pending
+
+#### Frontend (Lecture Detail / Player page):
+- [ ] **Verify** the "Assignments" tab is visible and functional for **sync** lectures
+- [ ] **Verify** students see assignments on sync lecture pages (not just async/hybrid)
+- [ ] **Verify** "Mark as Complete" button on sync lectures checks mandatory assignments
+  - Currently sync lectures can only be completed by teacher — ensure assignment check still applies
+  - If teacher marks lecture as `completed`, also check if mandatory assignments were submitted
+- [ ] Add UI indicator on sync lectures: "This live session has assignments — submit them to complete"
+
+---
+
+### 📌 3. Teacher Scope Restriction — Teachers See Only Assigned Lectures
+
+**Problem:** Currently, teachers see ALL lectures for their school. They should only see lectures they are assigned to.
+
+#### Backend Changes:
+- [ ] **Update `LectureController.index()`**:
+  - If `user.role === 'teacher'`, automatically filter: `->where('teacher_id', $user->id)`
+  - Teachers should NOT be able to see lectures assigned to other teachers
+  - Directors/admins still see all lectures (existing behavior)
+- [ ] **Update `LectureController.show()`**:
+  - Teachers can only view lectures they are assigned to (or all for admins/directors)
+- [ ] **Update `LectureController.update()` and `destroy()`**:
+  - Teachers can only edit/delete their own lectures
+  - Directors/admins can edit/delete any lecture
+
+#### Frontend Changes:
+- [ ] **Lectures list page**: No changes needed if backend filtering is correct
+- [ ] **Filter panel**: Remove `teacher_id` filter for teachers (they only see their own)
+  - Keep `teacher_id` filter for directors/admins (to filter by specific teacher)
+- [ ] **Create lecture**: When a teacher creates a lecture, auto-fill `teacher_id` to their own ID (hidden field)
+  - Teachers should NOT be able to assign lectures to other teachers
+  - Directors/admins can select any teacher in the cascading workflow
+
+---
+
+### 📌 4. Director & Teacher — Submission Handling & Grading
+
+**Problem:** Need to clarify and implement the roles for grading.
+
+#### Rules:
+- **Director/Admin**: Can grade ANY submission for ANY lecture in their school
+- **Teacher**: Can ONLY grade submissions for lectures they are assigned to
+
+#### Backend (Already mostly done — verify):
+- [ ] **Verify** `LectureAssignmentController` grading endpoints check permissions:
+  - `GET /api/lectures/assignments/{id}/submissions` — Directors see all, teachers only see their lecture's submissions
+  - `PUT /api/lectures/assignments/submissions/{id}/grade` — Same permission check
+  - `POST /api/lectures/assignments/{id}/auto-grade` — Same permission check
+- [ ] **Add permission check** if not already present:
+  ```php
+  // In grading endpoints:
+  if ($user->isTeacher() && $assignment->lecture->teacher_id !== $user->id) {
+      return response()->json(['message' => 'Unauthorized'], 403);
+  }
+  ```
+
+#### Frontend (Lecture Detail → Assignments → Submissions):
+- [ ] **Verify** grading UI is accessible to both directors and the assigned teacher
+- [ ] Directors should see a "Grade Submissions" button on ALL lectures
+- [ ] Teachers should see "Grade Submissions" only on their assigned lectures
+- [ ] Add role badge in grading view: "Grading as Director" vs "Grading as Assigned Teacher"
+
+---
+
+### 📌 5. Student — Lecture Completion with Assignments (All Modes)
+
+**Problem:** Need to verify the complete student flow works for all lecture modes.
+
+#### Student Flow (verify/implement):
+1. Student sees lectures for their grade level (already implemented)
+2. Student opens a lecture (any type: sync, async, hybrid)
+3. If lecture has assignments:
+   - Student sees assignments section
+   - Student completes and submits each assignment
+   - If mandatory, submission is required before completing lecture
+4. Student marks lecture as complete:
+   - **Async/Hybrid**: Student clicks "Mark as Complete" (backend checks mandatory assignments)
+   - **Sync**: Teacher marks lecture as `completed` → student's lecture status updates → assignment submissions still counted
+5. Student can view their submitted assignments, scores, and feedback
+
+#### Backend (verify):
+- [ ] `POST /api/lectures/{id}/complete` — Check mandatory assignments for async/hybrid
+- [ ] `PUT /api/lectures/{id}/complete` (teacher action) — When teacher marks sync lecture complete, record student completions for all enrolled students
+- [ ] Student progress tracking (`StudentLectureProgress`) works for all modes
+- [ ] Assignment submissions are linked to student's lecture completion record
+
+#### Frontend (Student lecture page):
+- [ ] Verify assignments section renders for all lecture types
+- [ ] Verify "Mark as Complete" button behavior:
+  - Disabled with tooltip if mandatory assignments pending
+  - Enabled once all mandatory assignments submitted
+- [ ] Verify completed lectures show assignment results (score, feedback)
+- [ ] Add "Lecture Completed" badge with completion date
+
+---
+
+### 📌 6. Director/Admin — Completed Lectures Overview with Attachments
+
+**Problem:** Directors need to see which students have completed which lectures, with their assignment submissions attached, for grading.
+
+#### New Feature: Student Lecture Completion Report
+
+#### Backend:
+- [ ] **New API endpoint**: `GET /api/lectures/{id}/student-progress` — Returns all students with:
+  - Student info (name, ID, grade)
+  - Lecture completion status (completed, in-progress, not-started)
+  - Completion date (if completed)
+  - Assignment submissions for this lecture (with scores, grades, submission status)
+  - Overall progress percentage
+- [ ] **New API endpoint**: `GET /api/lectures/completed-by-student` — For a specific student, return all their completed lectures with assignments
+- [ ] Support filtering by: grade level, student, date range, completion status
+
+#### Frontend (Director/Admin view):
+- [ ] **New tab** in Lecture Detail page: **"Student Progress"** (already exists as "Attendance" tab — rename/extend)
+  - Table of all students in the lecture's grade level
+  - Columns: Student Name, Status (Completed/In Progress/Not Started), Completion Date, Assignments Submitted, Assignment Scores
+  - Click on a student row → expand to see their assignment submissions in detail
+  - From the expanded view: click to grade a submission directly
+- [ ] **New page or tab**: **"Lecture Completion Report"** (could be under Reports or Lectures)
+  - Filter by: Grade Level, Subject, Date Range, Teacher
+  - Table: Student × Lecture matrix showing completion status
+  - Export option (CSV/PDF)
+- [ ] Quick grading access: From the progress table, directors can click on any pending submission and open the grading modal directly
+
+---
+
+### 📌 7. Duplicate Validation Rule Fix
+
+- [ ] **Fix** `LectureController.store()` — Remove duplicate validation rules at lines 159-162:
+  ```php
+  // CURRENT (bug):
+  'title' => 'required|string|max:255',
+  'description' => 'nullable|string',
+  'title' => 'required|string|max:255',  // DUPLICATE
+  'description' => 'nullable|string',     // DUPLICATE
+
+  // SHOULD BE:
+  'title' => 'required|string|max:255',
+  'description' => 'nullable|string',
+  ```
+
+---
+
+### 📌 8. Progress Bar Bug Fix on Lecture Cards
+
+- [ ] **Fix** lecture card progress bar — currently divides by hardcoded `1`:
+  ```javascript
+  // CURRENT (bug):
+  style={{ width: `${Math.min(((lecture.completed_count || 0) / 1) * 100, 100)}%` }}
+
+  // SHOULD BE:
+  style={{ width: `${Math.min(((lecture.completed_count || 0) / (lecture.total_students || 1)) * 100, 100)}%` }}
+  ```
+- [ ] Ensure backend returns `total_students` count in lecture list response (count of students enrolled in the grade level)
+
+---
+
+### 📌 9. Term Integration in Lecture Forms
+
+- [ ] **Add** `term_id` field to lecture creation forms (both simple and builder)
+- [ ] Dropdown should show terms for the active academic session
+- [ ] Backend validation: `term_id` must belong to the active session for the school
+- [ ] Filter panel: Make `term_id` filter functional (populate dropdown with terms)
+
+---
+
+## Implementation Order
+
+| Step | Task | Priority | Estimated Effort |
+|------|------|----------|-----------------|
+| 1 | Fix duplicate validation rule + progress bar bug | 🔴 P0 | 15 min |
+| 2 | Backend: New API endpoints (class-based teacher/subject lookup) | 🔴 P0 | 1-2 hrs |
+| 3 | Backend: Teacher scope restriction in LectureController | 🔴 P0 | 30 min |
+| 4 | Backend: Permission checks for grading (director vs teacher) | 🔴 P0 | 30 min |
+| 5 | Backend: Student lecture completion report endpoints | 🟠 P1 | 1-2 hrs |
+| 6 | Frontend: Cascading lecture creation form (simple modal) | 🔴 P0 | 2-3 hrs |
+| 7 | Frontend: Cascading lecture creation form (builder modal) | 🔴 P0 | 2-3 hrs |
+| 8 | Frontend: Teacher scope UI adjustments | 🟠 P1 | 1 hr |
+| 9 | Frontend: Verify/fix assignment support for sync lectures | 🔴 P0 | 1 hr |
+| 10 | Frontend: Student progress tab with grading access | 🟠 P1 | 3-4 hrs |
+| 11 | Frontend: Add term_id to forms + filters | 🟡 P2 | 1 hr |
+| 12 | Testing: End-to-end flow for all roles | 🔴 P0 | 2-3 hrs |
+
+---
+
+### Acceptance Criteria
+
+1. **Director creates lecture**: Selects grade → sees teachers assigned to that grade → selects teacher → sees only subjects that teacher teaches → selects subject → adds assignments → saves
+2. **Teacher creates lecture**: Same flow, but `teacher_id` is auto-filled to themselves, cannot assign to others
+3. **Sync lecture with assignments**: Director creates live lecture → attaches theory/MCQ/resource assignments → students join live → complete assignments → director grades
+4. **Async lecture with assignments**: Same as above, student self-paces through content → completes assignments → marks lecture complete
+5. **Hybrid lecture with assignments**: Same as above, student can attend live OR review async → assignments are required either way
+6. **Student completes lecture**: Sees all assignments → submits them → if mandatory, cannot mark complete without submitting → sees scores after grading
+7. **Director grading view**: Opens any lecture → sees all students → sees who completed → sees their assignment submissions → grades directly from the table
+8. **Teacher grading view**: Opens their assigned lecture → same grading capabilities → cannot access other teachers' lectures
+
+---
+
 ## Phase 2: Grade Levels & Class Structure
 
 **Status:** ✅ **FULLY IMPLEMENTED** (Completed April 11, 2026)
@@ -929,7 +1187,7 @@ Assignments can be attached to **any lecture type** (sync, async, hybrid):
 - [x] **CA Weight Config seed data** — Sample weight splits for testing (e.g., 60% assignments / 40% tests)
 
 ### 17.3 Manual Testing Checklist
-- [x] Run `php artisan db:seed` with updated seeder
+- [x] Run `php artisan db:seed` with updated seeder ✅ (ran successfully in 97s)
 - [x] **Director/Teacher end testing:**
   - Login as `director@greenfield.edu` / `SchoolAdmin@2026!`
   - Navigate to a lecture → verify assignments tab exists
